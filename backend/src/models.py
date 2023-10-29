@@ -5,7 +5,7 @@ import enum
 from typing import Optional
 from sqlalchemy import String, Integer, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy import Enum
 from database import engine
 
@@ -160,6 +160,8 @@ class Student(Base):
     first_term : Mapped[int] = mapped_column(Integer, nullable=True) #202209 or may have empty
     profile_picture : Mapped[Optional[str]] = mapped_column(String, nullable=True) #file path. or they do not have picture
     #addresses: Mapped[List["Address"]] = relationship(back_populates="user")
+    campus = relationship("Campus", back_populates ="student")
+    
 
     def __repr__(self) -> str:
         return f"Student(id={self.id!r}, name={self.first_name!r}, lastname={self.last_name!r}, email={self.email!r})"
@@ -203,6 +205,7 @@ class Major(Base):
     name: Mapped[str] = mapped_column(String(30), nullable=False, unique=True)
     dept_id: Mapped[int] = mapped_column(ForeignKey("department.id"), nullable=False)
     description: Mapped[str] = mapped_column(String(500), nullable=True)
+    department = relationship("Department", back_populates="major")
     
     def __repr__(self) -> str:
         return f"Major(id={self.id!r}, name={self.name!r}, dept_id={self.dept_id!r}, description={self.description!r})"
@@ -245,6 +248,10 @@ class ProgramEnrollments(Base):
     # way to list multiple unique constraints that are constrained together
     __table_args__ = (UniqueConstraint('student_id', 'degree_id', 'major_id', name='program_student_degree_major_uc'),)
     
+    student = relationship("Student", back_populates="program_enrollment")
+    degree = relationship("Degree", back_populates="program_enrollment")
+    major = relationship("Major", back_populates="program_enrollment")
+        
     def __repr__(self) -> str:
         return f"ProgramEnrollments(id={self.id!r}, student_id={self.student_id!r}, degree_id={self.degree_id!r}, major_id={self.major_id!r})"
     
@@ -263,6 +270,8 @@ class StudentLabs(Base):
     student_id: Mapped[int] = mapped_column(Integer, ForeignKey("student.id"), nullable=False)
     name: Mapped[int] = mapped_column(String)
     director: Mapped[Optional[str]] = mapped_column(String)
+    
+    student = relationship("Student", back_populates="student_labs")
     
     def __repr__(self) -> str:
         return f"StudentLabs(id={self.id!r}, student_id={self.student_id!r}, name={self.name!r})"
@@ -340,6 +349,8 @@ class Employment(Base):
     end_date : Mapped[Optional[str]] = mapped_column(String, nullable=True)   #July dd,yyyy 
     type: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
+    student = relationship("Student", back_populates="employment")
+
     def __repr__(self) -> str:
         return f"Employment(id={self.id!r}, job_title={self.job_title!r})"
 
@@ -364,6 +375,8 @@ class Funding(Base):
     end_date: Mapped[Optional[str]] = mapped_column(String)   #July dd,yyyy
     guaranteed: Mapped[Guaranteed] = mapped_column(Enum(Guaranteed)) # not sure 
 
+    student = relationship("Student", back_populates="funding")
+
     def __repr__(self) -> str:
         return f"Funding(id={self.id!r}, name={self.name!r})"
 
@@ -386,6 +399,8 @@ class Event(Base):
     description: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     status: Mapped[Status] = mapped_column(Enum(Status)) #Complete, On-Going
     
+    student = relationship("Student", back_populates="event")
+    
     def __repr__(self) -> str:
         return f"Event(id={self.id!r}, name={self.name!r})"
 
@@ -406,6 +421,8 @@ class Advisor(Base):
     middle_name: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     last_name: Mapped[Optional[str]] = mapped_column(String(40))
     dept_id: Mapped[int] = (Integer, ForeignKey("department.id"))
+    
+    department = relationship("Department", back_populates="advisor")
     
     def __repr__(self) -> str:
         return f"Advisor(id={self.id!r},first_name={self.first_name!r},last_name={self.last_name!r})"
@@ -428,6 +445,10 @@ class Requirement(Base):
     degree_id: Mapped[int] = mapped_column(Integer, ForeignKey("degree.id"))
     major_id: Mapped[int] = mapped_column(Integer, ForeignKey("major.id"))
     
+    degree = relationship("Degree", back_populates="requirement")
+    major = relationship("Major", back_populates="requirement")
+    
+    
     def __repr__(self) -> str:
         return f"Requirement(id={self.id!r},name={self.name!r})"
 
@@ -445,6 +466,8 @@ class Milestone(Base):
     name: Mapped[str] = mapped_column(String)
     description: Mapped[str] = mapped_column(String, nullable=True)
     stage_id: Mapped[int] = mapped_column(Integer, ForeignKey("stage.id"))
+    
+    Stage = relationship("Stage", back_populates="milestone")
     
     def __repr__(self) -> str:
         return f"Milestone(id={self.id!r},name={self.name!r})"
@@ -477,6 +500,10 @@ class Progress(Base):
     note: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     exempt: Mapped[Exempt] = mapped_column(Enum(Exempt))
     
+    requirement = relationship("Requirement", back_populates="progress")
+    milestone = relationship("Milestone", back_populates="progress")
+    student = relationship("Student", back_populates="progress")
+    
     def __repr__(self) -> str:
         return f"Progress(id={self.id!r},requirement_id={self.requirement_id!r},student_id={self.student_id!r})"
 
@@ -503,6 +530,10 @@ class CourseEnrollment(Base):
     pos_id: Mapped[int] = mapped_column(Integer, ForeignKey("studentpos.id"))
     year: Mapped[int] = mapped_column(Integer, nullable=True) # Do We need the years for the CourseEnrollment? add it just in case we need
     
+    student = relationship("Student", back_populates="course_enrollment")
+    studentpos = relationship("StudentPOS", back_populates="course_enrollment")
+    
+    
     def __repr__(self) -> str:
         return f"CourseEnrollment(id={self.id!r},student_id={self.student_id!r},course_title={self.course_title!r})"
         
@@ -522,6 +553,9 @@ class Stage(Base):
     description: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     major_id: Mapped[int] = mapped_column(Integer, ForeignKey("major.id"))
     degree_id: Mapped[int] = mapped_column(Integer, ForeignKey("degree.id"))
+    
+    major = relationship("Major", back_populates="stage")
+    degree = relationship("Degree", back_populates="stage")
     
     def __repr__(self) -> str:
         return f"Stage(id={self.id!r},major_id={self.major_id!r},degree_id={self.degree_id!r})"
@@ -543,6 +577,8 @@ class StudentPOS(Base):
     approved: Mapped[Approve] = mapped_column(Enum(Approve))
     chair: Mapped[Optional[str]] = mapped_column(String)
     co_chair: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    
+    student = relationship("Student", back_populates="student_pos")
     
     def __repr__(self) -> str:
         return f"StudentPOS(id={self.id!r},student_id={self.student_id!r})"
