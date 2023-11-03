@@ -404,28 +404,30 @@ class Event(Base):
     def __repr__(self) -> str:
         return f"Event(id={self.id!r}, name={self.name!r})"
 
-class Advisor(Base):
+class Faculty(Base):
     """Holds advisor information:
         - first name
         - middle name
         - last name
+        - privilege level
         - department id or department code
         
     Args:
         Base: Inherited base class from SQLAlchemy that allows ORM
     """
     
-    __tablename__ = 'advisor'
+    __tablename__ = 'faculty'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     first_name: Mapped[str] = mapped_column(String(40))
     middle_name: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     last_name: Mapped[Optional[str]] = mapped_column(String(40))
     dept_id: Mapped[int] = (Integer, ForeignKey("department.id"))
+    perivilege_level: Mapped[Optional[str]] = mapped_column(String, nullable=False)
     
-    department = relationship("Department", back_populates="advisor")
+    department = relationship("Department", back_populates="faculty")
     
     def __repr__(self) -> str:
-        return f"Advisor(id={self.id!r},first_name={self.first_name!r},last_name={self.last_name!r})"
+        return f"Faculty(id={self.id!r},first_name={self.first_name!r},last_name={self.last_name!r})"
 
 class Requirement(Base):
     """Holds requirement:
