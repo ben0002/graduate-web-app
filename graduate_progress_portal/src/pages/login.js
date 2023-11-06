@@ -4,15 +4,15 @@ export default function Login() {
     
     useEffect(_ => {
         async function getCurrentUser() {
-            await fetch("http://localhost:8000/api/login", {mode: 'cors'})
+            await fetch("https://bktp-gradpro.discovery.cs.vt.edu/api/login")
               .then((res) => res.json())
-              .catch((err) => {console.log(1); console.log(err)})
               .then(data => {
                 if(data.redirect_url) window.location.href = data.redirect_url
                 else{
                     console.log(data);
                 }
               })
+              .catch((err) => {console.log(1); console.log(err)})
                 
           }
         getCurrentUser();      

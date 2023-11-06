@@ -1,11 +1,12 @@
 from fastapi import FastAPI, Depends, HTTPException, Request, Response, Cookie
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from cas import CASClient
 
 app = FastAPI()
 
 origins = [
-    "http://localhost:3000",  # Example frontend development server
+    "*",  # Example frontend development server
 ]
 
 app.add_middleware(
@@ -16,12 +17,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
+@app.get("/api/")
 def read_root():
     return {"message": "Hello, World!"}
 
 
-SERVICE_URL = "http://localhost:8000"
+SERVICE_URL = "https://bktp-gradpro.discovery.cs.vt.edu/"
 
 # Creating the CAS CLIENT
 cas_client = CASClient(
@@ -35,8 +36,9 @@ cas_client = CASClient(
 # Routes related to CAS
 @app.get("/api/login")
 def login(request: Request):
+    
     username = request.cookies.get("username")
-    if username:
+    if username: # return user info
         return {"message": "Logged in!"}
 
     cas_ticket = request.query_params.get("ticket")
