@@ -4,13 +4,13 @@
 */node_modules
 /.pnp
 .pnp.js
-.pyc
 
 # testing
 /coverage
 
 # production
 /build
+*.pyc
 
 # misc
 .DS_Store
