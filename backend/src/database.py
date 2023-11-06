@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 
-URL_DATABASE = 'mysql+pymysql://root:vtprograds@localhost:3306/VTGrads_db'
+URL_DATABASE = 'mysql+pymysql://root:root@localhost:3306/VTGrads_db'
 
 engine = create_engine(URL_DATABASE)
 
