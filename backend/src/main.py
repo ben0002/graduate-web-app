@@ -1,7 +1,27 @@
 from fastapi import FastAPI, Depends, HTTPException, Request, Response, Cookie
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
+
+from sqlalchemy.orm import Session
+
 from cas import CASClient
+
+from enums import *
+from datetime import date
+
+import crud, schemas, models
+from database import SessionLocal, engine
+
+models.Base.metadata.drop_all(engine)
+models.Base.metadata.create_all(engine)
+
+# Dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 app = FastAPI()
 
@@ -60,3 +80,30 @@ def logout(response: Response):
     response.delete_cookie("username")
     return {"redirect_url": cas_logout_url}
 
+#------------------- non-cas --------------------#
+
+@app.get("/students", response_model=list[schemas.Student])
+async def students(
+    skip: int = 0, limit: int = 100, db: Session = Depends(get_db), 
+    admit_type: AdmitType | None = None, residency: Residencies | None = None, 
+    student_type: StudentTypes | None = None, prelim_exam_date: date | None = None, 
+    prelim_exam_passed: bool | None = None, first_term: int | None = None, 
+    status: StudentStatus | None = None, campus_id: int | None = None 
+):
+    filters = {
+        "admit_type": admit_type,
+        "residency": residency,
+        "student_type": student_type,
+        "prelim_exam_date": prelim_exam_date,
+        "prelim_exam_passed": prelim_exam_passed,
+        "first_term": first_term,
+        "status": status,
+        "campus_id": campus_id,
+    }   
+    
+    students = crud.get_students(db=db ,filters=filters, skip=skip, limit=limit)
+    return students
+
+
+    
+    
