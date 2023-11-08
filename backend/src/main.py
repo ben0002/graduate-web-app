@@ -4,7 +4,7 @@ from fastapi.responses import RedirectResponse
 
 from sqlalchemy.orm import Session
 
-from cas import CASClient
+#from cas import CASClient
 
 from enums import *
 from datetime import date
@@ -110,9 +110,9 @@ async def students(
     
     
 @app.post("/uploadfile")
-async def upload_student_file(file: UploadFile, db: Session = Depends(get_db)):
+async def upload_student_file(file: UploadFile, db: Session = Depends(get_db)):    
     try:
-        crud.process_csv_file(file, db, models.Student)
+        return crud.process_csv_file(file, db)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="CSV file not found")
     except PermissionError:

@@ -33,8 +33,8 @@ class AdvisorRole(enum.Enum):
 class Residencies(str, enum.Enum):
     """Values that are valid for residencies of student.
     """
-    IN_STATE = "in_state"
-    OUT_OF_STATE = "out_of_state"
+    IN_STATE = "In-State"
+    OUT_OF_STATE = "Out-of-State"
     
 class StudentStatus(enum.Enum):
     """Values that are valid for student status'.
@@ -53,6 +53,6 @@ class AdmitType(enum.Enum):
 class StudentTypes(enum.Enum):
     """Values that are valid for the different student types.
     """
-    NEW = 1
-    CONT = 2
-    NEW_PROGRAM = 3
+    NEW = "New"
+    CONT = "Cont"
+    NEW_PROGRAM = "New Prog"
