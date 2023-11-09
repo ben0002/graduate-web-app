@@ -33,8 +33,8 @@ class AdvisorRole(str, enum.Enum):
 class Residencies(str, enum.Enum): # should we make va_residency true and false or keep the enums?
     """Values that are valid for residencies of student.
     """
-    IN_STATE = "in_state"
-    OUT_OF_STATE = "out_of_state"
+    IN_STATE = "In-State"
+    OUT_OF_STATE = "Out-of-State"
     
 class StudentStatus(str, enum.Enum): # need to ask the difference b/n status and type bc can student set status in their pfp?
     """Values that are valid for student status'.

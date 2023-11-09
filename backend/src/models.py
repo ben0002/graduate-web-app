@@ -258,7 +258,7 @@ class Campus(Base):
     
     __tablename__ = 'campus'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(50))
+    name: Mapped[str] = mapped_column(String(50), nullable=True)
     address: Mapped[Optional[str]] = mapped_column(String(60), nullable=True)
     
     students = relationship("Student", back_populates="campus")

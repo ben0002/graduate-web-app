@@ -1,16 +1,18 @@
-from fastapi import FastAPI, Depends, HTTPException, Request, Response, Cookie
+from fastapi import FastAPI, Depends, HTTPException, Request, Response, Cookie, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
 from sqlalchemy.orm import Session
 
-from cas import CASClient
+#from cas import CASClient
 
 from enums import *
 from datetime import date
 
 import crud, schemas, models
 from database import SessionLocal, engine
+
+import csv
 
 models.Base.metadata.drop_all(engine)
 models.Base.metadata.create_all(engine)
@@ -173,3 +175,16 @@ async def advisor(advisor_id: int, db: Session = Depends(get_db)):
 
     
     
+@app.post("/uploadfile")
+async def upload_student_file(file: UploadFile, db: Session = Depends(get_db)):    
+    try:
+        return crud.process_csv_file(file, db)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="CSV file not found")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Permission denied to access the CSV file")
+    except csv.Error as csv_error:
+        raise HTTPException(status_code=400, detail=f"CSV file error: {csv_error}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+    return {"message": "CSV data uploaded and processed successfully"}
