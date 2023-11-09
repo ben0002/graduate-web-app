@@ -53,7 +53,7 @@ class Student(Base):
     va_residency: Mapped[Residencies] = mapped_column(Enum(Residencies), nullable=True)
     type: Mapped[StudentTypes] = mapped_column(Enum(StudentTypes), nullable=True)
     status: Mapped[StudentStatus] = mapped_column(Enum(StudentStatus), nullable=True)
-    admit_type: Mapped[AdmitType] = mapped_column(Enum(AdmitType), nullable=True)
+    # admit_type: Mapped[AdmitType] = mapped_column(Enum(AdmitType), nullable=True)
     campus_id: Mapped[Optional[int]] = mapped_column(Integer,ForeignKey("campus.id"), nullable=True)
     email: Mapped[Optional[str]] = mapped_column(String(70))
     phone_number: Mapped[Optional[str]] = mapped_column(String(13), nullable=True) 
@@ -365,7 +365,7 @@ class Faculty(Base):
     department = relationship("Department", back_populates="faculty")
     
     def __repr__(self) -> str:
-        return f"Advisor(id={self.id!r},first_name={self.first_name!r},last_name={self.last_name!r})"
+        return f"Faculty(id={self.id!r},first_name={self.first_name!r},last_name={self.last_name!r})"
 
 class Requirement(Base):
     """Holds requirement:
