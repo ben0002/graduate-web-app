@@ -50,8 +50,8 @@ SERVICE_URL = "https://bktp-gradpro.discovery.cs.vt.edu/"
 
 #------------------- non-cas --------------------#
 
-@app.get("/students", response_model=list[schemas.Student])
-async def students(
+@app.get("/students", response_model=list[schemas.StudentOut])
+def students(
     skip: int = 0, limit: int = 100, db: Session = Depends(get_db), 
     admit_type: AdmitType | None = None, residency: Residencies | None = None, 
     student_type: StudentTypes | None = None, prelim_exam_date: date | None = None, 
@@ -71,6 +71,72 @@ async def students(
     
     students = crud.get_students(db=db ,filters=filters, skip=skip, limit=limit)
     return students
+
+# add filters once all basic func. is done
+@app.get("/students/{student_id}", response_model=schemas.StudentOut)
+async def students_id(student_id: int, db: Session = Depends(get_db)):
+    filter = {
+        "id": student_id
+    }
+    
+    student = crud.get_students(db=db, filters=filter)
+    return student[0]
+
+@app.get("/students/{student_id}/visa", response_model=schemas.VisaOut)
+async def student_visa(student_id: int, db: Session = Depends(get_db)):
+    filter = {
+        "id": student_id,
+    }
+    
+    student = crud.get_students(db=db, filters=filter)
+    if student[0] is not None:
+        return student[0].visa
+
+@app.get("/faculty", response_model=list[schemas.FacultyOut])
+async def faculty(
+    skip: int | None, limit: int | None, db: Session = Depends(get_db),
+    dept_code: str | None = None, faculty_type: str | None = None,
+    privilege_level: int | None = None):
+    
+    filters = {
+        "dept_code": dept_code,
+        "faculty_type": faculty_type,
+        "privilege_level": privilege_level
+    }
+    
+    faculty = crud.get_faculty(db=db, filters=filters, skip=skip, limit=limit)
+    return faculty
+
+@app.get("/faculty/{faculty_id}", response_model=schemas.FacultyOut)
+async def faculty_id(db: Session = Depends(get_db)):
+    
+    faculty = crud.get_faculty(db=db, filters=None)
+    return faculty[0]
+
+@app.get("/advisors", response_model=list[schemas.FacultyOut])
+async def advisors(skip: int | None, limit: int | None, 
+                   dept_code: str | None = None, privilege_level: int | None = None,
+                   db: Session = Depends(get_db)):
+    
+    filters = {
+        "faculty_type": "advisor",
+        "dept_code": dept_code,
+        "privilege_level": privilege_level
+    }
+    
+    advisors = crud.get_faculty(db=db, filters=filters, skip=skip, limit=limit)
+    return advisors
+
+@app.get("/advisors/{advisor_id}", response_model=schemas.FacultyOut)
+async def advisor(advisor_id: int, db: Session = Depends(get_db)):
+        
+    advisor = crud.get_faculty(db=db, filters={"id": int})
+    return advisor[0]
+    
+    
+
+
+
 
 
     

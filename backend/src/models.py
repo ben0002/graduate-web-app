@@ -53,7 +53,7 @@ class Student(Base):
     va_residency: Mapped[Residencies] = mapped_column(Enum(Residencies), nullable=True)
     type: Mapped[StudentTypes] = mapped_column(Enum(StudentTypes), nullable=True)
     status: Mapped[StudentStatus] = mapped_column(Enum(StudentStatus), nullable=True)
-    admit_type: Mapped[AdmitType] = mapped_column(Enum(AdmitType), nullable=True)
+    # admit_type: Mapped[AdmitType] = mapped_column(Enum(AdmitType), nullable=True)
     campus_id: Mapped[Optional[int]] = mapped_column(Integer,ForeignKey("campus.id"), nullable=True)
     email: Mapped[Optional[str]] = mapped_column(String(70))
     phone_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True) 
