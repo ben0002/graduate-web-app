@@ -36,4 +36,23 @@ class Student(BaseModel):
     
     class Config:
         from_attributes = True
+
+class FileUpload(Student):
+    email: str
+    phone_number: str | None = None
+    visa_id: int | None = None
+    pronouns: str | None = None
+    gender: str | None = None
+    ethnicity: str | None = None
+    advisory_committee: str | None = None
+    plan_submit_date: str | None = None
+    prelim_exam_date: str | None = None
+    prelim_exam_pass: str | None = None
+    proposal_meeting: str | None = None
+    progress_meeting: str | None = None
+    ETD_submitted: bool | None = None
+    final_exam: str | None = None
+    first_term: int | None = None
+    profile_picture: str | None = None
+    
         

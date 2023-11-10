@@ -56,10 +56,10 @@ class Student(Base):
     admit_type: Mapped[AdmitType] = mapped_column(Enum(AdmitType), nullable=True)
     campus_id: Mapped[Optional[int]] = mapped_column(Integer,ForeignKey("campus.id"), nullable=True)
     email: Mapped[Optional[str]] = mapped_column(String(70))
-    phone_number: Mapped[Optional[str]] = mapped_column(String(13), nullable=True) 
+    phone_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True) 
     pronouns: Mapped[Optional[str]] = mapped_column(String(15), nullable=True)
-    # gender : Mapped[str] = mapped_column(String(40)) 
-    # ethnicity : Mapped[str] = mapped_column(String(50)) 
+    gender : Mapped[str] = mapped_column(String(40)) 
+    ethnicity : Mapped[str] = mapped_column(String(50)) 
     advisory_committee : Mapped[Optional[str]] = mapped_column(String(200), nullable=True) 
     prelim_exam_date : Mapped[Optional[str]] = mapped_column(String(10), nullable=True) # do we drop this column?
     plan_submit_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
@@ -127,7 +127,7 @@ class Major(Base):
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(30))
-    dept_code: Mapped[str] = mapped_column(String(10), ForeignKey("department.dept_code"))
+    dept_code: Mapped[Integer] = mapped_column(Integer, ForeignKey("department.dept_code"))
     description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     
     department = relationship("Department", back_populates="majors") 
@@ -145,7 +145,7 @@ class Department(Base):
     
     __tablename__ = "department"
     
-    dept_code: Mapped[str] = mapped_column(String(7), primary_key=True)
+    dept_code: Mapped[Integer] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(100))
     
     faculty = relationship("Faculty", back_populates="department")
@@ -238,7 +238,7 @@ class Visa(Base):
     __tablename__ = 'visa'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     student_id: Mapped[int] = mapped_column(Integer, ForeignKey("student.id", name="visa-student"), unique=True)
-    citizenship: Mapped[str] = mapped_column(String(60))
+    citizenship: Mapped[str] = mapped_column(String(60), nullable=True)
     visa_name: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     expiration_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True) # integer (mmddyyyy)
     
@@ -358,14 +358,14 @@ class Faculty(Base):
     first_name: Mapped[str] = mapped_column(String(40))
     middle_name: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     last_name: Mapped[Optional[str]] = mapped_column(String(40))
-    dept_code: Mapped[String] = mapped_column(String(7), ForeignKey("department.dept_code"))
+    dept_code: Mapped[Integer] = mapped_column(Integer, ForeignKey("department.dept_code"))
     faculty_type: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     privilege_level: Mapped[int] = mapped_column(Integer)
     
     department = relationship("Department", back_populates="faculty")
     
     def __repr__(self) -> str:
-        return f"Advisor(id={self.id!r},first_name={self.first_name!r},last_name={self.last_name!r})"
+        return f"Faculty(id={self.id!r},first_name={self.first_name!r},last_name={self.last_name!r})"
 
 class Requirement(Base):
     """Holds requirement:
@@ -504,6 +504,7 @@ class StudentPOS(Base):
         - on file
         - student id
         - approved
+        - approved date
         - name of chair
         - name of co-chair
         
@@ -514,7 +515,8 @@ class StudentPOS(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     student_id: Mapped[int] = mapped_column(Integer, ForeignKey("student.id"))
     approved: Mapped[bool] = mapped_column(Boolean)
-    chair: Mapped[str] = mapped_column(String(100))
+    approved_date: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    chair: Mapped[str] = mapped_column(String(100), nullable=True)
     co_chair: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     
     student = relationship("Student", back_populates="pos")
