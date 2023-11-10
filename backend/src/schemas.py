@@ -59,7 +59,7 @@ class StudentOut(StudentIn):
     class Config:
         from_attributes = True
 
-class FileUpload(Student):
+class FileUpload(StudentIn):
     email: str
     phone_number: str | None = None
     visa_id: int | None = None
