@@ -5,7 +5,7 @@ from cas import CASClient
 
 from sqlalchemy.orm import Session
 
-#from cas import CASClient
+from cas import CASClient
 
 from enums import *
 from datetime import date
@@ -59,7 +59,7 @@ cas_client = CASClient(
 # Routes related to CAS
 @app.get("/api/login")
 def login(request: Request):
-    
+
     username = request.cookies.get("username")
     if username: # return user info
         return {"message": "Logged in!"}
@@ -168,8 +168,15 @@ async def advisor(advisor_id: int, db: Session = Depends(get_db)):
     advisor = crud.get_faculty(db=db, filters={"id": int})
     return advisor[0]
     
-      
-@app.post("/uploadfile")
+    
+
+
+
+
+
+    
+
+@app.post("/uploadfile", response_model=list[schemas.FileUpload])
 async def upload_student_file(file: UploadFile, db: Session = Depends(get_db)):    
     try:
         return crud.process_csv_file(file, db)
@@ -181,4 +188,3 @@ async def upload_student_file(file: UploadFile, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=f"CSV file error: {csv_error}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
-    return {"message": "CSV data uploaded and processed successfully"}
