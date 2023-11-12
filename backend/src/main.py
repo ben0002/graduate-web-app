@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, Request, Response, Cookie, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
+from cas import CASClient
 
 from sqlalchemy.orm import Session
 
@@ -167,14 +168,7 @@ async def advisor(advisor_id: int, db: Session = Depends(get_db)):
     advisor = crud.get_faculty(db=db, filters={"id": int})
     return advisor[0]
     
-    
-
-
-
-
-
-    
-    
+      
 @app.post("/uploadfile")
 async def upload_student_file(file: UploadFile, db: Session = Depends(get_db)):    
     try:
