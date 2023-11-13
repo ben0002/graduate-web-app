@@ -15,8 +15,8 @@ from database import SessionLocal, engine
 
 import csv
 
-models.Base.metadata.drop_all(engine)
-models.Base.metadata.create_all(engine)
+#models.Base.metadata.drop_all(engine)
+#models.Base.metadata.create_all(engine)
 
 # Dependency
 def get_db():
@@ -105,6 +105,7 @@ def students(
     }   
     
     students = crud.get_students(db=db ,filters=filters, skip=skip, limit=limit)
+    print(students)
     return students
 
 # add filters once all basic func. is done
@@ -115,7 +116,8 @@ async def students_id(student_id: int, db: Session = Depends(get_db)):
     }
     
     student = crud.get_students(db=db, filters=filter)
-    return student[0]
+    print(student)
+    #return student[0]
 
 @app.get("/students/{student_id}/visa", response_model=schemas.VisaOut)
 async def student_visa(student_id: int, db: Session = Depends(get_db)):
@@ -170,12 +172,6 @@ async def advisor(advisor_id: int, db: Session = Depends(get_db)):
     
     
 
-
-
-
-
-    
-
 @app.post("/uploadfile", response_model=list[schemas.FileUpload])
 async def upload_student_file(file: UploadFile, db: Session = Depends(get_db)):    
     try:
@@ -186,5 +182,8 @@ async def upload_student_file(file: UploadFile, db: Session = Depends(get_db)):
         raise HTTPException(status_code=403, detail="Permission denied to access the CSV file")
     except csv.Error as csv_error:
         raise HTTPException(status_code=400, detail=f"CSV file error: {csv_error}")
+    except crud.CustomValueError as value_error:
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data}) 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+        raise #HTTPException(status_code=500, detail=f"There was an error processing the file")

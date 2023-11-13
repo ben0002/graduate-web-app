@@ -1,12 +1,23 @@
-from sqlalchemy.orm import Session, InstrumentedAttribute
+from sqlalchemy.orm import Session, InstrumentedAttribute, joinedload
 import models
 from io import TextIOWrapper
 import csv
 from fastapi import UploadFile
 import enums
 from pydantic import EmailStr
-from datetime import date
+from datetime import datetime
 
+class CustomException(Exception):
+    def __init__(self, message, original_exception, row_data=None):
+        super().__init__(message)
+        self.row_data = row_data
+        self.original_exception = original_exception
+    def set_row(self, row):
+        self.row_data = row
+        
+class CustomValueError(CustomException):
+    pass
+    
 
 def apply_filters(query,  model, filters: dict = {}):
     for column, value in filters.items():
@@ -16,9 +27,9 @@ def apply_filters(query,  model, filters: dict = {}):
 
 def get_students(db: Session, filters: dict, skip: int = 0, limit: int =100):
     query = db.query(models.Student)
-    query = apply_filters(query, models.Student, filters)
-    if(filters.get("citizenship", None) is not None):
-        query = query.filter(models.Student.visa["citizenship"] == filters.get("citizenship"))
+    #query = apply_filters(query, models.Student, filters)
+    #if(filters.get("citizenship", None) is not None):
+        #query = query.filter(models.Student.visa["citizenship"] == filters.get("citizenship"))
     return query.offset(skip).limit(limit).all()
 
 def get_faculty(db: Session, filters: dict, skip: int = 0, limit: int = 100):
@@ -79,6 +90,19 @@ def insert_major_from_file(data : dict, db: Session, department_code: int):
     # This will return the primary id for ForeignKey that other table may need
     return db.query(models.Major).filter(models.Major.name == major_name).first().id
 
+def convert_to_date(date: str | None):
+    
+    date_format = "%d-%b-%y"
+    if date == "" or date is None:
+        return None
+    try:
+        # Attempt to convert the string to a date using the specified format
+        date_object = datetime.strptime(date, date_format).date()
+        return date_object
+    except ValueError as ve:
+        raise CustomValueError(message="Ensure the date given is in dd-month-yy (i.e. 05-APR-23) format for given row.",
+                               original_exception=ve)
+
 # Processing data from file to Student table
 def insert_student_from_file(data : dict, db: Session, campus_id: int, response_data:list):
     
@@ -86,29 +110,32 @@ def insert_student_from_file(data : dict, db: Session, campus_id: int, response_
     # formatting it as list
     #if isinstance(advisory_committee, str):
         #advisory_committee = [x.strip() for x in advisory_committee.split(",")]
-    student = models.Student(
-        last_name = data.get("Last Name") or None,   
-        va_residency = enums.Residencies(data.get("Residency")) or None,
-        first_name = data.get("First/Middle Name") or None,
-        type = enums.StudentTypes(data.get("Stud Type")) or None,
-        first_term = data.get("First Term Enrl") or None,
-        email = data.get("E-mail") or None,
-        phone_number = data.get("Phone") or None,
-        gender = data.get("Gender") or None,
-        ethnicity = data.get("Ethnicity") or None,
-        prelim_exam_date = data.get("Prelim Exam Scheduled") or None,
-        prelim_exam_pass = data.get("Prelim Exam Passed") or None,
-        advisory_committee = data.get("Adviser Name") or None,
-        campus_id = campus_id
-    )
-    db.add(student)
-    db.commit()
-    table = db.query(models.Student).filter(models.Student.email == student.email).first()
-    response_data.append(table.__dict__)
-    # Since the primary key will be generate after commit(), I need to search the database agian in order to get the primary id    
-    # This will return the primary id for ForeignKey that other table may need
-    return table.id
-
+    try:
+        student = models.Student(
+            last_name = data.get("Last Name") or None,   
+            va_residency = enums.Residencies(data.get("Residency")) or None,
+            first_name = data.get("First/Middle Name") or None,
+            type = enums.StudentTypes(data.get("Stud Type")) or None,
+            first_term = data.get("First Term Enrl") or None,
+            email = data.get("E-mail") or None,
+            phone_number = data.get("Phone") or None,
+            gender = data.get("Gender") or None,
+            ethnicity = data.get("Ethnicity") or None,
+            prelim_exam_date = convert_to_date(data.get("Prelim Exam Scheduled", None)),
+            prelim_exam_pass = convert_to_date(data.get("Prelim Exam Passed", None)),
+            advisory_committee = data.get("Adviser Name") or None,
+            campus_id = campus_id
+        )
+        db.add(student)
+        db.commit()
+        table = db.query(models.Student).filter(models.Student.email == student.email).first()
+        response_data.append(table.__dict__)
+        # Since the primary key will be generate after commit(), I need to search the database agian in order to get the primary id    
+        # This will return the primary id for ForeignKey that other table may need
+        return table.id
+    except CustomValueError as ve:
+        raise 
+    
 # Processing data from file to StudentPOS table
 def insert_student_pos_from_file(data : dict, db: Session, student_id: int):
     # checking if it is approved, none mean it has not been approved yet
@@ -142,8 +169,13 @@ def insert_program_enrollment_from_file(data : dict, db: Session, student_id: in
 
 # Processing data from file to Visa table
 def insert_visa_from_file(data : dict, db: Session, student_id: int):
+    
+    citizen = data.get("Country of Citizenship")
+    if citizen == "":
+        citizen = "United States of America"
+        
     visa = models.Visa(
-        citizenship = data.get("Country of Citizenship") or None,
+        citizenship = citizen,
         student_id = student_id
     )
     db.add(visa)
@@ -174,17 +206,21 @@ def process_csv_file(file: UploadFile, db: Session):
         csv_reader = csv.DictReader(text_file)
         inserted_student_data : list = []
         for row in csv_reader:
-            campus_id = insert_campus_from_file(row, db)
-            degree_id = insert_degree_from_file(row, db)
-            dept_code = insert_department_from_file(row, db)
-            # it there is faculty, please do it below department
-            major_id = insert_major_from_file(row, db, dept_code)# -1 indicated there is no department
-            student_id = insert_student_from_file(row, db, campus_id, inserted_student_data)
-            ##faculty = models.Faculty()
-            ##student_advisor = models.StudentAdvisor()
-            insert_student_pos_from_file(row, db, student_id)
-            insert_program_enrollment_from_file(row, db, student_id, degree_id, major_id)
-            insert_visa_from_file(row, db, student_id)
+            try:
+                campus_id = insert_campus_from_file(row, db)
+                degree_id = insert_degree_from_file(row, db)
+                dept_code = insert_department_from_file(row, db)
+                # it there is faculty, please do it below department
+                major_id = insert_major_from_file(row, db, dept_code)# -1 indicated there is no department
+                student_id = insert_student_from_file(row, db, campus_id, inserted_student_data)
+                ##faculty = models.Faculty()
+                ##student_advisor = models.StudentAdvisor()
+                insert_student_pos_from_file(row, db, student_id)
+                insert_program_enrollment_from_file(row, db, student_id, degree_id, major_id)
+                insert_visa_from_file(row, db, student_id)
+            except CustomValueError as ve:
+                ve.set_row(row)
+                raise ve
     db.close()
     return inserted_student_data
             

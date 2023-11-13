@@ -29,26 +29,25 @@ class StudentIn(BaseModel):
     va_residency: Residencies | None = None
     type: StudentTypes | None = None
     status: StudentStatus | None = None
-    # admit_type: AdmitType | None  = None
+    admit_type: AdmitType | None  = None
     campus_id: int | None = None
     email: EmailStr 
     phone_number: constr(
         pattern=r'^\(\d{3}\) \d{3}-\d{4}$',  # Regular expression pattern for (123) 456-7890
         strict=True,  # Enforce strict validation (default is False)
         strip_whitespace=True  # Remove leading/trailing whitespace (default is True)
-    )
-    visa: VisaIn | None = None
-    pronouns: str | None = None
+    ) | None = None
+    #pronouns: str | None = None
     advisory_committee: str | None = None
     plan_submit_date: date | None = None
     prelim_exam_date: date | None = None
-    prelim_exam_pass: date | None = None
-    proposal_meeting: date | None = None
-    progress_meeting: date | None = None
-    ETD_submitted: bool | None = False
-    final_exam: date | None = None
-    first_term: int | None = None
-    profile_picture: str | None = None
+    #prelim_exam_pass: date | None = None
+    #proposal_meeting: date | None = None
+    #progress_meeting: date | None = None
+    #ETD_submitted: bool | None = False
+    #final_exam: date | None = None
+    #first_term: int | None = None
+    #profile_picture: str | None = None
     
     class Config:
         from_attributes = True
@@ -59,7 +58,7 @@ class StudentOut(StudentIn):
     class Config:
         from_attributes = True
 
-class FileUpload(StudentIn):
+class FileUpload(BaseModel):
     email: str
     phone_number: str | None = None
     visa_id: int | None = None
