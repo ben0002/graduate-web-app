@@ -1,0 +1,9 @@
+/*CSS File for Student Funding Card*/
+
+.student-employment-card-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: left;
+    width: 100%;
+}
