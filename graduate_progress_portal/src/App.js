@@ -8,7 +8,7 @@ import StudentProgress from './student/pages/StudentProgress.js';
 import StudentProfile from './student/pages/StudentProfile.js';
 import NotFound from './shared/pages/notFound.js';
 
-import { studentData } from './student/studentData.jsx';
+import { studentData } from './student/SampleStudentData.jsx';
 
 function App() { 
   return (
