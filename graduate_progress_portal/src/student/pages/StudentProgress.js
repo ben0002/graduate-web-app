@@ -21,10 +21,46 @@ const StudentProgress = () => {
         <Grid item xs={12}>
           <ToDoList student={studentData.tasks} />
         </Grid>
+<<<<<<< HEAD
 
         {/* Milestones */}
         <Grid item xs={12} md={5}>
           <StudentMilestoneCard student={studentData.milestones} />
+=======
+        <Grid container item spacing={2}>
+          <Grid item xs={10}>
+            <Grid container spacing={2}>
+              {/* Milestones */}
+              <Grid item xs={6}>
+                <StudentMilestoneCard />
+              </Grid>
+              {/* Requirements */}
+              <Grid item xs={6}>
+                <StudentRequirementCard />
+              </Grid>
+              {/* Course History */}
+              <Grid item xs={12}>
+                <StudentCourseHistoryCard/>
+              </Grid>
+            </Grid>
+          </Grid>
+
+          {/* Funding and Employment */}
+          <Grid item xs={2}>
+            <Grid container direction="column" spacing={2}>
+              {/* Funding */}
+              <Grid item>
+                <StudentFundingCard />
+              </Grid>
+              {/* Divider */}
+              <Divider orientation="horizontal" flexItem />
+              {/* Employment */}
+              <Grid item>
+                <StudentEmploymentCard/>
+              </Grid>
+            </Grid>
+          </Grid>
+>>>>>>> 1991dd3 (Seperated Funding and Employment)
         </Grid>
 
         {/* Requirements */}
