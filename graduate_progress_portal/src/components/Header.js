@@ -4,7 +4,7 @@ import { AppBar, Toolbar } from '@mui/material';
 const Header = () => {
   const headerStyle = {
     backgroundColor: '#630031', // Chicago Maroon 
-    height: '40px',
+    height: '3rem',
     display: 'flex',
   };
 

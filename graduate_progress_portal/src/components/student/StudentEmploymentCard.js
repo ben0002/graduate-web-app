@@ -40,7 +40,7 @@ export default function StudentEmploymentCard() {
           </IconButton>
         </Typography>
         {/* Content related to student employment goes here */}
-        <div style={{overflowY: 'scroll', overflowX: 'hidden', minHeight: '25rem', maxHeight: '25rem'}}>
+        <div style={{overflowY: 'scroll', overflowX: 'hidden', minHeight: '16.25rem', maxHeight: '16.25rem'}}>
           <div className="student-employment-card-placeholder">
             {makeEmploymentCards()}
           </div>

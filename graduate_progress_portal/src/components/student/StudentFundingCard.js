@@ -38,7 +38,7 @@ export default function StudentFundingCard() {
             <AddCircleOutlineIcon sx={{color: '#630031'}}/>
           </IconButton>
         </Typography>
-        <div style={{overflowY: 'scroll', overflowX: 'hidden', minHeight: '25rem', maxHeight: '25rem'}}>
+        <div style={{overflowY: 'scroll', overflowX: 'hidden', minHeight: '17.5rem', maxHeight: '17.5rem'}}>
           <div className="student-funding-card-placeholder">
             {makeFundingCards()}
           </div>

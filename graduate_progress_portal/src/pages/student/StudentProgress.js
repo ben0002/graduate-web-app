@@ -12,7 +12,7 @@ import StudentCourseHistoryCard from '../../components/student/StudentCourseHist
 
 const StudentProgress = () => {
   return (
-    <Box sx={{ width: '70%', paddingX: '2.5%', mx: 'auto', backgroundColor: '#f2f2f2', marginTop: '1rem'}}> {/* Adjust this width for the global container */}
+    <Box sx={{ width: '70%', paddingX: '2.5%', mx: 'auto', backgroundColor: '#f2f2f2', marginTop: '1rem', paddingBottom: '1rem'}}> {/* Adjust this width for the global container */}
       {/* Margin for cards */}
       <Grid container spacing={2}>
         {/* StudentCard and StudentProfileCard */}
@@ -22,31 +22,41 @@ const StudentProgress = () => {
         <Grid item xs={12}>
           <ToDoList student={studentData.tasks} />
         </Grid>
-        {/* Milestones */}
-        <Grid item xs={12} md={5}>
-          <StudentMilestoneCard student={studentData.milestones} />
+        <Grid container item spacing={2}>
+          <Grid item xs={10}>
+            <Grid container spacing={2}>
+              {/* Milestones */}
+              <Grid item xs={6}>
+                <StudentMilestoneCard />
+              </Grid>
+              {/* Requirements */}
+              <Grid item xs={6}>
+                <StudentRequirementCard />
+              </Grid>
+              {/* Course History */}
+              <Grid item xs={12}>
+                <StudentCourseHistoryCard/>
+              </Grid>
+            </Grid>
+          </Grid>
+          {/* Funding and Employment */}
+          <Grid item xs={2}>
+            <Grid container direction="column" spacing={2}>
+              {/* Funding */}
+              <Grid item>
+                <StudentFundingCard />
+              </Grid>
+              {/* Divider */}
+              <Divider orientation="horizontal" flexItem />
+              {/* Employment */}
+              <Grid item>
+                <StudentEmploymentCard/>
+              </Grid>
+            </Grid>
+          </Grid>
         </Grid>
-
-        {/* Requirements */}
-        <Grid item xs={12} md={5}>
-          <StudentRequirementCard student={studentData.requirements} />
-        </Grid>
-
-        {/* Funding and Employment with Divider */}
-        <Grid item xs={12} md={2} sx={{ display: 'flex', flexDirection: 'column' }}>
-          <StudentFundingCard student={studentData.funding} />
-          <Divider />
-          <StudentEmploymentCard student={studentData.employment} />
-        </Grid>
-
-        {/* Course History */}
-        <Grid item xs={10}>
-          <StudentCourseHistoryCard student={studentData.courseHistory} />
-        </Grid>
-
       </Grid>
     </Box>
   );
-};
-
+}
 export default StudentProgress;
