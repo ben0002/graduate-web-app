@@ -78,7 +78,6 @@ const StudentProgress = () => {
               </Grid>
             </Grid>
           </Grid>
-
           {/* Funding and Employment */}
           <Grid item xs={2}>
             <Grid container direction="column" spacing={2}>
