@@ -1,9 +1,9 @@
 import React from 'react';
 import { Tooltip, Button, Card, CardContent, Typography, Avatar, Box, Grid } from '@mui/material';
 import { Link } from 'react-router-dom';
-import './StudentCard.css';
+//import '../../assets/styling/student/';
 
-const StudentCardInfo = ({ student }) => {
+export default function StudentCardInfo({ student }) {
     const defaultAvatar = '/path/to/default/avatar.jpg'; // Replace with some sort of endpoint later?
 
     return (
@@ -81,5 +81,3 @@ const StudentCardInfo = ({ student }) => {
         </Card>
     );
 };
-
-export default StudentCardInfo;

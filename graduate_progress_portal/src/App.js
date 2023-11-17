@@ -1,14 +1,14 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import MainLayout from './layouts/mainLayout';
-import Login from './shared/pages/login.js';
-import AdvisorView from './advisor/advisorView.js';
+import Login from './pages/login.js';
+import AdvisorView from './pages/advisor/advisorView.js';
 import StudentLayout from './layouts/studentLayout';
-import StudentProgress from './student/pages/StudentProgress.js';
-import StudentProfile from './student/pages/StudentProfile.js';
-import NotFound from './shared/pages/notFound.js';
+import StudentProgress from './pages/student/StudentProgress.js';
+import StudentProfile from './pages/student/StudentProfile.js';
+import NotFound from './pages/notFound.js';
 
-import { studentData } from './student/SampleStudentData.jsx';
+import { studentData } from './assets/data/SampleStudentData.jsx';
 
 function App() { 
   return (
