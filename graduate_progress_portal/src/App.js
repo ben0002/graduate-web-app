@@ -18,7 +18,7 @@ function App() {
           <Route index element={<Login/>}/>
           <Route path="advisor" element={<AdvisorView/>}/>
           <Route path="student" element={<StudentLayout/>}>
-            <Route path="progress" element={<StudentProgress student={studentData}/>} /> 
+            <Route path="progress" element={<StudentProgress/>} /> 
             <Route path="profile" element={<StudentProfile/>}/>
             <Route path="*" element={<NotFound/>}/>
           </Route>

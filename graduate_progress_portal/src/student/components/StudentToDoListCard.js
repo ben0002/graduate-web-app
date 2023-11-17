@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, Typography } from '@mui/material';
-import './ToDoBox.css';
+import './StudentToDoListCard.css';
 
 const ToDoList = () => {
   return (

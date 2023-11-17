@@ -2,6 +2,7 @@
 
 .student-funding-card-container {
     width: 100%;
+    height: 375px;
     box-sizing: border-box;
 }
 
