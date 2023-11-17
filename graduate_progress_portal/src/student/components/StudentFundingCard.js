@@ -10,7 +10,7 @@ const StudentFundingCard = () => {
           <strong>Student Funding</strong>
         </Typography>
         <div className="student-funding-card-placeholder">
-          <Typography variant="body1">dsadasd</Typography>
+          <Typography variant="body1">No funding yet</Typography>
         </div>
       </CardContent>
     </Card>

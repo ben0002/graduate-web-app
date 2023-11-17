@@ -1,5 +1,6 @@
 import React from 'react';
-import { Tooltip, Button, Link, Card, CardContent, Typography, Avatar, Box, Grid } from '@mui/material';
+import { Tooltip, Button, Card, CardContent, Typography, Avatar, Box, Grid } from '@mui/material';
+import { Link } from 'react-router-dom';
 import './StudentCard.css';
 
 const StudentCardInfo = ({ student }) => {
