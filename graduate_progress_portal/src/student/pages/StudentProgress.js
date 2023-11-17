@@ -21,12 +21,9 @@ const StudentProgress = () => {
         <Grid item xs={12}>
           <ToDoList student={studentData.tasks} />
         </Grid>
-<<<<<<< HEAD
-
         {/* Milestones */}
         <Grid item xs={12} md={5}>
           <StudentMilestoneCard student={studentData.milestones} />
-=======
         <Grid container item spacing={2}>
           <Grid item xs={10}>
             <Grid container spacing={2}>
@@ -44,7 +41,6 @@ const StudentProgress = () => {
               </Grid>
             </Grid>
           </Grid>
-
           {/* Funding and Employment */}
           <Grid item xs={2}>
             <Grid container direction="column" spacing={2}>
@@ -60,26 +56,21 @@ const StudentProgress = () => {
               </Grid>
             </Grid>
           </Grid>
->>>>>>> 1991dd3 (Seperated Funding and Employment)
         </Grid>
-
         {/* Requirements */}
         <Grid item xs={12} md={5}>
           <StudentRequirementCard student={studentData.requirements} />
         </Grid>
-
         {/* Funding and Employment with Divider */}
         <Grid item xs={12} md={2} sx={{ display: 'flex', flexDirection: 'column' }}>
           <StudentFundingCard student={studentData.funding} />
           <Divider />
           <StudentEmploymentCard student={studentData.employment} />
         </Grid>
-
         {/* Course History */}
         <Grid item xs={10}>
           <StudentCourseHistoryCard student={studentData.courseHistory} />
         </Grid>
-
       </Grid>
     </Box>
   );
