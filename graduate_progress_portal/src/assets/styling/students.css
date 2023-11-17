@@ -24,6 +24,11 @@
 
 /********************** END OF STUDENT INFO CARD **********************/
 
+/* StudentPersonalInfoCard.css */
+.center-text {
+    text-align: center;
+  }
+
 /********************** START OF STUDENT COURSES **********************/
 
 .student-course-history-container {
