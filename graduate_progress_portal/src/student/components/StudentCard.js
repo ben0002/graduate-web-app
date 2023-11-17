@@ -1,10 +1,12 @@
 import React from 'react';
 import { Tooltip, Button, Card, CardContent, Typography, Avatar, Box, Grid } from '@mui/material';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import './StudentCard.css';
 
 const StudentCardInfo = ({ student }) => {
     const defaultAvatar = '/path/to/default/avatar.jpg'; // Replace with some sort of endpoint later?
+
+    const location = useLocation();
 
     return (
         <Card className="student-card-container" sx={{ height: '165px' }}>
@@ -61,9 +63,9 @@ const StudentCardInfo = ({ student }) => {
                                 variant="contained"
                                 color="primary"
                                 component={Link}
-                                to="/student/profile"
-                            >
-                                Profile
+                                to={location.pathname.includes('/student/profile') ? "/student/progress" : "/student/profile"}
+                                >
+                                {location.pathname.includes('/student/profile') ? "Go to Progress" : "Go to Profile"}
                             </Button>
                             <Button
                                 variant="contained"
