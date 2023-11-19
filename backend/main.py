@@ -3,6 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from cas import CASClient
 
+from sqlalchemy.orm import Session
+from database import engine, get_db
+from models import User
+
 app = FastAPI()
 
 origins = [
@@ -59,3 +63,10 @@ def logout(response: Response):
     cas_logout_url = cas_client.get_logout_url(SERVICE_URL)
     response.delete_cookie("username")
     return {"redirect_url": cas_logout_url}
+
+@app.get("/api/testSQL")
+def testSQL(response: Response, db: Session = Depends(get_db)):
+    user = db.query(User).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user

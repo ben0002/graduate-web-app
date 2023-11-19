@@ -12,7 +12,7 @@ RUN pip install -r requirements.txt
 COPY . .
 
 # Change the working directory to a subdirectory within your app
-WORKDIR /app/fastAPI
+#WORKDIR /app/fastAPI
 
 # Expose a port (e.g., 8000) for the FastAPI app to run
 EXPOSE 80
