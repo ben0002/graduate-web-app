@@ -20,21 +20,37 @@ class CustomValueError(CustomException):
     
 
 def apply_filters(query,  model, filters: dict = {}):
-    for column, value in filters.items():
-        if isinstance(getattr(model, column, None), InstrumentedAttribute):
-            query = query.filter(getattr(model, column) == value)
+    if filters is None:
+        return query
+    
+    for attr,value in filters.items():
+        if value is not None:
+            query = query.filter( getattr(model,attr)==value )
     return query
 
 def get_students(db: Session, filters: dict, skip: int = 0, limit: int =100):
     query = db.query(models.Student)
-    #query = apply_filters(query, models.Student, filters)
+    query = apply_filters(query, models.Student, filters)
     #if(filters.get("citizenship", None) is not None):
         #query = query.filter(models.Student.visa["citizenship"] == filters.get("citizenship"))
     return query.offset(skip).limit(limit).all()
 
+
 def get_faculty(db: Session, filters: dict, skip: int = 0, limit: int = 100):
     query = db.query(models.Faculty)
-    query = apply_filters(query, filters, models.Faculty)
+    query = apply_filters(query, models.Faculty, filters)
+    
+    return query.offset(skip).limit(limit).all()
+
+def get_degrees(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    query = db.query(models.Degree)
+    query = apply_filters(query, models.Degree, filters)
+    
+    return query.offset(skip).limit(limit).all()
+
+def get_majors(db: Session, filters, skip: int = 0, limit: int = 100):
+    query = db.query(models.Major)
+    query = apply_filters(query, models.Major, filters)
     
     return query.offset(skip).limit(limit).all()
 
@@ -58,19 +74,17 @@ def insert_campus_from_file(data, db: Session):
 # Processing data from file to Degree table
 def insert_degree_from_file(data : dict, db: Session):
     degree_name = data.get("Degree")
-    degree_level = data.get("Level")
-    degree = db.query(models.Degree).filter(models.Degree.name == degree_name, models.Degree.level == degree_level).one_or_none()
+    degree = db.query(models.Degree).filter(models.Degree.name == degree_name).one_or_none()
     if not degree:
         # Modeling the field with the data from file
         degree = models.Degree(
-            level = enums.DegreeLevels(degree_level),
             name = degree_name 
         )  
         db.add(degree)
         db.commit()
     # Since the primary key will be generate after commit(), I need to search the database agian in order to get the primary id    
     # This will return the primary id for ForeignKey that other table may need
-    return db.query(models.Degree).filter(models.Degree.name == degree_name, models.Degree.level == degree_level).first().id
+    return db.query(models.Degree).filter(models.Degree.name == degree_name).first().id
 
 # Processing data from file to Major table
 def insert_major_from_file(data : dict, db: Session, department_code: int):
@@ -113,6 +127,7 @@ def insert_student_from_file(data : dict, db: Session, campus_id: int, response_
     try:
         student = models.Student(
             last_name = data.get("Last Name") or None,   
+            citizenship = data.get("Country of Citizenship"),
             va_residency = enums.Residencies(data.get("Residency")) or None,
             first_name = data.get("First/Middle Name") or None,
             type = enums.StudentTypes(data.get("Stud Type")) or None,
@@ -167,22 +182,6 @@ def insert_program_enrollment_from_file(data : dict, db: Session, student_id: in
     # Since no table need the primary id from ProgramEnrollment currently, it does not return the id.
     # Feel free to reutrn id if it needs
 
-# Processing data from file to Visa table
-def insert_visa_from_file(data : dict, db: Session, student_id: int):
-    
-    citizen = data.get("Country of Citizenship")
-    if citizen == "":
-        citizen = "United States of America"
-        
-    visa = models.Visa(
-        citizenship = citizen,
-        student_id = student_id
-    )
-    db.add(visa)
-    db.commit()
-    # Since no table need the primary id from Visa currently, it does not return the id.
-    # Feel free to reutrn id if it needs
-
 # Processing data from file to Department table.
 # These inserted value below is non-real data, and it is for testing.
 def insert_department_from_file(data : dict, db: Session):
@@ -217,7 +216,6 @@ def process_csv_file(file: UploadFile, db: Session):
                 ##student_advisor = models.StudentAdvisor()
                 insert_student_pos_from_file(row, db, student_id)
                 insert_program_enrollment_from_file(row, db, student_id, degree_id, major_id)
-                insert_visa_from_file(row, db, student_id)
             except CustomValueError as ve:
                 ve.set_row(row)
                 raise ve

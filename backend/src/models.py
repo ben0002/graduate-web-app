@@ -50,10 +50,10 @@ class Student(Base):
     first_name: Mapped[str] = mapped_column(String(40))
     middle_name: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     last_name: Mapped[Optional[str]] = mapped_column(String(40))
+    citizenship: Mapped[str] = mapped_column(String(120))
     va_residency: Mapped[Residencies] = mapped_column(Enum(Residencies), nullable=True)
     type: Mapped[StudentTypes] = mapped_column(Enum(StudentTypes), nullable=True)
     status: Mapped[StudentStatus] = mapped_column(Enum(StudentStatus), nullable=True)
-    # admit_type: Mapped[AdmitType] = mapped_column(Enum(AdmitType), nullable=True)
     campus_id: Mapped[Optional[int]] = mapped_column(Integer,ForeignKey("campus.id"), nullable=True)
     email: Mapped[Optional[str]] = mapped_column(String(70))
     phone_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True) 
@@ -82,7 +82,6 @@ class Student(Base):
     progress_tasks = relationship("Progress", back_populates = "student") 
     courses = relationship("CourseEnrollment", back_populates = "student") 
     pos = relationship("StudentPOS", back_populates = "student") 
-    visa = relationship("Visa", back_populates="student") 
     
     def __repr__(self) -> str:
         return f"Student(id={self.id!r}, name={self.first_name!r}, lastname={self.last_name!r}, email={self.email!r})"
@@ -100,12 +99,10 @@ class Degree(Base):
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(30))
-    level: Mapped[DegreeLevels] = mapped_column(Enum(DegreeLevels))
     description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     
      # way to list multiple unique constraints that are constrained together
      # make sure that the degree name and degree level should be unique to each other.
-    __table_args__ = (UniqueConstraint('name', 'level', name='degree_name_level_uc'),)
     
     requirements = relationship("Requirement", back_populates="degree") 
     
@@ -225,27 +222,6 @@ class StudentAdvisor(Base):
 
     def __repr__(self) -> str:
         return f"StudentAdvisor(advisor_id={self.id!r}, student_id={self.student_id!r}, advisor_role={self.advisor_role!r})"
-
-class Visa(Base):
-    """Holds Visa information from student:
-        - citizenship
-        - visa name
-        - expiration date
-        
-    Args:
-        Base: Inherited base class from SQLAlchemy that allows ORM
-    """
-    __tablename__ = 'visa'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    student_id: Mapped[int] = mapped_column(Integer, ForeignKey("student.id", name="visa-student"), unique=True)
-    citizenship: Mapped[str] = mapped_column(String(60), nullable=True)
-    visa_name: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    expiration_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True) # integer (mmddyyyy)
-    
-    student = relationship("Student", back_populates = "visa") 
-
-    def __repr__(self) -> str:
-        return f"Visa(student_id={self.student_id!r}, visa_name={self.visa_name!r}, expiration_date: {self.expiration_date})"
 
 class Campus(Base):
     """Holds Campus information from student:

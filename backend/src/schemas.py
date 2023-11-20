@@ -6,26 +6,11 @@ from datetime import date
 from enums import *
 
 
-class VisaIn(BaseModel):
-    
-    student_id: int
-    citizenship: str
-    visa_name: str | None = None
-    expiration_date: date | None = None
-    
-    class Config:
-        from_attributes = True
-        
-class VisaOut(VisaIn):
-    id: int
-    
-    class Config:
-        from_attributes = True
-
 class StudentIn(BaseModel):
     first_name: str
     middle_name: str | None = None
     last_name: str
+    citizenship: str 
     va_residency: Residencies | None = None
     type: StudentTypes | None = None
     status: StudentStatus | None = None
@@ -41,13 +26,13 @@ class StudentIn(BaseModel):
     advisory_committee: str | None = None
     plan_submit_date: date | None = None
     prelim_exam_date: date | None = None
-    #prelim_exam_pass: date | None = None
-    #proposal_meeting: date | None = None
-    #progress_meeting: date | None = None
-    #ETD_submitted: bool | None = False
-    #final_exam: date | None = None
-    #first_term: int | None = None
-    #profile_picture: str | None = None
+    prelim_exam_pass: date | None = None
+    proposal_meeting: date | None = None
+    progress_meeting: date | None = None
+    ETD_submitted: bool | None = False
+    final_exam: date | None = None
+    first_term: int | None = None
+    profile_picture: str | None = None
     
     class Config:
         from_attributes = True
@@ -58,31 +43,11 @@ class StudentOut(StudentIn):
     class Config:
         from_attributes = True
 
-class FileUpload(BaseModel):
-    email: str
-    phone_number: str | None = None
-    visa_id: int | None = None
-    pronouns: str | None = None
-    gender: str | None = None
-    ethnicity: str | None = None
-    advisory_committee: str | None = None
-    plan_submit_date: str | None = None
-    prelim_exam_date: str | None = None
-    prelim_exam_pass: str | None = None
-    proposal_meeting: str | None = None
-    progress_meeting: str | None = None
-    ETD_submitted: bool | None = None
-    final_exam: str | None = None
-    first_term: int | None = None
-    profile_picture: str | None = None
-    
-        
-
 class FacultyIn(BaseModel):
     first_name: str 
     middle_name: str | None = None
     last_name: str 
-    dept_code: str
+    dept_code: int # could be int or str; testing purposes = it is int rn
     faculty_type: str | None = None
     privilege_level: int | None = 1
     
@@ -94,3 +59,28 @@ class FacultyOut(FacultyIn):
     
     class Config:
         from_attributes = True
+
+class Degree(BaseModel):
+    id: int
+    name: str
+    description: str | None = None
+    
+    class Config:
+        from_attributes = True
+
+class Major(BaseModel):
+    id: int
+    name: str
+    dept_code: int
+    description: str | None = None
+    
+    class Config:
+        from_attributes = True
+    
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+    

@@ -2,14 +2,6 @@
 for data validation for certain data"""
 import enum 
 
-class DegreeLevels(str, enum.Enum):
-    """Valid values for degree levels.
-    """
-    REGULAR_MASTERS = "Regular Masters"
-    DOCTORAL = "Doctoral"
-    PROVISIONAL_MASTERS = "Provisional Masters"
-    REGULAR_POST_MASTERS = "Regular Post Masters"
-
 class CourseType(str, enum.Enum):
     """Valid values for if the course is transfer or not From Course Enrollment.
     """
