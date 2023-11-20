@@ -174,13 +174,10 @@ async def upload_student_file(file: UploadFile, db: Session = Depends(get_db)):
     try:
         return crud.process_csv_file(file, db)
     except FileNotFoundError:
-        db.rollback()
         raise HTTPException(status_code=404, detail="CSV file not found")
     except PermissionError:
-        db.rollback()
         raise HTTPException(status_code=403, detail="Permission denied to access the CSV file")
     except csv.Error as csv_error:
-        db.rollback()
         raise HTTPException(status_code=400, detail=f"CSV file error: {csv_error}")
     except ValueError as e:
         db.rollback()
