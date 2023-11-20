@@ -1,30 +1,58 @@
-from sqlalchemy.orm import Session, InstrumentedAttribute
+from sqlalchemy.orm import Session, InstrumentedAttribute, joinedload
+import models
 from io import TextIOWrapper
 from fastapi import UploadFile
 from pydantic import EmailStr
-from datetime import date
+from datetime import datetime
 import schemas
 import models
 import enums
 import csv
 
+class CustomException(Exception):
+    def __init__(self, message, original_exception, row_data=None):
+        super().__init__(message)
+        self.row_data = row_data
+        self.original_exception = original_exception
+    def set_row(self, row):
+        self.row_data = row
+        
+class CustomValueError(CustomException):
+    pass
+
 
 def apply_filters(query,  model, filters: dict = {}):
-    for column, value in filters.items():
-        if isinstance(getattr(model, column, None), InstrumentedAttribute):
-            query = query.filter(getattr(model, column) == value)
+    if filters is None:
+        return query
+    
+    for attr,value in filters.items():
+        if value is not None:
+            query = query.filter( getattr(model,attr)==value )
     return query
 
 def get_students(db: Session, filters: dict, skip: int = 0, limit: int =100):
     query = db.query(models.Student)
     query = apply_filters(query, models.Student, filters)
-    if(filters.get("citizenship", None) is not None):
-        query = query.filter(models.Student.visa["citizenship"] == filters.get("citizenship"))
+    #if(filters.get("citizenship", None) is not None):
+        #query = query.filter(models.Student.visa["citizenship"] == filters.get("citizenship"))
     return query.offset(skip).limit(limit).all()
+
 
 def get_faculty(db: Session, filters: dict, skip: int = 0, limit: int = 100):
     query = db.query(models.Faculty)
-    query = apply_filters(query, filters, models.Faculty)
+    query = apply_filters(query, models.Faculty, filters)
+    
+    return query.offset(skip).limit(limit).all()
+
+def get_degrees(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    query = db.query(models.Degree)
+    query = apply_filters(query, models.Degree, filters)
+    
+    return query.offset(skip).limit(limit).all()
+
+def get_majors(db: Session, filters, skip: int = 0, limit: int = 100):
+    query = db.query(models.Major)
+    query = apply_filters(query, models.Major, filters)
     
     return query.offset(skip).limit(limit).all()
 
@@ -48,19 +76,17 @@ def insert_campus_from_file(data, db: Session):
 # Processing data from file to Degree table
 def insert_degree_from_file(data : dict, db: Session):
     degree_name = data.get("Degree")
-    degree_level = data.get("Level")
-    degree = db.query(models.Degree).filter(models.Degree.name == degree_name, models.Degree.level == degree_level).one_or_none()
+    degree = db.query(models.Degree).filter(models.Degree.name == degree_name).one_or_none()
     if not degree:
         # Modeling the field with the data from file
         degree = models.Degree(
-            level = enums.DegreeLevels(degree_level),
             name = degree_name 
         )  
         db.add(degree)
         db.commit()
     # Since the primary key will be generate after commit(), I need to search the database agian in order to get the primary id    
     # This will return the primary id for ForeignKey that other table may need
-    return db.query(models.Degree).filter(models.Degree.name == degree_name, models.Degree.level == degree_level).first().id
+    return db.query(models.Degree).filter(models.Degree.name == degree_name).first().id
 
 # Processing data from file to Major table
 def insert_major_from_file(data : dict, db: Session, department_code: int):
@@ -80,29 +106,49 @@ def insert_major_from_file(data : dict, db: Session, department_code: int):
     # This will return the primary id for ForeignKey that other table may need
     return db.query(models.Major).filter(models.Major.name == major_name).first().id
 
-# Processing data from file to Student table
-def insert_student_from_file(data : dict, db: Session, campus_id: int):
-    student = models.Student(
-        last_name = data.get("Last Name") or None,   
-        va_residency = enums.Residencies(data.get("Residency")) or None,
-        first_name = data.get("First/Middle Name") or None,
-        type = enums.StudentTypes(data.get("Stud Type")) or None,
-        first_term = data.get("First Term Enrl") or None,
-        email = data.get("E-mail") or None,
-        phone_number = data.get("Phone") or None,
-        gender = data.get("Gender") or None,
-        ethnicity = data.get("Ethnicity") or None,
-        prelim_exam_date = data.get("Prelim Exam Scheduled") or None,
-        prelim_exam_pass = data.get("Prelim Exam Passed") or None,
-        advisory_committee = data.get("Adviser Name") or None,
-        campus_id = campus_id
-    )
-    db.add(student)
-    db.commit()
-    # Since the primary key will be generate after commit(), I need to search the database agian in order to get the primary id    
-    # This will return the primary id for ForeignKey that other table may need
-    return db.query(models.Student).filter(models.Student.email == student.email).first().id
+def convert_to_date(date: str | None):
+    
+    date_format = "%d-%b-%y"
+    if date == "" or date is None:
+        return None
+    try:
+        # Attempt to convert the string to a date using the specified format
+        date_object = datetime.strptime(date, date_format).date()
+        return date_object
+    except ValueError as ve:
+        raise CustomValueError(message="Ensure the date given is in dd-month-yy (i.e. 05-APR-23) format for given row.",
+                               original_exception=ve)
 
+# Processing data from file to Student table
+def insert_student_from_file(data : dict, db: Session, campus_id: int, response_data:list):
+    
+    try:
+        student = models.Student(
+            last_name = data.get("Last Name") or None,   
+            citizenship = data.get("Country of Citizenship"),
+            va_residency = enums.Residencies(data.get("Residency")) or None,
+            first_name = data.get("First/Middle Name") or None,
+            type = enums.StudentTypes(data.get("Stud Type")) or None,
+            first_term = data.get("First Term Enrl") or None,
+            email = data.get("E-mail") or None,
+            phone_number = data.get("Phone") or None,
+            gender = data.get("Gender") or None,
+            ethnicity = data.get("Ethnicity") or None,
+            prelim_exam_date = convert_to_date(data.get("Prelim Exam Scheduled", None)),
+            prelim_exam_pass = convert_to_date(data.get("Prelim Exam Passed", None)),
+            advisory_committee = data.get("Adviser Name") or None,
+            campus_id = campus_id
+        )
+        db.add(student)
+        db.commit()
+        table = db.query(models.Student).filter(models.Student.email == student.email).first()
+        response_data.append(table.__dict__)
+        # Since the primary key will be generate after commit(), I need to search the database agian in order to get the primary id    
+        # This will return the primary id for ForeignKey that other table may need
+        return table.id
+    except CustomValueError as ve:
+        raise 
+    
 # Processing data from file to StudentPOS table
 def insert_student_pos_from_file(data : dict, db: Session, student_id: int):
     # checking if it is approved, none mean it has not been approved yet
@@ -135,17 +181,6 @@ def insert_program_enrollment_from_file(data : dict, db: Session, student_id: in
     db.add(programEnrollment)
     db.commit()
     # Since no table need the primary id from ProgramEnrollment currently, it does not return the id.
-    # Feel free to reutrn id if it needs
-
-# Processing data from file to Visa table
-def insert_visa_from_file(data : dict, db: Session, student_id: int):
-    visa = models.Visa(
-        citizenship = data.get("Country of Citizenship") or None,
-        student_id = student_id
-    )
-    db.add(visa)
-    db.commit()
-    # Since no table need the primary id from Visa currently, it does not return the id.
     # Feel free to reutrn id if it needs
 
 # Processing data from file to Department table.
@@ -213,7 +248,7 @@ def process_csv_file(file: UploadFile, db: Session):
             ##student_advisor = models.StudentAdvisor()
             insert_student_pos_from_file(row, db, student_id)
             insert_program_enrollment_from_file(row, db, student_id, degree_id, major_id)
-            insert_visa_from_file(row, db, student_id)
+            
             #-----------------------------------------------------------------
     return inserted_student_data
             

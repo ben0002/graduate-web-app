@@ -15,8 +15,8 @@ from database import SessionLocal, engine
 
 import csv
 
-models.Base.metadata.drop_all(engine)
-models.Base.metadata.create_all(engine)
+#models.Base.metadata.drop_all(engine)
+#models.Base.metadata.create_all(engine)
 
 # Dependency
 def get_db():
@@ -46,6 +46,9 @@ def read_root():
 
 
 SERVICE_URL = "https://bktp-gradpro.discovery.cs.vt.edu/"
+SECRET_KEY = "03588c9b6f5508ff6ab7175ba9b38a4d1366581fdc6468e8323015db7d68dac0" # key used to sign JWT token
+ALGORITHM = "HS256" # algorithm used to sign JWT Token
+ACCESS_TOKEN_EXPIRE = 120
 
 # Creating the CAS CLIENT
 cas_client = CASClient(
@@ -95,7 +98,7 @@ def students(
 ):
     filters = {
         "admit_type": admit_type,
-        "residency": residency,
+        "va_residency": residency,
         "student_type": student_type,
         "prelim_exam_date": prelim_exam_date,
         "prelim_exam_passed": prelim_exam_passed,
@@ -115,27 +118,19 @@ async def students_id(student_id: int, db: Session = Depends(get_db)):
     }
     
     student = crud.get_students(db=db, filters=filter)
+    if(len(student) == 0):
+        raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
     return student[0]
-
-@app.get("/students/{student_id}/visa", response_model=schemas.VisaOut)
-async def student_visa(student_id: int, db: Session = Depends(get_db)):
-    filter = {
-        "id": student_id,
-    }
-    
-    student = crud.get_students(db=db, filters=filter)
-    if student[0] is not None:
-        return student[0].visa
 
 @app.get("/faculty", response_model=list[schemas.FacultyOut])
 async def faculty(
-    skip: int | None, limit: int | None, db: Session = Depends(get_db),
+    skip: int | None = 0, limit: int | None = 100, db: Session = Depends(get_db),
     dept_code: str | None = None, faculty_type: str | None = None,
     privilege_level: int | None = None):
     
     filters = {
         "dept_code": dept_code,
-        "faculty_type": faculty_type,
+        "faculty_type": faculty_type.lower() if faculty_type is not None else None,
         "privilege_level": privilege_level
     }
     
@@ -143,13 +138,19 @@ async def faculty(
     return faculty
 
 @app.get("/faculty/{faculty_id}", response_model=schemas.FacultyOut)
-async def faculty_id(db: Session = Depends(get_db)):
+async def faculty_id(faculty_id: int, db: Session = Depends(get_db)):
     
-    faculty = crud.get_faculty(db=db, filters=None)
+    filter = {
+        "id": faculty_id
+    }
+    faculty = crud.get_faculty(db=db, filters=filter)
+    if(len(faculty) == 0):
+        raise HTTPException(status_code=404, detail=f"Faculty member with the given id: {faculty_id} does not exist.")
     return faculty[0]
 
+
 @app.get("/advisors", response_model=list[schemas.FacultyOut])
-async def advisors(skip: int | None, limit: int | None, 
+async def advisors(skip: int | None = 0, limit: int | None = 100, 
                    dept_code: str | None = None, privilege_level: int | None = None,
                    db: Session = Depends(get_db)):
     
@@ -165,11 +166,45 @@ async def advisors(skip: int | None, limit: int | None,
 @app.get("/advisors/{advisor_id}", response_model=schemas.FacultyOut)
 async def advisor(advisor_id: int, db: Session = Depends(get_db)):
         
-    advisor = crud.get_faculty(db=db, filters={"id": int})
+    advisor = crud.get_faculty(db=db, filters={"id": advisor_id})
+    if(len(advisor) == 0):
+        raise HTTPException(status_code=404, detail=f"Advisor with the given id: {advisor_id} does not exist.")
     return advisor[0]
     
+@app.get("/degrees", response_model=list[schemas.Degree])
+def degrees(db: Session = Depends(get_db), skip: int | None = 0, limit: int | None = 100):
+    
+    return crud.get_degrees(db, None, skip, limit)
 
-@app.post("/uploadfile", response_model=list[schemas.FileUpload])
+@app.get("/degrees/{degree_id}", response_model=schemas.Degree)
+def degree(degree_id: int, db: Session = Depends(get_db)):
+    
+    filter = { "id": degree_id}
+    
+    degree = crud.get_degrees(db, filter, 0, 1)
+    
+    if(len(degree) == 0):
+        raise HTTPException(status_code=404, detail=f"Degree with the given id: {degree_id} does not exist.")
+    return degree[0]
+
+@app.get("/majors", response_model=list[schemas.Major])
+def degrees(db: Session = Depends(get_db), skip: int | None = 0, limit: int | None = 100):
+    
+    return crud.get_majors(db, None, skip, limit)
+
+@app.get("/majors/{major_id}", response_model=schemas.Major)
+def degree(major_id: int, db: Session = Depends(get_db), skip: int | None = 0, limit: int | None = 100):
+    
+    filters = {'id': major_id}
+    
+    major = crud.get_majors(db, filters, skip, limit)
+    if(len(major) == 0):
+        raise HTTPException(status_code=404, detail=f"Degree with the given id: {major_id} does not exist.")
+    return major[0]
+
+
+
+@app.post("/uploadfile", response_model=list[schemas.StudentOut])
 async def upload_student_file(file: UploadFile, db: Session = Depends(get_db)):    
     try:
         return crud.process_csv_file(file, db)
@@ -182,8 +217,11 @@ async def upload_student_file(file: UploadFile, db: Session = Depends(get_db)):
     except ValueError as e:
         db.rollback()
         raise HTTPException(status_code=422, detail=f"Validation error: {str(e)}")
-    except Exception as e:
+    except crud.CustomValueError as value_error:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data}) 
+    #except Exception as e:
+        #raise HTTPException(status_code=500, detail=f"There was an error processing the file")
     finally:
         db.close()

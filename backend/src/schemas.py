@@ -8,26 +8,11 @@ from validators import *
 from enums import *
 
 
-class VisaIn(BaseModel):
-    
-    student_id: int
-    citizenship: str
-    visa_name: str | None = None
-    expiration_date: date | None = None
-    
-    class Config:
-        from_attributes = True
-        
-class VisaOut(VisaIn):
-    id: int
-    
-    class Config:
-        from_attributes = True
-
 class StudentIn(BaseModel):
     first_name: str = Field(..., min_length=1, max_length=40)
     middle_name: str | None = None
     last_name: str = Field(..., min_length=1, max_length=40)
+    citizenship: str 
     va_residency: Residencies | None = None
     type: StudentTypes | None = None
     status: StudentStatus | None = None
@@ -81,7 +66,7 @@ class FacultyIn(BaseModel):
     first_name: str 
     middle_name: str | None = None
     last_name: str 
-    dept_code: str
+    dept_code: int # could be int or str; testing purposes = it is int rn
     faculty_type: str | None = None
     privilege_level: int | None = 1
     
@@ -93,3 +78,28 @@ class FacultyOut(FacultyIn):
     
     class Config:
         from_attributes = True
+
+class Degree(BaseModel):
+    id: int
+    name: str
+    description: str | None = None
+    
+    class Config:
+        from_attributes = True
+
+class Major(BaseModel):
+    id: int
+    name: str
+    dept_code: int
+    description: str | None = None
+    
+    class Config:
+        from_attributes = True
+    
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+    
