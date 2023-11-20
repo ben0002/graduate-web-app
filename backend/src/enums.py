@@ -53,6 +53,6 @@ class AdmitType(str, enum.Enum): # do we get rid of admit type?
 class StudentTypes(str, enum.Enum): # ask question about this in relation to student status 
     """Values that are valid for the different student types.
     """
-    NEW = "new"
-    CONT = "continuing"
-    NEW_PROGRAM = "new_program"
+    NEW = "New"
+    CONT = "Cont"
+    NEW_PROGRAM = "New Prog"

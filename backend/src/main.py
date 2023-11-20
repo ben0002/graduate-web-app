@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, Request, Response, Cookie, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
+from pydantic import ValidationError
 
 from sqlalchemy.orm import Session
 
@@ -167,23 +168,25 @@ async def advisor(advisor_id: int, db: Session = Depends(get_db)):
     advisor = crud.get_faculty(db=db, filters={"id": int})
     return advisor[0]
     
-    
-
-
-
-
-
-    
 
 @app.post("/uploadfile", response_model=list[schemas.FileUpload])
 async def upload_student_file(file: UploadFile, db: Session = Depends(get_db)):    
     try:
         return crud.process_csv_file(file, db)
     except FileNotFoundError:
+        db.rollback()
         raise HTTPException(status_code=404, detail="CSV file not found")
     except PermissionError:
+        db.rollback()
         raise HTTPException(status_code=403, detail="Permission denied to access the CSV file")
     except csv.Error as csv_error:
+        db.rollback()
         raise HTTPException(status_code=400, detail=f"CSV file error: {csv_error}")
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(e)}")
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+    finally:
+        db.close()
