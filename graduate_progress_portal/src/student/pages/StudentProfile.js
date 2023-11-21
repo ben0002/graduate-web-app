@@ -25,7 +25,11 @@ const StudentProfile = () => {
                     <MessageBox />
                 </Grid>
                 <Grid item xs={12} md={5} lg={5}>
-                    <StudentAdvisorCommitteeCard />
+                    <Card>
+                        <Box sx={{maxHeight: '19rem', overflowY: 'auto'}}>
+                            <StudentAdvisorCommitteeCard />
+                        </Box>
+                    </Card>
                 </Grid>
             </Grid>
             <Grid container alignItems="flex-start" paddingTop="16px">
