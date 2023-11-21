@@ -56,98 +56,7 @@ def get_majors(db: Session, filters, skip: int = 0, limit: int = 100):
     
     return query.offset(skip).limit(limit).all()
 
-# Processing data from file to Campus table
-def insert_campus_from_file(data, db: Session):
-    campus_name = data.get("Campus") #it does not have campus name, so I use the ID number indicate the name.
-    # This will check if the table with the same campus name is exist.
-    # It is to avoid duplicated table
-    campus = db.query(models.Campus).filter(models.Campus.name == campus_name).one_or_none()
-    if not campus:
-        campus = models.Campus(
-            name = campus_name,
-            address = data.get("Admit Camp") or None
-        )
-        db.add(campus)
-        db.commit()
-    # Since the primary key will be generate after commit(), I need to search the database agian in order to get the primary id    
-    # This will return the primary id for ForeignKey that other table may need
-    return db.query(models.Campus).filter(models.Campus.name == campus.name).first().id
-
-# Processing data from file to Degree table
-def insert_degree_from_file(data : dict, db: Session):
-    degree_name = data.get("Degree")
-    degree = db.query(models.Degree).filter(models.Degree.name == degree_name).one_or_none()
-    if not degree:
-        # Modeling the field with the data from file
-        degree = models.Degree(
-            name = degree_name 
-        )  
-        db.add(degree)
-        db.commit()
-    # Since the primary key will be generate after commit(), I need to search the database agian in order to get the primary id    
-    # This will return the primary id for ForeignKey that other table may need
-    return db.query(models.Degree).filter(models.Degree.name == degree_name).first().id
-
-# Processing data from file to Major table
-def insert_major_from_file(data : dict, db: Session, department_code: int):
-    major_name = data.get("Major")
-    # This will check if the table with the same major name is exist.
-    # It is to avoid duplicated table
-    major = db.query(models.Major).filter(models.Major.name == major_name).one_or_none()
-    if not major:
-        major = models.Major(
-            name = major_name or None,
-            description = data.get("Major Description") or None,
-            dept_code = department_code
-        )
-        db.add(major)
-        db.commit()
-    # Since the primary key will be generate after commit(), I need to search the database agian in order to get the primary id    
-    # This will return the primary id for ForeignKey that other table may need
-    return db.query(models.Major).filter(models.Major.name == major_name).first().id
-
-def convert_to_date(date: str | None):
-    
-    date_format = "%d-%b-%y"
-    if date == "" or date is None:
-        return None
-    try:
-        # Attempt to convert the string to a date using the specified format
-        date_object = datetime.strptime(date, date_format).date()
-        return date_object
-    except ValueError as ve:
-        raise CustomValueError(message="Ensure the date given is in dd-month-yy (i.e. 05-APR-23) format for given row.",
-                               original_exception=ve)
-
-# Processing data from file to Student table
-def insert_student_from_file(data : dict, db: Session, campus_id: int, response_data:list):
-    
-    try:
-        student = models.Student(
-            last_name = data.get("Last Name") or None,   
-            citizenship = data.get("Country of Citizenship"),
-            va_residency = enums.Residencies(data.get("Residency")) or None,
-            first_name = data.get("First/Middle Name") or None,
-            type = enums.StudentTypes(data.get("Stud Type")) or None,
-            first_term = data.get("First Term Enrl") or None,
-            email = data.get("E-mail") or None,
-            phone_number = data.get("Phone") or None,
-            gender = data.get("Gender") or None,
-            ethnicity = data.get("Ethnicity") or None,
-            prelim_exam_date = convert_to_date(data.get("Prelim Exam Scheduled", None)),
-            prelim_exam_pass = convert_to_date(data.get("Prelim Exam Passed", None)),
-            advisory_committee = data.get("Adviser Name") or None,
-            campus_id = campus_id
-        )
-        db.add(student)
-        db.commit()
-        table = db.query(models.Student).filter(models.Student.email == student.email).first()
-        response_data.append(table.__dict__)
-        # Since the primary key will be generate after commit(), I need to search the database agian in order to get the primary id    
-        # This will return the primary id for ForeignKey that other table may need
-        return table.id
-    except CustomValueError as ve:
-        raise 
+#--------------------------------------------------Insert Data Function For File-------------------------
     
 # Processing data from file to StudentPOS table
 def insert_student_pos_from_file(data : dict, db: Session, student_id: int):
@@ -166,7 +75,26 @@ def insert_student_pos_from_file(data : dict, db: Session, student_id: int):
     db.commit()
     # Since no table need the primary id from Student POS currently, it does not return the id.
     # Feel free to reutrn id if it needs
+    
+# Processing data from file to Student table
+def insert_student_from_file(data : dict, db: Session):
+    student = models.Student(**data)
+    db.add(student)
+    db.commit()
+    table = db.query(models.Student).filter(models.Student.email == student.email).first()
+    # Since the primary key will be generate after commit(), I need to search the database agian in order to get the primary id    
+    # This will return the primary id for ForeignKey that other table may need
+    return table.id
 
+def insert_student_advisor_from_file(data : dict, advisor_id: int, student_id: int, role: enums.AdvisorRole, db: Session,):
+    student_advisor = models.StudentAdvisor(
+        advisor_id = advisor_id,
+        student_id = student_id,
+        advisor_role = role
+    )
+    db.add(student_advisor)
+    db.commit()
+    
 # Processing data from file to ProgramEnrollment table
 def insert_program_enrollment_from_file(data : dict, db: Session, student_id: int, degree_id: int, major_id: int):
     # make sure do not have duplicate table
@@ -178,77 +106,294 @@ def insert_program_enrollment_from_file(data : dict, db: Session, student_id: in
             major_id = major_id,
             enrollment_date = "01-01-2023" #this is defualt value Since we don't have the data about enrollment_date
         )
-    db.add(programEnrollment)
-    db.commit()
-    # Since no table need the primary id from ProgramEnrollment currently, it does not return the id.
-    # Feel free to reutrn id if it needs
+        db.add(programEnrollment)
+        db.commit()
+        
+# Processing data from file to Campus table
+def insert_campus_from_file(data: dict, db: Session):
+    campus_name = data.get("name") #it does not have campus name, so I use the ID number indicate the name.
+    # This will check if the table with the same campus name is exist.
+    # It is to avoid duplicated table
+    campus = db.query(models.Campus).filter(models.Campus.name == campus_name).one_or_none()
+    if not campus:
+        campus = models.Campus(**data)
+        db.add(campus)
+        db.commit()
 
 # Processing data from file to Department table.
 # These inserted value below is non-real data, and it is for testing.
 def insert_department_from_file(data : dict, db: Session):
-    
-    department = db.query(models.Department).filter(models.Department.name == "CS").one_or_none()
+    department = db.query(models.Department).filter(models.Department.name == data.get("name")).one_or_none()
     # This will check if the table with the same department name is exist.
     # It is to avoid duplicated table
     if not department:
-        department = models.Department(
-            name="CS"
-        )
+        department = models.Department(**data)
         db.add(department)
         db.commit()
-    # Since the primary key will be generate after commit(), I need to search the database agian in order to get the primary id    
-    # This will return the primary id for ForeignKey that other table may need
-    return db.query(models.Department).filter(models.Department.name == "CS").first().dept_code
 
-def validation_data_from_file(data: dict):
-    validation_data = schemas.FileUpload(
+# Processing data from file to Major table
+def insert_major_from_file(data : dict, db: Session):
+    major_name = data.get("name")
+    # This will check if the table with the same major name is exist.
+    # It is to avoid duplicated table
+    major = db.query(models.Major).filter(models.Major.name == major_name).one_or_none()
+    if not major:
+        major = models.Major(**data)
+        db.add(major)
+        db.commit()
+        
+# Processing data from file to Degree table
+def insert_degree_from_file(data : dict, db: Session):
+    degree_name = data.get("name")
+    degree = db.query(models.Degree).filter(models.Degree.name == degree_name).one_or_none()
+    if not degree:
+        # Modeling the field with the data from file
+        degree = models.Degree(**data)  
+        db.add(degree)
+        db.commit()
+        
+# Processing data from file to Degree table
+def insert_faculty_from_file(data : dict, db: Session):
+    # Modeling the field with the data from file
+    faculty = models.Faculty(**data)  
+    db.add(faculty)
+    db.commit()
+#------------------------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------Helper function for validation--------------------------------------------
+#this will return the campus id corresponding to campus name. However, if the campus is not exist, it will thrown error excpetion
+def find_campus(campus_name: str, db: Session, row_number: int):
+    #if the campus is none, then return none for the id
+    if not campus_name:
+        return None
+    campus = db.query(models.Campus).filter(models.Campus.name == campus_name).first()
+    if campus:
+        return campus.id
+    else:
+        raise CustomValueError(message="The campus \"" + campus_name + "\" is not found in the Database.", original_exception=None, row_data=row_number)
+        
+def find_advisor(advisor_name: str, db:Session, row_number: int):
+    if not advisor_name:
+        return None
+    last_name, first_name = map(str.strip, advisor_name.split(',', 1))
+    advisor = db.query(models.Faculty).filter(models.Faculty.last_name == last_name, models.Faculty.first_name == first_name).first()
+    if advisor:
+        return advisor.id
+    else:
+        raise CustomValueError(message="The advisor \"" + advisor_name + "\" is not found in the Database.", original_exception=None, row_data=row_number)
+    
+# This will find degree and return degree id. 
+def find_degree(degree_name: str, db: Session, row_number: int):
+    if not degree_name:
+        raise CustomValueError(message="The degree is need.", original_exception=None)
+    degree = db.query(models.Degree).filter(models.Degree.name == degree_name).one_or_none()
+    if degree:
+        return degree.id
+    else:
+        raise CustomValueError(message="The degree \"" + degree_name + "\" is not found in the Database.", original_exception=None, row_data=row_number)
+# This will find major and return the id itself 
+def find_major(major_description: str, db: Session, row_number: int):
+    if not major_description:
+        raise CustomValueError(message="The major is need.", original_exception=None)
+    major = db.query(models.Major).filter(models.Major.description == major_description).one_or_none()
+    if major:
+        return major.id
+    else:
+        raise CustomValueError(message="The major \"" + major_description + "\" is not found in the Database.", original_exception=None, row_data=row_number)
+
+# This will find department and return the id itself 
+def find_department(department_name: str, db: Session, row_number: int):
+    # Not sure if it can be none
+    if not department_name:
+        return None
+    department = db.query(models.Department).filter(models.Department.name == department_name).one_or_none()
+    if department:
+        return department.dept_code
+    else:
+        raise CustomValueError(message="The department \"" + department_name + "\" is not found in the Database.", original_exception=None, row_data=row_number)
+#--------------------------------------------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------Validation Function--------------------------------------------
+# This will help to validate the data from csv file when insert the data for student
+def validation_student_data_from_file(data: dict, db: Session, row_number: int):
+    degree_id = find_degree(data.get("Degree") or None, db, row_number)
+    major_id = find_major(data.get("Major") or None, db, row_number)
+    advisor_id = find_advisor(data.get("Advisor") or None, db, row_number)
+    co_advisor_id = find_advisor(data.get("Co-Advisor") or None, db, row_number)
+    validation_data = schemas.StudentFileUpload(
         first_name = data.get("First/Middle Name") or None,
+        pronouns= data.get("Preferred Pronouns") or None,
         last_name = data.get("Last Name") or None,
-        campus = data.get("Campus") or None,
-        va_residency = enums.Residencies(data.get("Residency")) or None,
-        type = enums.StudentTypes(data.get("Stud Type")) or None,
-        admit_camp = data.get("Admit Camp") or None,
-        level = enums.DegreeLevels(data.get("Level")) or None,
-        degree_name = data.get("Degree") or None,
-        major_name = data.get("Major") or None,
-        major_description = data.get("Major Description") or None,
-        first_term = data.get("First Term Enrl") or None,
-        pos_approveddate = data.get("POS Approved") or None,
-        pos_chair = data.get("POS Chair") or None,
-        pos_co_chair = data.get("POS CoChair") or None,
+        campus_id = find_campus(data.get("Campus") or None, db, row_number),
+        va_residency = enums.Residencies(data.get("Virginia Residency")) or None,
+        type = enums.StudentTypes(data.get("Student Status")) or None,
+        first_term = data.get("First Term") or None,
         email = data.get("E-mail") or None,
         phone_number = data.get("Phone") or None,
         country_citizenship = data.get("Country of Citizenship") or None,
-        gender = data.get("Gender") or None,
-        ethnicity = data.get("Ethnicity") or None,
         advisory_committee = data.get("Adviser Name") or None,
-        prelim_exam_date = data.get("Prelim Exam Scheduled") or None,
-        prelim_exam_pass = data.get("Prelim Exam Passed") or None
+        plan_submit_date = data.get("Plan Submitted") or None,
+        prelim_exam_pass = data.get("Prelim Exam Passed") or None,
+        proposal_meeting = data.get("Proposal Meeting") or None,
+        progress_meeting = data.get("Progress Meeting") or None,
+        final_exam = data.get("Final Exam") or None,
+        ETD_submitted = data.get("ETD Submitted") or None
+    )
+    return validation_data, degree_id, major_id, advisor_id, co_advisor_id
+# This will help to validate the data from csv file when insert the data for campus
+def validation_campus_data_from_file(data: dict, db:Session, row_number: int):
+    validation_data = schemas.CampusIn(
+        name = data.get("Campus Name"),
+        address = data.get("Address") or None
     )
     return validation_data
 
+# This will help to validate the data from csv file when insert the data for department
+def validation_department_data_from_file(data: dict, db:Session, row_number: int):
+    validation_data = schemas.DepartmentIn(
+        name = data.get("department name") or None
+    )
+    return validation_data
 
-# This will process data from csv file, and add them to the corresponding database.
-def process_csv_file(file: UploadFile, db: Session):
+# This will help to validate the data from csv file when insert the data for major
+def validation_major_data_from_file(data: dict, db:Session, row_number: int):
+    validation_data = schemas.MajorIn(
+        dept_code = find_department(data.get("department name") or None, db, row_number),
+        name = data.get("Majors") or None,
+        description = data.get("description") or None
+    )
+    return validation_data
+
+# This will help to validate the data from csv file when insert the data for degree
+def validation_degree_data_from_file(data: dict, db:Session, row_number: int):
+    validation_data = schemas.DegreeIn(
+        name = data.get("Degrees") or None,
+        description = data.get("description") or None
+    )
+    return validation_data
+
+# This will help to validate the data from csv file when insert the data for degree
+def validation_faculty_data_from_file(data: dict, db:Session, row_number: int):
+    last_name, first_name = map(str.strip, data.get("Faculty name").split(',', 1))
+    validation_data = schemas.FacultyIn(
+        dept_code = find_department(data.get("department") or None, db, row_number),
+        last_name = last_name or None,
+        first_name = first_name or None,
+        faculty_type = data.get("faculty type") or None,
+        privilege_level = data.get("privilege level") or None
+    )
+    return validation_data
+#----------------------------------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------End Point Helper Function--------------------------------------------
+# This will process student data from csv file, and add them to the corresponding database.
+def process_student_data_from_file(file: UploadFile, db: Session):
     with TextIOWrapper(file.file, 'utf-8') as text_file:
         csv_reader = csv.DictReader(text_file)
         inserted_student_data : list = []
+        number_row = 1
         for row in csv_reader:
             #--------------Validation-----------------------------------------
-            inserted_student_data.append(validation_data_from_file(row))
+            validation_data, degree_id, major_id, advisor_id, co_advisor_id = validation_student_data_from_file(row, db, number_row)
+            inserted_student_data.append(validation_data)
             #-----------------------------------------------------------------
             #----------------Insert To Database ------------------------------
-            campus_id = insert_campus_from_file(row, db)
-            degree_id = insert_degree_from_file(row, db)
-            dept_code = insert_department_from_file(row, db)
-            # it there is faculty, please do it below department
-            major_id = insert_major_from_file(row, db, dept_code)# -1 indicated there is no department
-            student_id = insert_student_from_file(row, db, campus_id)
-            ##faculty = models.Faculty()
-            ##student_advisor = models.StudentAdvisor()
-            insert_student_pos_from_file(row, db, student_id)
+            student_id = insert_student_from_file(dict(validation_data), db)
             insert_program_enrollment_from_file(row, db, student_id, degree_id, major_id)
-            
+            # make sure the advisor_id is not null
+            if advisor_id:
+                insert_student_advisor_from_file(row, advisor_id, student_id, enums.AdvisorRole.MAIN_ADVISOR, db)
+            if co_advisor_id:
+                insert_student_advisor_from_file(row, co_advisor_id, student_id, enums.AdvisorRole.CO_ADVISOR, db)
             #-----------------------------------------------------------------
+            number_row += 1
     return inserted_student_data
+
+
+# This will process campus data from csv file, and add them to the corresponding database.
+def process_campus_data_from_file(file: UploadFile, db: Session):
+    with TextIOWrapper(file.file, 'utf-8') as text_file:
+        csv_reader = csv.DictReader(text_file)
+        inserted_campus_data : list = []
+        number_row = 1
+        for row in csv_reader:
+            #--------------Validation-----------------------------------------
+            validation_data = validation_campus_data_from_file(row, db, number_row)
+            inserted_campus_data.append(validation_data)
+            #-----------------------------------------------------------------
+            #----------------Insert To Database ------------------------------
+            insert_campus_from_file(dict(validation_data), db)
+            #-----------------------------------------------------------------
+            number_row += 1
+    return inserted_campus_data
+
+# This will process department data from csv file, and add them to the corresponding database.
+def process_department_data_from_file(file: UploadFile, db: Session):
+    with TextIOWrapper(file.file, 'utf-8') as text_file:
+        csv_reader = csv.DictReader(text_file)
+        inserted_department_data : list = []
+        number_row = 1
+        for row in csv_reader:
+            #--------------Validation-----------------------------------------
+            validation_data = validation_department_data_from_file(row, db, number_row)
+            inserted_department_data.append(validation_data)
+            #-----------------------------------------------------------------
+            #----------------Insert To Database ------------------------------
+            insert_department_from_file(dict(validation_data), db)
+            #-----------------------------------------------------------------
+            number_row += 1
+    return inserted_department_data
+
+# This will process major data from csv file, and add them to the corresponding database.
+def process_major_data_from_file(file: UploadFile, db: Session):
+    with TextIOWrapper(file.file, 'utf-8') as text_file:
+        csv_reader = csv.DictReader(text_file)
+        inserted_major_data : list = []
+        number_row = 1
+        for row in csv_reader:
+            #--------------Validation-----------------------------------------
+            validation_data = validation_major_data_from_file(row, db, number_row)
+            inserted_major_data.append(validation_data)
+            #-----------------------------------------------------------------
+            #----------------Insert To Database ------------------------------
+            insert_major_from_file(dict(validation_data), db)
+            #-----------------------------------------------------------------
+            number_row += 1
+    return inserted_major_data
+
+# This will process major data from csv file, and add them to the corresponding database.
+def process_degree_data_from_file(file: UploadFile, db: Session):
+    with TextIOWrapper(file.file, 'utf-8') as text_file:
+        csv_reader = csv.DictReader(text_file)
+        inserted_degree_data : list = []
+        number_row = 1
+        for row in csv_reader:
+            #--------------Validation-----------------------------------------
+            validation_data = validation_degree_data_from_file(row, db, number_row)
+            inserted_degree_data.append(validation_data)
+            #-----------------------------------------------------------------
+            #----------------Insert To Database ------------------------------
+            insert_degree_from_file(dict(validation_data), db)
+            #-----------------------------------------------------------------
+            number_row += 1
+    return inserted_degree_data
+
+# This will process major data from csv file, and add them to the corresponding database.
+def process_faculty_data_from_file(file: UploadFile, db: Session):
+    with TextIOWrapper(file.file, 'utf-8') as text_file:
+        csv_reader = csv.DictReader(text_file)
+        inserted_faculty_data : list = []
+        number_row = 1
+        for row in csv_reader:
+            #--------------Validation-----------------------------------------
+            validation_data = validation_faculty_data_from_file(row, db, number_row)
+            inserted_faculty_data.append(validation_data)
+            #-----------------------------------------------------------------
+            #----------------Insert To Database ------------------------------
+            insert_faculty_from_file(dict(validation_data), db)
+            #-----------------------------------------------------------------
+            number_row += 1
+    return inserted_faculty_data
+
+#------------------------------------------------------------------------------------------------------------------------------
             

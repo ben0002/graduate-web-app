@@ -50,7 +50,7 @@ class Student(Base):
     first_name: Mapped[str] = mapped_column(String(40))
     middle_name: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     last_name: Mapped[Optional[str]] = mapped_column(String(40))
-    citizenship: Mapped[str] = mapped_column(String(120))
+    citizenship: Mapped[str] = mapped_column(String(120), nullable=True)
     va_residency: Mapped[Residencies] = mapped_column(Enum(Residencies), nullable=True)
     type: Mapped[StudentTypes] = mapped_column(Enum(StudentTypes), nullable=True)
     status: Mapped[StudentStatus] = mapped_column(Enum(StudentStatus), nullable=True)
@@ -58,8 +58,8 @@ class Student(Base):
     email: Mapped[Optional[str]] = mapped_column(String(70))
     phone_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True) 
     pronouns: Mapped[Optional[str]] = mapped_column(String(15), nullable=True)
-    gender : Mapped[str] = mapped_column(String(40)) 
-    ethnicity : Mapped[str] = mapped_column(String(50)) 
+    gender : Mapped[str] = mapped_column(String(40), nullable=True) 
+    ethnicity : Mapped[str] = mapped_column(String(50), nullable=True) 
     advisory_committee : Mapped[Optional[str]] = mapped_column(String(200), nullable=True) 
     prelim_exam_date : Mapped[Optional[str]] = mapped_column(String(10), nullable=True) # do we drop this column?
     plan_submit_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
@@ -235,7 +235,7 @@ class Campus(Base):
     __tablename__ = 'campus'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(50), nullable=True)
-    address: Mapped[Optional[str]] = mapped_column(String(60), nullable=True)
+    address: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
     
     students = relationship("Student", back_populates="campus")
     

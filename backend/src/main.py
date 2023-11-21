@@ -15,8 +15,8 @@ from database import SessionLocal, engine
 
 import csv
 
-#models.Base.metadata.drop_all(engine)
-#models.Base.metadata.create_all(engine)
+models.Base.metadata.drop_all(engine)
+models.Base.metadata.create_all(engine)
 
 # Dependency
 def get_db():
@@ -171,12 +171,12 @@ async def advisor(advisor_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Advisor with the given id: {advisor_id} does not exist.")
     return advisor[0]
     
-@app.get("/degrees", response_model=list[schemas.Degree])
+@app.get("/degrees", response_model=list[schemas.DegreeOut])
 def degrees(db: Session = Depends(get_db), skip: int | None = 0, limit: int | None = 100):
     
     return crud.get_degrees(db, None, skip, limit)
 
-@app.get("/degrees/{degree_id}", response_model=schemas.Degree)
+@app.get("/degrees/{degree_id}", response_model=schemas.DegreeOut)
 def degree(degree_id: int, db: Session = Depends(get_db)):
     
     filter = { "id": degree_id}
@@ -187,12 +187,12 @@ def degree(degree_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Degree with the given id: {degree_id} does not exist.")
     return degree[0]
 
-@app.get("/majors", response_model=list[schemas.Major])
+@app.get("/majors", response_model=list[schemas.MajorOut])
 def degrees(db: Session = Depends(get_db), skip: int | None = 0, limit: int | None = 100):
     
     return crud.get_majors(db, None, skip, limit)
 
-@app.get("/majors/{major_id}", response_model=schemas.Major)
+@app.get("/majors/{major_id}", response_model=schemas.MajorOut)
 def degree(major_id: int, db: Session = Depends(get_db), skip: int | None = 0, limit: int | None = 100):
     
     filters = {'id': major_id}
@@ -204,24 +204,124 @@ def degree(major_id: int, db: Session = Depends(get_db), skip: int | None = 0, l
 
 
 
-@app.post("/uploadfile", response_model=list[schemas.StudentOut])
+#---------------------------------File Upload EndPoint----------------------------------------
+@app.post("/uploadstudentfile", response_model=list[schemas.StudentFileUpload])
 async def upload_student_file(file: UploadFile, db: Session = Depends(get_db)):    
     try:
-        return crud.process_csv_file(file, db)
+        return crud.process_student_data_from_file(file, db)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="CSV file not found")
     except PermissionError:
         raise HTTPException(status_code=403, detail="Permission denied to access the CSV file")
     except csv.Error as csv_error:
         raise HTTPException(status_code=400, detail=f"CSV file error: {csv_error}")
-    except ValueError as e:
+    except ValueError as validation_error:
         db.rollback()
-        raise HTTPException(status_code=422, detail=f"Validation error: {str(e)}")
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(validation_error)}")
     except crud.CustomValueError as value_error:
         db.rollback()
         raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
                                                      "problematic_row": value_error.row_data}) 
-    #except Exception as e:
-        #raise HTTPException(status_code=500, detail=f"There was an error processing the file")
     finally:
         db.close()
+        
+@app.post("/uploadcampusfile", response_model=list[schemas.CampusIn])
+async def upload_campus_file(file: UploadFile, db: Session = Depends(get_db)):    
+    try:
+        return crud.process_campus_data_from_file(file, db)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="CSV file not found")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Permission denied to access the CSV file")
+    except csv.Error as csv_error:
+        raise HTTPException(status_code=400, detail=f"CSV file error: {csv_error}")
+    except ValueError as validation_error:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(validation_error)}")
+    except crud.CustomValueError as value_error:
+        db.rollback()
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data}) 
+    finally:
+        db.close()
+        
+@app.post("/uploaddepartmentfile", response_model=list[schemas.DepartmentIn])
+async def upload_department_file(file: UploadFile, db: Session = Depends(get_db)):    
+    try:
+        return crud.process_department_data_from_file(file, db)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="CSV file not found")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Permission denied to access the CSV file")
+    except csv.Error as csv_error:
+        raise HTTPException(status_code=400, detail=f"CSV file error: {csv_error}")
+    except ValueError as validation_error:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(validation_error)}")
+    except crud.CustomValueError as value_error:
+        db.rollback()
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data}) 
+    finally:
+        db.close()
+        
+@app.post("/uploadmajorfile", response_model=list[schemas.MajorIn])
+async def upload_major_file(file: UploadFile, db: Session = Depends(get_db)):    
+    try:
+        return crud.process_major_data_from_file(file, db)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="CSV file not found")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Permission denied to access the CSV file")
+    except csv.Error as csv_error:
+        raise HTTPException(status_code=400, detail=f"CSV file error: {csv_error}")
+    except ValueError as validation_error:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(validation_error)}")
+    except crud.CustomValueError as value_error:
+        db.rollback()
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data}) 
+    finally:
+        db.close()
+        
+@app.post("/uploaddegreefile", response_model=list[schemas.DegreeIn])
+async def upload_degree_file(file: UploadFile, db: Session = Depends(get_db)):    
+    try:
+        return crud.process_degree_data_from_file(file, db)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="CSV file not found")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Permission denied to access the CSV file")
+    except csv.Error as csv_error:
+        raise HTTPException(status_code=400, detail=f"CSV file error: {csv_error}")
+    except ValueError as validation_error:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(validation_error)}")
+    except crud.CustomValueError as value_error:
+        db.rollback()
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data}) 
+    finally:
+        db.close()
+
+@app.post("/uploadfacultyfile", response_model=list[schemas.FacultyIn])
+async def upload_faculty_file(file: UploadFile, db: Session = Depends(get_db)):    
+    try:
+        return crud.process_faculty_data_from_file(file, db)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="CSV file not found")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Permission denied to access the CSV file")
+    except csv.Error as csv_error:
+        raise HTTPException(status_code=400, detail=f"CSV file error: {csv_error}")
+    except ValueError as validation_error:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(validation_error)}")
+    except crud.CustomValueError as value_error:
+        db.rollback()
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data}) 
+    finally:
+        db.close()
+#--------------------------------------------------------------------------------------------------
