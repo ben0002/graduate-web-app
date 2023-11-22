@@ -8,6 +8,7 @@ import schemas
 import models
 import enums
 import csv
+import re
 
 class CustomException(Exception):
     def __init__(self, message, original_exception, row_data=None):
@@ -181,6 +182,20 @@ def find_advisor(advisor_name: str, db:Session, row_number: int):
         return advisor.id
     else:
         raise CustomValueError(message="The advisor \"" + advisor_name + "\" is not found in the Database.", original_exception=None, row_data=row_number)
+
+def find_co_advisor(advisor_name: str, db:Session, row_number: int):
+    if not advisor_name:
+        return None
+    list_name = re.split(r'\s{2,}', advisor_name)
+    advisor_id = []
+    for name in list_name:
+        last_name, first_name = map(str.strip, name.split(',', 1))
+        advisor = db.query(models.Faculty).filter(models.Faculty.last_name == last_name, models.Faculty.first_name == first_name).first()
+        if advisor:
+            advisor_id.append(advisor.id)
+        else:
+            raise CustomValueError(message="The advisor \"" + advisor_name + "\" is not found in the Database.", original_exception=None, row_data=row_number)
+    return advisor_id
     
 # This will find degree and return degree id. 
 def find_degree(degree_name: str, db: Session, row_number: int):
@@ -219,7 +234,7 @@ def validation_student_data_from_file(data: dict, db: Session, row_number: int):
     degree_id = find_degree(data.get("Degree") or None, db, row_number)
     major_id = find_major(data.get("Major") or None, db, row_number)
     advisor_id = find_advisor(data.get("Advisor") or None, db, row_number)
-    co_advisor_id = find_advisor(data.get("Co-Advisor") or None, db, row_number)
+    co_advisor_id = find_co_advisor(data.get("Co-Advisor") or None, db, row_number)
     validation_data = schemas.StudentFileUpload(
         first_name = data.get("First/Middle Name") or None,
         pronouns= data.get("Preferred Pronouns") or None,
@@ -304,7 +319,8 @@ def process_student_data_from_file(file: UploadFile, db: Session):
             if advisor_id:
                 insert_student_advisor_from_file(row, advisor_id, student_id, enums.AdvisorRole.MAIN_ADVISOR, db)
             if co_advisor_id:
-                insert_student_advisor_from_file(row, co_advisor_id, student_id, enums.AdvisorRole.CO_ADVISOR, db)
+                for id in co_advisor_id:
+                    insert_student_advisor_from_file(row, id, student_id, enums.AdvisorRole.CO_ADVISOR, db)
             #-----------------------------------------------------------------
             number_row += 1
     return inserted_student_data

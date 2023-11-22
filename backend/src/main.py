@@ -4,6 +4,7 @@ from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
 
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from cas import CASClient
 
@@ -222,6 +223,9 @@ async def upload_student_file(file: UploadFile, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
                                                      "problematic_row": value_error.row_data}) 
+    except IntegrityError as constraint_violation:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
     finally:
         db.close()
         
@@ -242,6 +246,9 @@ async def upload_campus_file(file: UploadFile, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
                                                      "problematic_row": value_error.row_data}) 
+    except IntegrityError as constraint_violation:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
     finally:
         db.close()
         
@@ -261,7 +268,10 @@ async def upload_department_file(file: UploadFile, db: Session = Depends(get_db)
     except crud.CustomValueError as value_error:
         db.rollback()
         raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
-                                                     "problematic_row": value_error.row_data}) 
+                                                     "problematic_row": value_error.row_data})
+    except IntegrityError as constraint_violation:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
     finally:
         db.close()
         
@@ -282,6 +292,9 @@ async def upload_major_file(file: UploadFile, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
                                                      "problematic_row": value_error.row_data}) 
+    except IntegrityError as constraint_violation:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
     finally:
         db.close()
         
@@ -302,6 +315,9 @@ async def upload_degree_file(file: UploadFile, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
                                                      "problematic_row": value_error.row_data}) 
+    except IntegrityError as constraint_violation:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
     finally:
         db.close()
 
@@ -322,6 +338,9 @@ async def upload_faculty_file(file: UploadFile, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
                                                      "problematic_row": value_error.row_data}) 
+    except IntegrityError as constraint_violation:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
     finally:
         db.close()
 #--------------------------------------------------------------------------------------------------
