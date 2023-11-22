@@ -49,7 +49,7 @@ const StudentLabInformationCard = () => {
                         />
                     </Grid>
                     <Grid item xs={12}>
-                        <Button variant="contained" sx={{ marginTop: 2 }}>Add</Button>
+                        <Button variant="contained" sx={{ marginTop: 2, backgroundColor: "#630031" }}>Add</Button>
                     </Grid>
                 </Grid>
             </CardContent>
