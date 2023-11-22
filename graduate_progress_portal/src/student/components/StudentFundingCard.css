@@ -1,0 +1,16 @@
+/*CSS File for Student Funding Card*/
+
+.student-funding-card-container {
+    width: 100%;
+    height: 375px;
+    box-sizing: border-box;
+}
+
+.student-funding-card-placeholder {
+    width: 100%;
+    height: 300px;
+    border: 1px dashed #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

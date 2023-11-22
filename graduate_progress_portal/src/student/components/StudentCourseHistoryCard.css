@@ -1,0 +1,13 @@
+.student-course-history-container {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.student-course-history-placeholder {
+  width: 100%;
+  height: 285px;
+  border: 1px dashed #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

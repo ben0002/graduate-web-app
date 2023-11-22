@@ -1,15 +1,16 @@
-import './assets/styling/App.css';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import MainLayout from './layouts/mainLayout';
-import Login from './pages/login';
-import AdvisorView from './pages/advisorView';
+import Login from './shared/pages/login.js';
+import AdvisorView from './advisor/advisorView.js';
 import StudentLayout from './layouts/studentLayout';
-import StudentProgress from './pages/studentProgress';
-import StudentProfile from './pages/studentProfile';
-import NotFound from './pages/notFound';
+import StudentProgress from './student/pages/StudentProgress.js';
+import StudentProfile from './student/pages/StudentProfile.js';
+import NotFound from './shared/pages/notFound.js';
 
-function App() {
+import { studentData } from './student/SampleStudentData.jsx';
+
+function App() { 
   return (
     <BrowserRouter>
       <Routes>
@@ -17,7 +18,7 @@ function App() {
           <Route index element={<Login/>}/>
           <Route path="advisor" element={<AdvisorView/>}/>
           <Route path="student" element={<StudentLayout/>}>
-            <Route index element={<StudentProgress/>}/> {/* should this be index, '/', or '/progress' */}
+            <Route path="progress" element={<StudentProgress/>} /> 
             <Route path="profile" element={<StudentProfile/>}/>
             <Route path="*" element={<NotFound/>}/>
           </Route>
