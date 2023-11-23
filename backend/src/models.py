@@ -69,7 +69,8 @@ class Student(Base):
     ETD_submitted: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     final_exam: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     first_term : Mapped[int] = mapped_column(Integer, nullable=True) 
-    profile_picture : Mapped[Optional[str]] = mapped_column(String(100), nullable=True) 
+    profile_picture : Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    graduation_date : Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     
     
     campus = relationship("Campus", back_populates = "students") 

@@ -29,11 +29,11 @@ class StudentIn(BaseModel):
     prelim_exam_pass: date | None = None
     proposal_meeting: date | None = None
     progress_meeting: date | None = None
+    graduation_date: date | None = None
     ETD_submitted: bool | None = False
     final_exam: date | None = None
     first_term: int | None = None
     profile_picture: str | None = None
-    
     class Config:
         from_attributes = True
 
@@ -49,8 +49,12 @@ class StudentFileUpload(StudentIn):
     prelim_exam_pass: date | None = None
     proposal_meeting: date | None = None
     progress_meeting: date | None = None
+    graduation_date: date | None = None
     final_exam: date | None = None
     #---------------------------Validator----------------------------------
+    @validator("graduation_date", pre=True, always=True)
+    def validate_graduation_date(cls, value):
+        return validate_date(value)
     @validator("prelim_exam_date", pre=True, always=True)
     def validate_prelim_exam_date(cls, value):
         return validate_date(value)
@@ -141,5 +145,170 @@ class DepartmentOut(DepartmentIn):
     dept_code: int
     class Config:
         from_attributes = True
+        
+class ProgramEnrollmentIn(BaseModel):
+    student_id: int
+    degree_id: int
+    major_id: int
+    enrollment_date: str = Field(..., max_length=10)
+    class Config:
+        from_attributes = True
 
-    
+class ProgramEnrollmentOut(ProgramEnrollmentIn):
+    id: int
+    class Config:
+        from_attributes = True
+
+class StudentLabsIn(BaseModel):
+    student_id: int
+    name: str = Field(..., max_length=40)
+    director: str = Field(..., max_length=40)
+    class Config:
+        from_attributes = True
+        
+class StudentLabsOut(StudentLabsIn):
+    id : int
+    class Config:
+        from_attributes = True
+        
+class StudentAdvisorIn(BaseModel):
+    advisor_role : AdvisorRole
+    class Config:
+        from_attributes = True
+        
+class StudentAdvisorOut(StudentAdvisorIn):
+    advisor_id : int
+    student_id : int
+    class Config:
+        from_attributes = True
+        
+class EmploymentIn(BaseModel):
+    student_id : int
+    job_title : str = Field(..., max_length=40)
+    pay : int | None = None
+    start_date: date | None = None
+    end_date : date | None = None
+    type : str = Field(..., max_length=30)
+    class Config:
+        from_attributes = True
+
+class EmploymentOut(EmploymentIn):
+    id : int
+    class Config:
+        from_attributes = True
+
+class FundingIn(BaseModel):
+    student_id : int
+    name : str = Field(..., max_length=50)
+    award_amount : int | None = None
+    start_date: date | None = None
+    end_date : date | None = None
+    guaranteed : bool | None = False    
+    class Config:
+        from_attributes = True
+        
+class FundingOut(FundingIn):
+    id : int 
+    class Config:
+        from_attributes = True
+
+class EventIn(BaseModel):
+    student_id : int
+    name : str = Field(..., max_length=40)
+    due_date: date | None = None
+    description : Optional[str] = Field(None, max_length=100)
+    status: EventStatus
+    class Config:
+        from_attributes = True
+
+class EventOut(EventIn):
+    id : int
+    class Config:
+        from_attributes = True
+
+class RequirementIn(BaseModel):
+    name : str = Field(..., max_length=50)
+    description : Optional[str] = Field(None, max_length=100)
+    major_id: int
+    degree_id: int
+    class Config:
+        from_attributes = True
+        
+class RequirementOut(RequirementIn):
+    id : int
+    class Config:
+        from_attributes = True
+
+class MilestoneIn(BaseModel):
+    name : str = Field(..., max_length=50)
+    description : Optional[str] = Field(None, max_length=100)
+    stage_id : int
+    class Config:
+        from_attributes = True
+        
+class MilestoneOut(MilestoneIn):
+    id : int
+    class Config:
+        from_attributes = True
+
+class ProgressIn(BaseModel):
+    student_id : int
+    ideal_completion_date: date
+    requirement_id: int
+    milestone_id: int
+    deadline: date
+    completion_date: date
+    approved: bool | None = False
+    note : Optional[str] = Field(None, max_length=200)
+    exempt: bool | None = False
+    class Config:
+        from_attributes = True
+
+class ProgressOut(ProgressIn):
+    id : int
+    class Config:
+        from_attributes = True
+
+class CourseEnrollmentIn(BaseModel):
+    student_id: int
+    course_title: str = Field(..., max_length=50)   
+    course_type: CourseType
+    credits: int
+    term: int
+    pos_id: int
+    year: int | None = None
+    class Config:
+        from_attributes = True
+
+class CourseEnrollmentOut(CourseEnrollmentIn):
+    id: int
+    class Config:
+        from_attributes = True
+        
+class StageIn(BaseModel):
+    name: str = Field(..., max_length=40)
+    description: Optional[str] = Field(None, max_length=150)
+    major_id: int
+    degree_id: int
+    class Config:
+        from_attributes = True
+        
+class StageOut(StageIn):
+    id : int
+    class Config:
+        from_attributes = True
+        
+class StudentPOSIn(BaseModel):
+    student_id: int
+    approved: bool | None = False
+    approved_date: Optional[str] = Field(None, max_length=50)
+    chair: Optional[str] = Field(None, max_length=100)
+    co_chair: Optional[str] = Field(None, max_length=100)
+    class Config:
+        from_attributes = True
+
+class StudentPOSOut(StudentPOSIn):
+    id: int
+    class Config:
+        from_attributes = True
+

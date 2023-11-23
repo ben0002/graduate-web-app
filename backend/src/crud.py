@@ -57,6 +57,91 @@ def get_majors(db: Session, filters, skip: int = 0, limit: int = 100):
     
     return query.offset(skip).limit(limit).all()
 
+def get_campus(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    query = db.query(models.Campus)
+    query = apply_filters(query, models.Campus, filters)
+    
+    return query.offset(skip).limit(limit).all()
+
+def get_department(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    query = db.query(models.Department)
+    query = apply_filters(query, models.Department, filters)
+    
+    return query.offset(skip).limit(limit).all()
+
+def get_programEnrollment(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    query = db.query(models.ProgramEnrollment)
+    query = apply_filters(query, models.ProgramEnrollment, filters)
+    
+    return query.offset(skip).limit(limit).all()
+
+def get_studentLab(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    query = db.query(models.StudentLabs)
+    query = apply_filters(query, models.StudentLabs, filters)
+    
+    return query.offset(skip).limit(limit).all()
+
+def get_studentAdvisor(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    query = db.query(models.StudentAdvisor)
+    query = apply_filters(query, models.StudentAdvisor, filters)
+    
+    return query.offset(skip).limit(limit).all()
+
+def get_employment(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    query = db.query(models.Employment)
+    query = apply_filters(query, models.Employment, filters)
+    
+    return query.offset(skip).limit(limit).all()
+
+def get_funding(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    query = db.query(models.Funding)
+    query = apply_filters(query, models.Funding, filters)
+    
+    return query.offset(skip).limit(limit).all()
+
+def get_event(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    query = db.query(models.Event)
+    query = apply_filters(query, models.Event, filters)
+    
+    return query.offset(skip).limit(limit).all()
+
+
+def get_requirement(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    query = db.query(models.Requirement)
+    query = apply_filters(query, models.Requirement, filters)
+    
+    return query.offset(skip).limit(limit).all()
+
+def get_milestone(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    query = db.query(models.Milestone)
+    query = apply_filters(query, models.Milestone, filters)
+    
+    return query.offset(skip).limit(limit).all()
+
+def get_progress(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    query = db.query(models.Progress)
+    query = apply_filters(query, models.Progress, filters)
+    
+    return query.offset(skip).limit(limit).all()
+
+def get_courseEnrollment(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    query = db.query(models.CourseEnrollment)
+    query = apply_filters(query, models.CourseEnrollment, filters)
+    
+    return query.offset(skip).limit(limit).all()
+
+def get_stage(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    query = db.query(models.Stage)
+    query = apply_filters(query, models.Stage, filters)
+    
+    return query.offset(skip).limit(limit).all()
+
+def get_studentPOS(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    query = db.query(models.StudentPOS)
+    query = apply_filters(query, models.StudentPOS, filters)
+    
+    return query.offset(skip).limit(limit).all()
+
 #--------------------------------------------------Insert Data Function For File-------------------------
     
 # Processing data from file to StudentPOS table
