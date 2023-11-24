@@ -196,7 +196,6 @@ class Department(Base):
         return f"Department(id={self.id!r}, name={self.name!r})"
 
 class ProgramEnrollment(Base):
-class ProgramEnrollment(Base):
     """Holds information of student program enrollments by storing:
         - Unique combination of:
             - Degree
@@ -211,10 +210,6 @@ class ProgramEnrollment(Base):
     __tablename__ = "program_enrollment"
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    student_id: Mapped[int] = mapped_column(Integer, ForeignKey("student.id"))
-    degree_id: Mapped[int] = mapped_column(Integer, ForeignKey("degree.id"))
-    major_id: Mapped[int] = mapped_column(Integer, ForeignKey("major.id"))
-    enrollment_date: Mapped[str] = mapped_column(String(10))
     student_id: Mapped[int] = mapped_column(Integer, ForeignKey("student.id"))
     degree_id: Mapped[int] = mapped_column(Integer, ForeignKey("degree.id"))
     major_id: Mapped[int] = mapped_column(Integer, ForeignKey("major.id"))
