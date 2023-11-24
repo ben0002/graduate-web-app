@@ -1,0 +1,15 @@
+/*CSS File for Student Funding Card*/
+
+.student-emplpoyment-card-container {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.student-emplpoyment-card-placeholder {
+    width: 100%;
+    height: 300px;
+    border: 1px dashed #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

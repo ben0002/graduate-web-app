@@ -4,10 +4,15 @@ the schema """
 from typing import Optional
 from sqlalchemy import ForeignKey, UniqueConstraint, PrimaryKeyConstraint
 from sqlalchemy import Boolean, String, Integer
+from sqlalchemy import ForeignKey, UniqueConstraint, PrimaryKeyConstraint
+from sqlalchemy import Boolean, String, Integer
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy import Enum
 from database import engine
+from enums import *
+
 from enums import *
 
 
@@ -40,6 +45,25 @@ class Student(Base):
         - prelim exam pass
         - first term 
         - profile picture
+        student's
+        - first name
+        - last name
+        - middle name
+        - residency
+        - type
+        - status
+        - admit type
+        - campus id
+        - email
+        - phone number
+        - citizenship
+        - gender
+        - ethnicity
+        - committee members
+        - prelim exam date
+        - prelim exam pass
+        - first term 
+        - profile picture
 
     Args:
         Base: Inherited superclass that allows ORM
@@ -50,7 +74,7 @@ class Student(Base):
     first_name: Mapped[str] = mapped_column(String(40))
     middle_name: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     last_name: Mapped[Optional[str]] = mapped_column(String(40))
-    citizenship: Mapped[str] = mapped_column(String(120), nullable=True)
+    citizenship: Mapped[str] = mapped_column(String(120))
     va_residency: Mapped[Residencies] = mapped_column(Enum(Residencies), nullable=True)
     type: Mapped[StudentTypes] = mapped_column(Enum(StudentTypes), nullable=True)
     status: Mapped[StudentStatus] = mapped_column(Enum(StudentStatus), nullable=True)
@@ -101,8 +125,14 @@ class Degree(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(30))
     description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    name: Mapped[str] = mapped_column(String(30))
+    description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     
      # way to list multiple unique constraints that are constrained together
+     # make sure that the degree name and degree level should be unique to each other.
+    
+    requirements = relationship("Requirement", back_populates="degree") 
+    
      # make sure that the degree name and degree level should be unique to each other.
     
     requirements = relationship("Requirement", back_populates="degree") 
@@ -130,12 +160,20 @@ class Major(Base):
     
     department = relationship("Department", back_populates="majors") 
     requirements = relationship("Requirement", back_populates="major") 
+    name: Mapped[str] = mapped_column(String(30))
+    dept_code: Mapped[Integer] = mapped_column(Integer, ForeignKey("department.dept_code"))
+    description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    
+    department = relationship("Department", back_populates="majors") 
+    requirements = relationship("Requirement", back_populates="major") 
     
     def __repr__(self) -> str:
+        return f"Major(id={self.id!r}, name={self.name!r}, dept_code={self.dept_code!r}, description={self.description!r})"
         return f"Major(id={self.id!r}, name={self.name!r}, dept_code={self.dept_code!r}, description={self.description!r})"
     
 class Department(Base):
     """Table that holds information about all departments.
+        - name
         - name
     Args:
         Base: Inherited base class that allows ORM
@@ -148,10 +186,16 @@ class Department(Base):
     
     faculty = relationship("Faculty", back_populates="department")
     majors = relationship("Major", back_populates="department") 
+    dept_code: Mapped[Integer] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(100))
+    
+    faculty = relationship("Faculty", back_populates="department")
+    majors = relationship("Major", back_populates="department") 
     
     def __repr__(self) -> str:
         return f"Department(id={self.id!r}, name={self.name!r})"
 
+class ProgramEnrollment(Base):
 class ProgramEnrollment(Base):
     """Holds information of student program enrollments by storing:
         - Unique combination of:
@@ -167,6 +211,10 @@ class ProgramEnrollment(Base):
     __tablename__ = "program_enrollment"
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    student_id: Mapped[int] = mapped_column(Integer, ForeignKey("student.id"))
+    degree_id: Mapped[int] = mapped_column(Integer, ForeignKey("degree.id"))
+    major_id: Mapped[int] = mapped_column(Integer, ForeignKey("major.id"))
+    enrollment_date: Mapped[str] = mapped_column(String(10))
     student_id: Mapped[int] = mapped_column(Integer, ForeignKey("student.id"))
     degree_id: Mapped[int] = mapped_column(Integer, ForeignKey("degree.id"))
     major_id: Mapped[int] = mapped_column(Integer, ForeignKey("major.id"))
