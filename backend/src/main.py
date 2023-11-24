@@ -537,6 +537,12 @@ async def studentPOS(studentPOS_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"StudentPOS with the given id: {studentPOS_id} does not exist.")
     return studentPOS[0]
 
+@app.post("/students", status_code=201)
+async def create_students(students: list[schemas.StudentIn], db:Session = Depends(get_db)):
+    for student in students:
+        db_studnet = models.Student(**student.dict())
+        db.add(db_studnet)
+    db.commit()
 
 #---------------------------------File Upload EndPoints----------------------------------------
 @app.post("/uploadstudentfile", response_model=list[schemas.StudentFileUpload])
