@@ -26,9 +26,9 @@ const StudentCardInfo = ({ student }) => {
                                 <br />
                                 <Typography color="textSecondary"><strong>Advisor:</strong> {student.advisor || 'N/A'}</Typography>
                                 <Tooltip title={student.committee || 'N/A'}>
-                                    <Typography 
-                                        className="truncate" 
-                                        fontSize={13} 
+                                    <Typography
+                                        className="truncate"
+                                        fontSize={13}
                                         color="textSecondary"
                                         style={{ maxWidth: '27%' }} // Truncate everything after 27% of the container width
                                     >
@@ -62,16 +62,19 @@ const StudentCardInfo = ({ student }) => {
                             <Button
                                 variant="contained"
                                 //color="primary"
-                                sx = {{backgroundColor: "#630031"}}
+                                sx={{
+                                    backgroundColor: "#630031",
+                                    '&:hover': { backgroundColor: '#4E342E' }
+                                }}
                                 component={Link}
                                 to={location.pathname.includes('/student/profile') ? "/student/progress" : "/student/profile"}
-                                >
+                            >
                                 {location.pathname.includes('/student/profile') ? "Go to Progress" : "Go to Profile"}
                             </Button>
                             <Button
                                 variant="contained"
                                 color="secondary"
-                                sx={{ mt: 2 }} 
+                                sx={{ mt: 2 }}
                                 onClick={() => { /* Logic to print PDF */ }}
                                 disabled={true}
                             >
