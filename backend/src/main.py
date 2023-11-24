@@ -539,9 +539,12 @@ async def studentPOS(studentPOS_id: int, db: Session = Depends(get_db)):
 
 @app.post("/students", status_code=201)
 async def create_students(students: list[schemas.StudentIn], db:Session = Depends(get_db)):
-    for student in students:
-        db_studnet = models.Student(**student.dict())
-        db.add(db_studnet)
+    try:
+        for student in students:
+            db_studnet = models.Student(**student.dict())
+            db.add(db_studnet)
+    except IntegrityError as constraint_violation:
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
     db.commit()
 
 #---------------------------------File Upload EndPoints----------------------------------------
