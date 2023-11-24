@@ -403,9 +403,6 @@ async def programEnrollment(programEnrollment_id: int, db: Session = Depends(get
     return programEnrollment[0]
 
 
-    studentLab = crud.get_studentLab(db, None, skip, limit)
-    return studentLab
-
 @app.get("/studentLabs/{studentLab_id}", response_model=schemas.StudentLabsOut)
 async def studentLab(studentLab_id: int, db: Session = Depends(get_db)):
     filter = { "id": studentLab_id}
