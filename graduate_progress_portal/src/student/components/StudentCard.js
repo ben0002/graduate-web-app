@@ -61,7 +61,8 @@ const StudentCardInfo = ({ student }) => {
                         <Box display="flex" flexDirection="column" alignItems="center">
                             <Button
                                 variant="contained"
-                                color="primary"
+                                //color="primary"
+                                sx = {{backgroundColor: "#630031"}}
                                 component={Link}
                                 to={location.pathname.includes('/student/profile') ? "/student/progress" : "/student/profile"}
                                 >

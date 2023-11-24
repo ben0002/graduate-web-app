@@ -48,8 +48,10 @@ const StudentLabInformationCard = () => {
                             placeholder="Lab Location"
                         />
                     </Grid>
-                    <Grid item xs={12}>
-                        <Button variant="contained" sx={{ marginTop: 2, backgroundColor: "#630031" }}>Add</Button>
+                    <Grid item xs={12} sx={{display: 'flex', justifyContent:'center'}}>
+                        <Button variant="contained" sx={{
+                            marginTop: 2, backgroundColor: "#630031", borderRadius: 20,
+                        }}>Add</Button>
                     </Grid>
                 </Grid>
             </CardContent>
