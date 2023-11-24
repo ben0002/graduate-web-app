@@ -186,11 +186,19 @@ def insert_program_enrollment_from_file(data : dict, db: Session, student_id: in
     # make sure do not have duplicate table
     programEnrollment = db.query(models.ProgramEnrollment).filter(models.ProgramEnrollment.degree_id == degree_id, models.ProgramEnrollment.student_id == student_id, models.ProgramEnrollment.major_id == major_id).one_or_none()
     if not programEnrollment:
+        
+        validation = schemas.ProgramEnrollmentIn(
+            student_id=student_id,
+            degree_id=degree_id,
+            major_id=major_id,
+            enrollment_date="30-MAR-23" #this is defualt value Since we don't have the data about enrollment_date
+        )
+
         programEnrollment = models.ProgramEnrollment(
-            student_id = student_id,
-            degree_id = degree_id,
-            major_id = major_id,
-            enrollment_date = "01-01-2023" #this is defualt value Since we don't have the data about enrollment_date
+            student_id = validation.student_id,
+            degree_id = validation.degree_id,
+            major_id = validation.major_id,
+            enrollment_date = validation.enrollment_date
         )
         db.add(programEnrollment)
         db.commit()

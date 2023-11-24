@@ -3,3 +3,4 @@
 src/__pycache__
 /.vscode
 src/database.py
+src/.env

@@ -176,6 +176,8 @@ class ProgramEnrollment(Base):
     __table_args__ = (UniqueConstraint('student_id', 'degree_id', 'major_id', name='program_student_degree_major_uc'),)
     
     student = relationship("Student", back_populates="programs")
+    major = relationship("Major")
+    degree = relationship("Degree")
         
     def __repr__(self) -> str:
         return f"ProgramEnrollments(id={self.id!r}, student_id={self.student_id!r}, degree_id={self.degree_id!r}, major_id={self.major_id!r})"
@@ -220,6 +222,7 @@ class StudentAdvisor(Base):
     )
     
     student = relationship("Student", back_populates="advisors")
+    advisor = relationship("Faculty", back_populates="advisor_students")
 
     def __repr__(self) -> str:
         return f"StudentAdvisor(advisor_id={self.id!r}, student_id={self.student_id!r}, advisor_role={self.advisor_role!r})"
@@ -340,6 +343,7 @@ class Faculty(Base):
     privilege_level: Mapped[int] = mapped_column(Integer)
     
     department = relationship("Department", back_populates="faculty")
+    advisor_students = relationship("StudentAdvisor", back_populates="advisor")
     
     def __repr__(self) -> str:
         return f"Faculty(id={self.id!r},first_name={self.first_name!r},last_name={self.last_name!r})"
@@ -409,8 +413,8 @@ class Progress(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     student_id: Mapped[int] = mapped_column(Integer, ForeignKey("student.id"))
     ideal_completion_date: Mapped[str] = mapped_column(String(10))
-    requirement_id: Mapped[int] = mapped_column(Integer, ForeignKey("requirement.id"))
-    milestone_id: Mapped[int] = mapped_column(Integer, ForeignKey("milestone.id"))
+    requirement_id: Mapped[int] = mapped_column(Integer, ForeignKey("requirement.id"), nullable=True)
+    milestone_id: Mapped[int] = mapped_column(Integer, ForeignKey("milestone.id"), nullable=True)
     deadline: Mapped[str] = mapped_column(String(10))
     completion_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     approved: Mapped[bool] = mapped_column(Boolean)
@@ -419,6 +423,9 @@ class Progress(Base):
     
     
     student = relationship("Student", back_populates="progress_tasks")
+    requirement = relationship("Requirement")
+    milestone = relationship("Milestone")
+    
     
     def __repr__(self) -> str:
         return f"Progress(id={self.id!r},requirement_id={self.requirement_id!r},student_id={self.student_id!r})"

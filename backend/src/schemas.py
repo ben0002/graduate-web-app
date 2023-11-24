@@ -44,13 +44,6 @@ class StudentOut(StudentIn):
         from_attributes = True
 
 class StudentFileUpload(StudentIn):
-    plan_submit_date: date | None = None
-    prelim_exam_date: date | None = None
-    prelim_exam_pass: date | None = None
-    proposal_meeting: date | None = None
-    progress_meeting: date | None = None
-    graduation_date: date | None = None
-    final_exam: date | None = None
     #---------------------------Validator----------------------------------
     @validator("graduation_date", pre=True, always=True)
     def validate_graduation_date(cls, value):
@@ -120,7 +113,6 @@ class MajorOut(MajorIn):
     class Config:
         from_attributes = True
     
-
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -150,14 +142,19 @@ class ProgramEnrollmentIn(BaseModel):
     student_id: int
     degree_id: int
     major_id: int
-    enrollment_date: str = Field(..., max_length=10)
+    enrollment_date: date
+    @validator("enrollment_date", pre=True, always=True)
+    def validate_enrollment_date(cls, value):
+        return validate_date(value)
     class Config:
         from_attributes = True
 
-class ProgramEnrollmentOut(ProgramEnrollmentIn):
+class ProgramEnrollmentOut(BaseModel):
     id: int
-    class Config:
-        from_attributes = True
+    major: MajorOut
+    degree: DegreeOut
+    enrollment_date: date
+    
 
 class StudentLabsIn(BaseModel):
     student_id: int
@@ -176,9 +173,8 @@ class StudentAdvisorIn(BaseModel):
     class Config:
         from_attributes = True
         
-class StudentAdvisorOut(StudentAdvisorIn):
-    advisor_id : int
-    student_id : int
+class StudentAdvisorOut(StudentAdvisorIn, FacultyOut):
+    
     class Config:
         from_attributes = True
         
@@ -254,20 +250,31 @@ class MilestoneOut(MilestoneIn):
 class ProgressIn(BaseModel):
     student_id : int
     ideal_completion_date: date
-    requirement_id: int
-    milestone_id: int
+    requirement_id: int | None = None
+    milestone_id: int | None = None
     deadline: date
-    completion_date: date
+    completion_date: date | None = None
     approved: bool | None = False
     note : Optional[str] = Field(None, max_length=200)
     exempt: bool | None = False
+    
     class Config:
         from_attributes = True
 
-class ProgressOut(ProgressIn):
+class ProgressOut(BaseModel):
     id : int
+    ideal_completion_date: date
+    deadline: date
+    completion_date: date | None = None
+    approved: bool | None = False
+    exempt: bool | None = False
+    note: Optional[str] = Field(None, max_length=200)
+    requirement: RequirementOut | None = None
+    milestone: MilestoneOut | None = None
+    
     class Config:
         from_attributes = True
+        exclude_unset = True  # Exclude fields with None (null) values
 
 class CourseEnrollmentIn(BaseModel):
     student_id: int

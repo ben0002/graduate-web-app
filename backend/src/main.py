@@ -89,6 +89,20 @@ def logout(response: Response):
 
 #------------------- non-cas --------------------#
 
+#------------------- helper functions -----------#
+def pagination(skip: int, limit: int, response: list):
+    total_responses = len(response)
+    if skip < total_responses:
+        response = response[skip:]
+    else:
+        return []
+    
+    if limit < total_responses:
+        response = response[:limit]
+    
+    return response
+
+#-------------------------------------- start of /students endpoints -------------------------------#
 @app.get("/students", response_model=list[schemas.StudentOut])
 def students(
     skip: int = 0, limit: int = 100, db: Session = Depends(get_db), 
@@ -123,6 +137,146 @@ async def students_id(student_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
     return student[0]
 
+@app.get("/students/{student_id}/employments", response_model=list[schemas.EmploymentOut])
+def student_employments(student_id: int, skip: int | None = 0, limit: int | None = 100, 
+                        db: Session = Depends(get_db)):
+    
+    filter = {"id": student_id}
+    student = crud.get_students(db=db, filters=filter)
+    if(len(student) == 0):
+        raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
+    
+    return pagination(skip=skip, limit=limit, response=student[0].employment)
+
+@app.get("/students/{student_id}/funding", response_model=list[schemas.FundingOut])
+def student_funding(student_id: int, skip: int | None = 0, limit: int | None = 100, 
+                        db: Session = Depends(get_db)):
+    
+    filter = {"id": student_id}
+    student = crud.get_students(db=db, filters=filter)
+    if(len(student) == 0):
+        raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
+    
+    return pagination(skip=skip, limit=limit, response=student[0].funding)
+
+@app.get("/students/{student_id}/advisors", response_model=list[schemas.StudentAdvisorOut])
+def student_advisors(student_id: int, skip: int | None = 0, limit: int | None = 100, 
+                        db: Session = Depends(get_db)):
+    
+    filter = {"id": student_id}
+    student = crud.get_students(db=db, filters=filter)
+    if(len(student) == 0):
+        raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
+    
+    advisors = []
+    for student_advisor in student[0].advisors:
+        advisors.append(
+            schemas.StudentAdvisorOut(
+                id=student_advisor.advisor.id,
+                first_name=student_advisor.advisor.first_name,
+                middle_name=student_advisor.advisor.middle_name,
+                last_name=student_advisor.advisor.last_name,
+                dept_code=student_advisor.advisor.dept_code,
+                privilege_level=student_advisor.advisor.privilege_level,
+                advisor_role=student_advisor.advisor_role   
+            )
+        )
+        
+    return pagination(skip=skip, limit=limit, response=advisors)
+  
+    
+
+@app.get("/students/{student_id}/events", response_model=list[schemas.EventOut])
+def student_events(student_id: int, skip: int | None = 0, limit: int | None = 100, 
+                        db: Session = Depends(get_db)):
+    
+    filter = {"id": student_id}
+    student = crud.get_students(db=db, filters=filter)
+    if(len(student) == 0):
+        raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
+    
+    return pagination(skip=skip, limit=limit, response=student[0].events)
+
+@app.get("/students/{student_id}/labs", response_model=list[schemas.StudentLabsOut])
+def student_labs(student_id: int, skip: int | None = 0, limit: int | None = 100, 
+                        db: Session = Depends(get_db)):
+    
+    filter = {"id": student_id}
+    student = crud.get_students(db=db, filters=filter)
+    if(len(student) == 0):
+        raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
+    
+    return pagination(skip=skip, limit=limit, respones=student[0].labs)
+
+@app.get("/students/{student_id}/programs", response_model=list[schemas.ProgramEnrollmentOut])
+def student_programs(student_id: int, skip: int | None = 0, limit: int | None = 100, 
+                        db: Session = Depends(get_db)):
+    
+    filter = {"id": student_id}
+    student = crud.get_students(db=db, filters=filter)
+    if(len(student) == 0):
+        raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
+    
+    programs = []
+    for program in student[0].programs:
+        programs.append(
+            schemas.ProgramEnrollmentOut(
+                id=program.id,
+                major=program.major,
+                degree=program.degree,
+                enrollment_date=program.enrollment_date
+            )
+        )
+    return pagination(skip=skip, limit=limit, response=programs)
+
+@app.get("/students/{student_id}/progress-tasks", response_model=list[schemas.ProgressOut])
+def student_progress(student_id: int, skip: int | None = 0, limit: int | None = 100, 
+                        db: Session = Depends(get_db)):
+    
+    filter = {"id": student_id}
+    student = crud.get_students(db=db, filters=filter)
+    if(len(student) == 0):
+        raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
+    
+    tasks = []
+    for task in student[0].progress_tasks:
+        tasks.append(
+            schemas.ProgressOut(
+                id=task.id,
+                ideal_completion_date=task.ideal_completion_date,
+                requirement=task.requirement,
+                milestone=task.milestone,
+                deadline=task.deadline,
+                completion_date=task.completion_date,
+                approved=task.approved,
+                note=task.note,
+                exempt=task.exempt
+            )
+        )
+    return pagination(skip=skip, limit=limit, response=tasks)
+
+@app.get("/students/{student_id}/courses", response_model=list[schemas.CourseEnrollmentOut])
+def student_courses(student_id: int, skip: int | None = 0, limit: int | None = 100, 
+                        db: Session = Depends(get_db)):
+    
+    filter = {"id": student_id}
+    student = crud.get_students(db=db, filters=filter)
+    if(len(student) == 0):
+        raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
+    return pagination(skip=skip, limit=limit, response=student[0].courses)
+
+@app.get("/students/{student_id}/pos", response_model=list[schemas.StudentPOSOut])
+def student_pos(student_id: int, skip: int | None = 0, limit: int | None = 100, 
+                        db: Session = Depends(get_db)):
+    
+    filter = {"id": student_id}
+    student = crud.get_students(db=db, filters=filter)
+    if(len(student) == 0):
+        raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
+    return pagination(skip=skip, limit=limit, response=student[0].pos)
+
+#---------------------------------------- end of /students endpoints --------------------------------------------#
+    
 @app.get("/faculty", response_model=list[schemas.FacultyOut])
 async def faculty(
     skip: int | None = 0, limit: int | None = 100, db: Session = Depends(get_db),
@@ -219,7 +373,7 @@ async def campus(campus_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Campus with the given id: {campus_id} does not exist.")
     return campus[0]
 
-@app.get("/department", response_model=list[schemas.DepartmentOut])
+@app.get("/departments", response_model=list[schemas.DepartmentOut])
 async def departments(skip: int | None = 0, limit: int | None = 100, db: Session = Depends(get_db), department_name: str | None = None):
     filter = {
         "name": department_name
@@ -227,7 +381,7 @@ async def departments(skip: int | None = 0, limit: int | None = 100, db: Session
     department = crud.get_department(db, filter, skip, limit)
     return department
 
-@app.get("/department/{dept_code}", response_model=schemas.DepartmentOut)
+@app.get("/departments/{dept_code}", response_model=schemas.DepartmentOut)
 async def department(dept_code: int, db: Session = Depends(get_db)):
     filter = { "dept_code": dept_code}
     department = crud.get_department(db, filter, 0, 1)
@@ -235,12 +389,12 @@ async def department(dept_code: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Department with the given id: {dept_code} does not exist.")
     return department[0]
 
-@app.get("/programEnrollment", response_model=list[schemas.ProgramEnrollmentOut])
+@app.get("/programEnrollments", response_model=list[schemas.ProgramEnrollmentOut])
 async def programEnrollments(skip: int | None = 0, limit: int | None = 100, db: Session = Depends(get_db)):
     programEnrollment = crud.get_programEnrollment(db, None, skip, limit)
     return programEnrollment
 
-@app.get("/programEnrollment/{programEnrollment_id}", response_model=schemas.ProgramEnrollmentOut)
+@app.get("/programEnrollments/{programEnrollment_id}", response_model=schemas.ProgramEnrollmentOut)
 async def programEnrollment(programEnrollment_id: int, db: Session = Depends(get_db)):
     filter = { "id": programEnrollment_id}
     programEnrollment = crud.get_programEnrollment(db, filter, 0, 1)
@@ -248,8 +402,7 @@ async def programEnrollment(programEnrollment_id: int, db: Session = Depends(get
         raise HTTPException(status_code=404, detail=f"Program Enrollment with the given id: {programEnrollment_id} does not exist.")
     return programEnrollment[0]
 
-@app.get("/studentLabs", response_model=list[schemas.StudentLabsOut])
-async def studentLabs(skip: int | None = 0, limit: int | None = 100, db: Session = Depends(get_db)):
+
     studentLab = crud.get_studentLab(db, None, skip, limit)
     return studentLab
 
@@ -261,27 +414,12 @@ async def studentLab(studentLab_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Student Lab with the given id: {studentLab_id} does not exist.")
     return studentLab[0]
 
-@app.get("/studentAdvisor", response_model=list[schemas.StudentAdvisorOut])
-async def studentAdvisors(skip: int | None = 0, limit: int | None = 100, db: Session = Depends(get_db)):
-    studentAdvisors = crud.get_studentAdvisor(db, None, skip, limit)
-    return studentAdvisors
-
-@app.get("/studentAdvisor/{student_id}/{advisor_id}", response_model=schemas.StudentAdvisorOut)
-async def studentAdvisor(student_id: int, advisor_id: int,db: Session = Depends(get_db)):
-    filter = { "student_id": student_id,
-               "advisor_id" : advisor_id
-             }
-    studentAdvisor = crud.get_studentAdvisor(db, filter, 0, 1)
-    if(len(studentAdvisor) == 0):
-        raise HTTPException(status_code=404, detail=f"Student Advisor with the given id: student id: {student_id} & advisor id: {advisor_id} does not exist.")
-    return studentAdvisor[0]
-
-@app.get("/employment", response_model=list[schemas.EmploymentOut])
+@app.get("/employments", response_model=list[schemas.EmploymentOut])
 async def employments(skip: int | None = 0, limit: int | None = 100, db: Session = Depends(get_db)):
     employments = crud.get_employment(db, None, skip, limit)
     return employments
 
-@app.get("/employment/{employment_id}", response_model=schemas.EmploymentOut)
+@app.get("/employments/{employment_id}", response_model=schemas.EmploymentOut)
 async def employment(employment_id: int, db: Session = Depends(get_db)):
     filter = { "id": employment_id}
     employment = crud.get_employment(db, filter, 0, 1)
@@ -302,12 +440,12 @@ async def funding(funding_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Funding with the given id: {funding_id} does not exist.")
     return funding[0]
 
-@app.get("/event", response_model=list[schemas.EventOut])
+@app.get("/events", response_model=list[schemas.EventOut])
 async def events(skip: int | None = 0, limit: int | None = 100, db: Session = Depends(get_db)):
     events = crud.get_event(db, None, skip, limit)
     return events
 
-@app.get("/event/{event_id}", response_model=schemas.EventOut)
+@app.get("/events/{event_id}", response_model=schemas.EventOut)
 async def event(event_id: int, db: Session = Depends(get_db)):
     filter = { "id": event_id}
     event = crud.get_event(db, filter, 0, 1)
@@ -315,7 +453,7 @@ async def event(event_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Event with the given id: {event_id} does not exist.")
     return event[0]
 
-@app.get("/requirement", response_model=list[schemas.RequirementOut])
+@app.get("/requirements", response_model=list[schemas.RequirementOut])
 async def requirements(skip: int | None = 0, limit: int | None = 100, db: Session = Depends(get_db), requirement_name: str | None = None, major_id: int | None = None, degree_id: int | None = None):
     filter = { "name": requirement_name,
                "major_id" : major_id,
@@ -324,7 +462,7 @@ async def requirements(skip: int | None = 0, limit: int | None = 100, db: Sessio
     requirements = crud.get_requirement(db, filter, skip, limit)
     return requirements
 
-@app.get("/requirement/{requirement_id}", response_model=schemas.RequirementOut)
+@app.get("/requirements/{requirement_id}", response_model=schemas.RequirementOut)
 async def requirement(requirement_id: int, db: Session = Depends(get_db)):
     filter = { "id": requirement_id}
     requirement = crud.get_requirement(db, filter, 0, 1)
@@ -332,12 +470,12 @@ async def requirement(requirement_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Requirement with the given id: {requirement_id} does not exist.")
     return requirement[0]
 
-@app.get("/milestone", response_model=list[schemas.MilestoneOut])
+@app.get("/milestones", response_model=list[schemas.MilestoneOut])
 async def milestones(skip: int | None = 0, limit: int | None = 100, db: Session = Depends(get_db)):
     milestones = crud.get_milestone(db, None, skip, limit)
     return milestones
 
-@app.get("/milestone/{milestone_id}", response_model=schemas.MilestoneOut)
+@app.get("/milestones/{milestone_id}", response_model=schemas.MilestoneOut)
 async def milestone(milestone_id: int, db: Session = Depends(get_db)):
     filter = { "id": milestone_id}
     milestone = crud.get_milestone(db, filter, 0, 1)
@@ -358,12 +496,12 @@ async def progress(progress_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Progress with the given id: {progress_id} does not exist.")
     return progress[0]
 
-@app.get("/courseEnrollment", response_model=list[schemas.CourseEnrollmentOut])
+@app.get("/courseEnrollments", response_model=list[schemas.CourseEnrollmentOut])
 async def courseEnrollments(skip: int | None = 0, limit: int | None = 100, db: Session = Depends(get_db)):
     courseEnrollments = crud.get_courseEnrollment(db, None, skip, limit)
     return courseEnrollments
 
-@app.get("/courseEnrollment/{courseEnrollment_id}", response_model=schemas.CourseEnrollmentOut)
+@app.get("/courseEnrollments/{courseEnrollment_id}", response_model=schemas.CourseEnrollmentOut)
 async def courseEnrollment(courseEnrollment_id: int, db: Session = Depends(get_db)):
     filter = { "id": courseEnrollment_id}
     courseEnrollment = crud.get_courseEnrollment(db, filter, 0, 1)
@@ -371,7 +509,7 @@ async def courseEnrollment(courseEnrollment_id: int, db: Session = Depends(get_d
         raise HTTPException(status_code=404, detail=f"CourseEnrollment with the given id: {courseEnrollment_id} does not exist.")
     return courseEnrollment[0]
 
-@app.get("/stage", response_model=list[schemas.StageOut])
+@app.get("/stages", response_model=list[schemas.StageOut])
 async def stages(skip: int | None = 0, limit: int | None = 100, db: Session = Depends(get_db), stage_name: str | None = None, major_id: int | None = None, degree_id : int | None = None):
     filter = {
         "name" : stage_name,
@@ -381,7 +519,7 @@ async def stages(skip: int | None = 0, limit: int | None = 100, db: Session = De
     stages = crud.get_stage(db, None, skip, limit)
     return stages
 
-@app.get("/stage/{stage_id}", response_model=schemas.StageOut)
+@app.get("/stages/{stage_id}", response_model=schemas.StageOut)
 async def stage(stage_id: int, db: Session = Depends(get_db)):
     filter = { "id": stage_id}
     stage = crud.get_stage(db, filter, 0, 1)
@@ -403,7 +541,7 @@ async def studentPOS(studentPOS_id: int, db: Session = Depends(get_db)):
     return studentPOS[0]
 
 
-#---------------------------------File Upload EndPoint----------------------------------------
+#---------------------------------File Upload EndPoints----------------------------------------
 @app.post("/uploadstudentfile", response_model=list[schemas.StudentFileUpload])
 async def upload_student_file(file: UploadFile, db: Session = Depends(get_db)):    
     try:
