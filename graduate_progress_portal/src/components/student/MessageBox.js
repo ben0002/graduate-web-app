@@ -53,6 +53,7 @@ const MessageBox = () => {
           <Button
             variant="contained"
             sx={{
+              borderRadius: 20,
               backgroundColor: '#630031',
               color: 'white',
               '&:hover': {
