@@ -546,6 +546,16 @@ async def create_students(students: list[schemas.StudentIn], db:Session = Depend
     except IntegrityError as constraint_violation:
         HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
     db.commit()
+    
+@app.delete("/students/{student_id}", status_code=204)
+async def delete_student(student_id, db:Session = Depends(get_db)):
+    filter = {"id" : student_id}
+    try:
+        student = crud.delete_data(db, filter, models.Student)
+        if not student:
+            raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 #---------------------------------File Upload EndPoints----------------------------------------
 @app.post("/uploadstudentfile", response_model=list[schemas.StudentFileUpload])

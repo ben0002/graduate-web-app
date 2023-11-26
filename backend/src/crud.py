@@ -142,6 +142,17 @@ def get_studentPOS(db: Session, filters: dict, skip: int = 0, limit: int = 100):
     
     return query.offset(skip).limit(limit).all()
 
+def delete_data(db: Session, filter: dict, model):
+    query = db.query(model)
+    query = apply_filters(query, model, filter)
+    if query:
+        db.delete(query)
+        db.commit()
+        return True
+    else:
+        raise False
+    
+
 #--------------------------------------------------Insert Data Function For File-------------------------
     
 # Processing data from file to StudentPOS table
@@ -251,7 +262,7 @@ def insert_faculty_from_file(data : dict, db: Session):
     # Modeling the field with the data from file
     faculty = models.Faculty(**data)  
     db.add(faculty)
-    db.commit()
+    db.commit() 
 #------------------------------------------------------------------------------------------------------------
 
 #----------------------------------------------------------Helper function for validation--------------------------------------------
