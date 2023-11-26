@@ -8,11 +8,11 @@ if os.environ.get("ENVIRONMENT") != "production":
     from dotenv import load_dotenv
     load_dotenv()
 
-host = os.environ.get("DB_HOST", "localhost")
-user = os.environ.get("DB_USER", "root")
-password = os.environ.get("DB_PASSWORD", "Danny2498")
-database = os.environ.get("DB_NAME", "vtgrads_db")
-port = os.environ.get("DB_PORT", "3306")
+host = os.environ.get("DB_HOST")
+user = os.environ.get("DB_USER")
+password = os.environ.get("DB_PASSWORD")
+database = os.environ.get("DB_NAME")
+port = os.environ.get("DB_PORT")
 
 URL_DATABASE = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
 
