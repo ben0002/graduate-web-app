@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, Request, Response, Cookie
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from cas import CASClient
 
 from sqlalchemy.orm import Session
@@ -26,7 +26,7 @@ def read_root():
     return {"message": "Hello, World!"}
 
 
-SERVICE_URL = "https://bktp-gradpro.discovery.cs.vt.edu/"
+SERVICE_URL = "https://bktp-gradpro-api.discovery.cs.vt.edu/"
 
 # Creating the CAS CLIENT
 cas_client = CASClient(
@@ -39,23 +39,30 @@ cas_client = CASClient(
 
 # Routes related to CAS
 @app.get("/api/login")
-def login(request: Request):
+def login(request: Request, response: Response):
     
     username = request.cookies.get("username")
     if username: # return user info
-        return {"message": "Logged in!"}
-
+        # Ensure the response has the JSON content-type
+        return JSONResponse(content={"message": "Logged in!"}, media_type="application/json")
+    
     cas_ticket = request.query_params.get("ticket")
     if not cas_ticket:
         cas_login_url = cas_client.get_login_url()
-        return {"redirect_url": cas_login_url}
-
+        return JSONResponse(content={"redirect_url": cas_login_url}, media_type="application/json")
+    
     (user, _, _) = cas_client.verify_ticket(cas_ticket)
     if not user:
         raise HTTPException(status_code=403, detail="Failed to verify ticket!")
 
-    response = RedirectResponse(SERVICE_URL)
-    response.set_cookie(key="username", value=user)
+    # Redirect to the web app
+    web_app_url = "https://bktp-gradpro.discovery.cs.vt.edu/"
+    response = JSONResponse(content={"redirect_url": web_app_url}, media_type="application/json")
+
+    # Set cookie with the domain attribute for the parent domain
+    # and ensure it is set for cross-origin requests (SameSite=None; Secure)
+    response.set_cookie(key="username", value=user, domain=".discovery.cs.vt.edu", 
+                        samesite="None", secure=True, httponly=True)
     return response
 
 @app.get("/api/logout")
