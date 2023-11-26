@@ -382,6 +382,7 @@ class Faculty(Base):
     middle_name: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     last_name: Mapped[Optional[str]] = mapped_column(String(40))
     dept_code: Mapped[Integer] = mapped_column(Integer, ForeignKey("department.dept_code"))
+    email: Mapped[str] = mapped_column(String(70))
     faculty_type: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     privilege_level: Mapped[int] = mapped_column(Integer)
     
