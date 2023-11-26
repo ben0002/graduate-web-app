@@ -1,10 +1,15 @@
 from fastapi import FastAPI, Depends, HTTPException, Request, Response, Cookie, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
+from fastapi.security import OAuth2PasswordBearer
 from pydantic import ValidationError
+
+from datetime import timedelta, datetime
 
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+
+from jose import JWTError, jwt
 
 from cas import CASClient
 
@@ -15,6 +20,8 @@ import crud, schemas, models
 from database import SessionLocal, engine
 
 import csv
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 #models.Base.metadata.drop_all(engine)
 #models.Base.metadata.create_all(engine)
@@ -49,7 +56,7 @@ def read_root():
 SERVICE_URL = "https://bktp-gradpro.discovery.cs.vt.edu/"
 SECRET_KEY = "03588c9b6f5508ff6ab7175ba9b38a4d1366581fdc6468e8323015db7d68dac0" # key used to sign JWT token
 ALGORITHM = "HS256" # algorithm used to sign JWT Token
-ACCESS_TOKEN_EXPIRE = 120
+ACCESS_TOKEN_EXPIRE_MINUTES = 120
 
 # Creating the CAS CLIENT
 cas_client = CASClient(
@@ -61,12 +68,21 @@ cas_client = CASClient(
 )
 
 # Routes related to CAS
-@app.get("/api/login")
+@app.get("/login")
 def login(request: Request):
 
     username = request.cookies.get("username")
     if username: # return user info
-        return {"message": "Logged in!"}
+        
+        cas_ticket = request.query_params.get("ticket")
+        access_token = role_based(username, cas_ticket)
+        if access_token:
+            return schemas.Token(
+                access_token=access_token, 
+                token_type="bearer")
+        else:
+            raise HTTPException(status=404, detail="Student or Faculty does not exist in the system.")
+
 
     cas_ticket = request.query_params.get("ticket")
     if not cas_ticket:
@@ -76,18 +92,62 @@ def login(request: Request):
     (user, _, _) = cas_client.verify_ticket(cas_ticket)
     if not user:
         raise HTTPException(status_code=403, detail="Failed to verify ticket!")
+    
+    
 
     response = RedirectResponse(SERVICE_URL)
     response.set_cookie(key="username", value=user)
     return response
 
-@app.get("/api/logout")
+@app.get("/logout")
 def logout(response: Response):
     cas_logout_url = cas_client.get_logout_url(SERVICE_URL)
     response.delete_cookie("username")
     return {"redirect_url": cas_logout_url}
 
 #------------------- non-cas --------------------#
+
+#------------------- JWT -----------------------#
+
+def role_based(pid: str, cas_ticket):
+    
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    email = f"{pid}@vt.edu"
+    faculty = crud.get_faculty(Depends(get_db()), filters={"email":email},
+                        skip=0, limit=1)
+    if(len(faculty) != 0):
+        data = {
+            "sub": email,
+            "faculty": True,
+            "privilege": faculty[0].privilege_level,
+            "id": faculty[0].id,
+            "cas_ticket": cas_ticket
+        }
+        return create_access_token(data=data, expires_delta=access_token_expires)
+    
+    student = crud.get_students(Depends(get_db()), filters={"email":email}, skip=0, limit=0)
+    if(len(student) != 0):
+        data = {
+            "sub": email,
+            "faculty": False,
+            "id": student[0].id,
+            "cas_ticket": cas_ticket
+        }
+        return create_access_token(data=data, expires_delta=access_token_expires)
+    
+    return None
+
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+    
 
 #------------------- helper functions -----------#
 def pagination(skip: int, limit: int, response: list):
