@@ -7,3 +7,4 @@ python-dotenv==1.0.0
 python-cas==1.6.0
 email-validator==2.1.0.post1
 uvicorn==0.24.0
+jose==1.0.0

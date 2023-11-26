@@ -9,7 +9,7 @@ from datetime import timedelta, datetime
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from jose import JWTError, jwt
+#from jose import JWTError, jwt
 
 from cas import CASClient
 
@@ -24,7 +24,7 @@ import csv
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 #models.Base.metadata.drop_all(engine)
-#models.Base.metadata.create_all(engine)
+models.Base.metadata.create_all(engine)
 
 # Dependency
 def get_db():
@@ -108,7 +108,7 @@ def logout(response: Response):
 #------------------- non-cas --------------------#
 
 #------------------- JWT -----------------------#
-
+"""
 def role_based(pid: str, cas_ticket):
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -148,7 +148,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
     
-
+"""
 #------------------- helper functions -----------#
 def pagination(skip: int, limit: int, response: list):
     total_responses = len(response)
@@ -335,6 +335,126 @@ def student_pos(student_id: int, skip: int | None = 0, limit: int | None = 100,
         raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
     return pagination(skip=skip, limit=limit, response=student[0].pos)
 
+@app.post("/students", status_code=201)
+async def create_students(students: list[schemas.StudentIn], db:Session = Depends(get_db)):
+    try:
+        for student in students:
+            db_studnet = models.Student(**student.dict())
+            db.add(db_studnet)
+    except IntegrityError as constraint_violation:
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+    db.commit()
+    
+    
+@app.delete("/students/{student_id}", status_code=204)
+async def delete_student(student_id : int, db:Session = Depends(get_db)):
+    filter = {"id" : student_id}
+    student = crud.delete_data(db=db, filter=filter, model=models.Student)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
+    
+"""  
+@app.delete("/students/{student_id}/employments", status_code=204)
+async def delete_employment(student_id : int, db:Session = Depends(get_db), job_name: str | None = None):
+    filter = {"student_id" : student_id,
+              "job_title" : job_name
+              }
+    student = crud.delete_data(db=db, filter=filter, model=models.Employment)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Employment with the given student id: {student_id} does not exist.")
+    """
+@app.delete("/students/{student_id}/employments", status_code=204)
+async def delete_employment(student_id : int, employment_id: int,db:Session = Depends(get_db)):
+    filter = {
+        "id" : employment_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.Employment)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Employment with the given student id: {student_id} does not exist.")
+
+    
+@app.delete("/students/{student_id}/fundings", status_code=204)
+async def delete_funding(student_id : int, funding_id : int, db:Session = Depends(get_db)):
+    filter = {
+        "id" : funding_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.Funding)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Funding with the given student id: {student_id} does not exist.")
+
+@app.delete("/students/{student_id}/advisors", status_code=204)
+async def delete_advisor(student_id : int, advisor_id : int, db:Session = Depends(get_db)):
+    filter = {
+        "advisor_id" : advisor_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.StudentAdvisor)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Student Advisor with the given student id: {student_id} does not exist.")
+    
+@app.delete("/students/{student_id}/events", status_code=204)
+async def delete_event(student_id : int, event_id: int, db:Session = Depends(get_db)):
+    filter = {
+        "id" : event_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.Event)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Event with the given student id: {student_id} does not exist.")
+
+@app.delete("/students/{student_id}/labs", status_code=204)
+async def delete_lab(student_id : int, lab_id: int, db:Session = Depends(get_db)):
+    filter = {
+        "id" : lab_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.StudentLabs)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Student Lab with the given student id: {student_id} does not exist.")
+    
+@app.delete("/students/{student_id}/progress", status_code=204)
+async def delete_progress(student_id : int, progress_id: int, db:Session = Depends(get_db)):
+    filter = {
+        "id" : progress_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.Progress)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Progress with the given student id: {student_id} does not exist.")
+"""Program Enrollment
+@app.delete("/students/{student_id}/{program_id}", status_code=204)
+async def delete_programEnrollment(student_id : int, program_id: int, db:Session = Depends(get_db)):
+    filter = {
+        "id" : program_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.ProgramEnrollment)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Program with the given student id: {student_id} does not exist.")
+"""
+@app.delete("/students/{student_id}/courses", status_code=204)
+async def delete_course(student_id : int, course_id: int, db:Session = Depends(get_db)):
+    filter = {
+        "id" : course_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.CourseEnrollment)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Course with the given student id: {student_id} does not exist.")
+"""Student POS
+@app.delete("/students/{student_id}/{pos_id}", status_code=204)
+async def delete_pos(student_id : int, pos_id: int, db:Session = Depends(get_db)):
+    filter = {
+        "id" : pos_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.StudentPOS)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Stuent POS with the given student id: {student_id} does not exist.")
+"""
+    
 #---------------------------------------- end of /students endpoints --------------------------------------------#
     
 @app.get("/faculty", response_model=list[schemas.FacultyOut])
@@ -596,26 +716,6 @@ async def studentPOS(studentPOS_id: int, db: Session = Depends(get_db)):
     if(len(studentPOS) == 0):
         raise HTTPException(status_code=404, detail=f"StudentPOS with the given id: {studentPOS_id} does not exist.")
     return studentPOS[0]
-
-@app.post("/students", status_code=201)
-async def create_students(students: list[schemas.StudentIn], db:Session = Depends(get_db)):
-    try:
-        for student in students:
-            db_studnet = models.Student(**student.dict())
-            db.add(db_studnet)
-    except IntegrityError as constraint_violation:
-        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
-    db.commit()
-    
-@app.delete("/students/{student_id}", status_code=204)
-async def delete_student(student_id, db:Session = Depends(get_db)):
-    filter = {"id" : student_id}
-    try:
-        student = crud.delete_data(db, filter, models.Student)
-        if not student:
-            raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 #---------------------------------File Upload EndPoints----------------------------------------
 @app.post("/uploadstudentfile", response_model=list[schemas.StudentFileUpload])

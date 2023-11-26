@@ -75,6 +75,7 @@ class FacultyIn(BaseModel):
     middle_name: str | None = None
     last_name: str = Field(..., max_length=30)
     dept_code: int # could be int or str; testing purposes = it is int rn
+    email: EmailStr
     faculty_type: Optional[str] = Field(None, max_length=20)
     privilege_level: int | None = 1
     

@@ -74,7 +74,7 @@ class Student(Base):
     first_name: Mapped[str] = mapped_column(String(40))
     middle_name: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     last_name: Mapped[Optional[str]] = mapped_column(String(40))
-    citizenship: Mapped[str] = mapped_column(String(120))
+    citizenship: Mapped[str] = mapped_column(String(120), nullable=True)
     va_residency: Mapped[Residencies] = mapped_column(Enum(Residencies), nullable=True)
     type: Mapped[StudentTypes] = mapped_column(Enum(StudentTypes), nullable=True)
     status: Mapped[StudentStatus] = mapped_column(Enum(StudentStatus), nullable=True)
@@ -98,15 +98,15 @@ class Student(Base):
     
     
     campus = relationship("Campus", back_populates = "students") 
-    employment = relationship("Employment", back_populates = "student") 
-    funding = relationship("Funding", back_populates = "student") 
-    advisors = relationship("StudentAdvisor", back_populates = "student") 
-    events = relationship("Event", back_populates = "student") 
-    labs = relationship("StudentLabs", back_populates = "student") 
-    programs = relationship("ProgramEnrollment", back_populates = "student") 
-    progress_tasks = relationship("Progress", back_populates = "student") 
-    courses = relationship("CourseEnrollment", back_populates = "student") 
-    pos = relationship("StudentPOS", back_populates = "student") 
+    employment = relationship("Employment", back_populates = "student", cascade="all, delete, delete-orphan") 
+    funding = relationship("Funding", back_populates = "student", cascade="all, delete, delete-orphan") 
+    advisors = relationship("StudentAdvisor", back_populates = "student", cascade="all, delete, delete-orphan") 
+    events = relationship("Event", back_populates = "student", cascade="all, delete, delete-orphan") 
+    labs = relationship("StudentLabs", back_populates = "student", cascade="all, delete, delete-orphan") 
+    programs = relationship("ProgramEnrollment", back_populates = "student", cascade="all, delete, delete-orphan") 
+    progress_tasks = relationship("Progress", back_populates = "student", cascade="all, delete, delete-orphan") 
+    courses = relationship("CourseEnrollment", back_populates = "student", cascade="all, delete, delete-orphan") 
+    pos = relationship("StudentPOS", back_populates = "student", cascade="all, delete, delete-orphan") 
     
     def __repr__(self) -> str:
         return f"Student(id={self.id!r}, name={self.first_name!r}, lastname={self.last_name!r}, email={self.email!r})"
