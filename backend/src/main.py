@@ -1,8 +1,9 @@
 from fastapi import FastAPI, Depends, HTTPException, Request, Response, Cookie, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi import status
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.security import OAuth2PasswordBearer
-from pydantic import ValidationError
+from typing import Annotated
 
 from datetime import timedelta, datetime
 
@@ -20,8 +21,6 @@ import crud, schemas, models
 from database import SessionLocal, engine
 
 import csv
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 #models.Base.metadata.drop_all(engine)
 #models.Base.metadata.create_all(engine)
@@ -53,7 +52,7 @@ def read_root():
     return {"message": "Hello, World!"}
 
 
-SERVICE_URL = "https://bktp-gradpro.discovery.cs.vt.edu/"
+SERVICE_URL = "https://bktp-gradpro-api.discovery.cs.vt.edu/"
 SECRET_KEY = "03588c9b6f5508ff6ab7175ba9b38a4d1366581fdc6468e8323015db7d68dac0" # key used to sign JWT token
 ALGORITHM = "HS256" # algorithm used to sign JWT Token
 ACCESS_TOKEN_EXPIRE_MINUTES = 120
@@ -68,41 +67,38 @@ cas_client = CASClient(
 )
 
 # Routes related to CAS
-@app.get("/login")
-def login(request: Request):
+@app.get("/api/login")
+def login(request: Request, response: Response):
 
-    username = request.cookies.get("username")
-    if username: # return user info
-        
-        cas_ticket = request.query_params.get("ticket")
-        access_token = role_based(username, cas_ticket)
-        if access_token:
-            return schemas.Token(
-                access_token=access_token, 
-                token_type="bearer")
-        else:
-            raise HTTPException(status=404, detail="Student or Faculty does not exist in the system.")
-
+    jwt = request.cookies.get("access_token")
+    if jwt: # return user info
+        verify_jwt(jwt)
+        return JSONResponse(content={"message": "Logged in!"}, media_type="application/json")
 
     cas_ticket = request.query_params.get("ticket")
     if not cas_ticket:
         cas_login_url = cas_client.get_login_url()
-        return {"redirect_url": cas_login_url}
+        return JSONResponse(content={"redirect_url": cas_login_url}, media_type="application/json")
 
     (user, _, _) = cas_client.verify_ticket(cas_ticket)
     if not user:
         raise HTTPException(status_code=403, detail="Failed to verify ticket!")
     
+    access_token = role_based(user, cas_ticket)
+    if not access_token:
+        raise HTTPException(status=404, detail="Student or Faculty does not exist in the system.")
     
-
-    response = RedirectResponse(SERVICE_URL)
-    response.set_cookie(key="username", value=user)
+    web_app_url = "https://bktp-gradpro.discovery.cs.vt.edu/"
+    response = JSONResponse(content={"redirect_url": web_app_url}, media_type="application/json")
+    response.set_cookie(key="access_token", value=access_token, httponly=True, domain="discovery.cs.vt.edu",
+                        samesite="None", secure=True)
+    
     return response
 
-@app.get("/logout")
+@app.get("/api/logout")
 def logout(response: Response):
     cas_logout_url = cas_client.get_logout_url(SERVICE_URL)
-    response.delete_cookie("username")
+    response.delete_cookie("access_token")
     return {"redirect_url": cas_logout_url}
 
 #------------------- non-cas --------------------#
@@ -147,6 +143,17 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+def verify_jwt(token: Annotated[str | None, Cookie()] = None):
+    try:
+        payload = token.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     
 
 #------------------- helper functions -----------#
@@ -163,7 +170,7 @@ def pagination(skip: int, limit: int, response: list):
     return response
 
 #-------------------------------------- start of /students endpoints -------------------------------#
-@app.get("/students", response_model=list[schemas.StudentOut])
+@app.get("/api/students", response_model=list[schemas.StudentOut])
 def students(
     skip: int = 0, limit: int = 100, db: Session = Depends(get_db), 
     admit_type: AdmitType | None = None, residency: Residencies | None = None, 
@@ -186,7 +193,7 @@ def students(
     return students
 
 # add filters once all basic func. is done
-@app.get("/students/{student_id}", response_model=schemas.StudentOut)
+@app.get("/api/students/{student_id}", response_model=schemas.StudentOut)
 async def students_id(student_id: int, db: Session = Depends(get_db)):
     filter = {
         "id": student_id
@@ -197,7 +204,7 @@ async def students_id(student_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
     return student[0]
 
-@app.get("/students/{student_id}/employments", response_model=list[schemas.EmploymentOut])
+@app.get("/api/students/{student_id}/employments", response_model=list[schemas.EmploymentOut])
 def student_employments(student_id: int, skip: int | None = 0, limit: int | None = 100, 
                         db: Session = Depends(get_db)):
     
@@ -208,7 +215,7 @@ def student_employments(student_id: int, skip: int | None = 0, limit: int | None
     
     return pagination(skip=skip, limit=limit, response=student[0].employment)
 
-@app.get("/students/{student_id}/funding", response_model=list[schemas.FundingOut])
+@app.get("/api/students/{student_id}/funding", response_model=list[schemas.FundingOut])
 def student_funding(student_id: int, skip: int | None = 0, limit: int | None = 100, 
                         db: Session = Depends(get_db)):
     
@@ -219,7 +226,7 @@ def student_funding(student_id: int, skip: int | None = 0, limit: int | None = 1
     
     return pagination(skip=skip, limit=limit, response=student[0].funding)
 
-@app.get("/students/{student_id}/advisors", response_model=list[schemas.StudentAdvisorOut])
+@app.get("/api/students/{student_id}/advisors", response_model=list[schemas.StudentAdvisorOut])
 def student_advisors(student_id: int, skip: int | None = 0, limit: int | None = 100, 
                         db: Session = Depends(get_db)):
     
@@ -246,7 +253,7 @@ def student_advisors(student_id: int, skip: int | None = 0, limit: int | None = 
   
     
 
-@app.get("/students/{student_id}/events", response_model=list[schemas.EventOut])
+@app.get("/api/students/{student_id}/events", response_model=list[schemas.EventOut])
 def student_events(student_id: int, skip: int | None = 0, limit: int | None = 100, 
                         db: Session = Depends(get_db)):
     
@@ -266,7 +273,7 @@ def student_labs(student_id: int, skip: int | None = 0, limit: int | None = 100,
     if(len(student) == 0):
         raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
     
-    return pagination(skip=skip, limit=limit, respones=student[0].labs)
+    return pagination(skip=skip, limit=limit, response=student[0].labs)
 
 @app.get("/students/{student_id}/programs", response_model=list[schemas.ProgramEnrollmentOut])
 def student_programs(student_id: int, skip: int | None = 0, limit: int | None = 100, 
@@ -289,7 +296,7 @@ def student_programs(student_id: int, skip: int | None = 0, limit: int | None = 
         )
     return pagination(skip=skip, limit=limit, response=programs)
 
-@app.get("/students/{student_id}/progress-tasks", response_model=list[schemas.ProgressOut])
+@app.get("/api/students/{student_id}/progress-tasks", response_model=list[schemas.ProgressOut])
 def student_progress(student_id: int, skip: int | None = 0, limit: int | None = 100, 
                         db: Session = Depends(get_db)):
     
@@ -315,7 +322,7 @@ def student_progress(student_id: int, skip: int | None = 0, limit: int | None = 
         )
     return pagination(skip=skip, limit=limit, response=tasks)
 
-@app.get("/students/{student_id}/courses", response_model=list[schemas.CourseEnrollmentOut])
+@app.get("/api/students/{student_id}/courses", response_model=list[schemas.CourseEnrollmentOut])
 def student_courses(student_id: int, skip: int | None = 0, limit: int | None = 100, 
                         db: Session = Depends(get_db)):
     
