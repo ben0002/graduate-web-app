@@ -108,7 +108,7 @@ def logout(response: Response):
 #------------------- non-cas --------------------#
 
 #------------------- JWT -----------------------#
-"""
+
 def role_based(pid: str, cas_ticket):
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -148,7 +148,6 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
     
-"""
 #------------------- helper functions -----------#
 def pagination(skip: int, limit: int, response: list):
     total_responses = len(response)
