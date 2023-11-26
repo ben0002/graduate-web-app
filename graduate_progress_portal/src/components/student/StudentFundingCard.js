@@ -1,25 +1,40 @@
-import React, { useState } from 'react';
-import { Box, Button, Card, CardContent, IconButton, Input, Modal, Switch, Typography } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Button, Card, CardContent, IconButton, Input, Modal, Switch, TextField, Typography } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import EditIcon from '@mui/icons-material/Edit';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
+import { DatePicker } from '@mui/x-date-pickers';
 
-var count = 2;
-
-function FundingModal(funding, openModal, closeModal, removeFunding){
+function FundingModal(funding, openModal, closeModal, methods, newFunding){
+  const [isNew, setIsNew] = useState(false);
   const [edit, setEdit] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  if(funding == null) return(<></>)
+  useEffect(_ => {
+    setIsNew(newFunding);
+    setEdit(newFunding);
+  }, [newFunding])
 
-  return(
-    <Modal open={openModal} onClose={_ => closeModal(null)}>
+  const checkChanged = _ => {
+    return true
+  }
+
+  const checkNewFields = save => {
+    var valid = true
+    if(save && valid) setIsNew(false)
+    return valid
+  }
+
+  if(funding == null && !isNew) {return(<></>)}
+  
+    return(
+      <Modal open={openModal || isNew} onClose={_ => {closeModal(null); setEdit(false)}}>
       <Box style={{width: '50%', height: '50%', backgroundColor: 'white', margin: '12.5% 25%', padding: '1rem', position: 'relative', borderRadius: '0.5rem', boxShadow: '0px 0px 15px 0 black'}}>
         <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', borderBottom: '2px solid gray', borderRadius: '0.25rem', marginBottom: '0.5rem'}}>
-          <h1 style={{margin: '0'}}>{funding.Name}</h1>
+          {edit ? <TextField/> : <h1 style={{margin: '0'}}>{funding ? funding.Name: ''}</h1>}
           <div style={{display: 'flex'}}>
-            <IconButton onClick={_ => removeFunding(funding.id)}>
+            <IconButton onClick={_ => (isNew ? checkNewFields(false) ? setConfirmDelete(true) : closeModal() : setEdit(!edit))}>
               <EditIcon sx={{color: '#630031'}}/>
             </IconButton>
             <IconButton onClick={_ => setConfirmDelete(true)}>
@@ -28,20 +43,20 @@ function FundingModal(funding, openModal, closeModal, removeFunding){
           </div>
         </div>
         <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: '.75rem'}}>
-          <div style={{display: 'flex', flexDirection: 'column', alignItems: 'start', justifyContent: 'space-between', paddingRight: '.75rem'}}>
-            <p style={{margin: '0'}}><b>Total:</b>  $$$$$</p>
-            <p style={{margin: '0'}}><b>Recurring:</b> No/Period</p>
+          <div style={{display: 'flex', flexDirection: 'column', alignItems: `${edit ? 'end' : 'start'}`, justifyContent: 'space-between', paddingRight: '.75rem'}}>
+            <p style={{margin: '0', display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>Total:</b> {edit ? <TextField/> : '$$$$$'}</p>
+            <p style={{margin: '0', display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>Recurring:</b> {edit ? <TextField/> : 'No/Period'}</p>
           </div>
-          <div style={{display: 'flex', flexDirection: 'column', alignItems: 'start', justifyContent: 'space-between', paddingRight: '.75rem'}}>
-            <Typography> <b>Start Date:</b> mm/dd/yyyy</Typography>
-            <Typography> <b>End Date:</b> mm/dd/yyyy</Typography>
+          <div style={{display: 'flex', flexDirection: 'column', alignItems: 'end', justifyContent: 'space-between', paddingRight: '.75rem'}}>
+            <Typography style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>Start Date:</b> {edit ? <DatePicker/> : 'mm/dd/yyyy'}</Typography>
+            <Typography style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>End Date:</b> {edit ? <DatePicker/> : 'mm/dd/yyyy'}</Typography>
           </div>
           <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
-            <Switch/>
+            <Switch disabled={!edit}/>
             <Typography> Approved </Typography>
           </div>
           <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
-            <Switch/>
+            <Switch disabled={!edit}/>
             <Typography> Gauranteed </Typography>
           </div>
         </div>
@@ -51,9 +66,13 @@ function FundingModal(funding, openModal, closeModal, removeFunding){
           <Typography>Placeholder text</Typography>
         </div>
         <h3 style={{margin: '0.25rem 0'}}>Notes:</h3>
-        <div style={{borderTop: '1px solid lightgray', borderBottom: '1px solid lightgray', borderRadius: '0.5rem', height: '7rem'}}>
-          <Typography>Placeholder text</Typography>
-        </div>
+        {edit ? 
+          <textarea style={{resize: 'none', height: '7rem', width: 'calc(100% - 0.5rem)'}}/>
+          :
+          <div style={{borderTop: '1px solid lightgray', borderBottom: '1px solid lightgray', borderRadius: '0.5rem', height: '7rem'}}>
+            <Typography>Placeholder text</Typography>
+          </div>
+        }
         <div style={{position: 'absolute', left: '1rem', bottom: '1rem'}}>
           <div style={{display: 'flex', alignItems: 'center'}}>
             <h3 style={{display: 'inline-block', margin: '0.5rem 0'}}> Files: </h3>
@@ -65,10 +84,11 @@ function FundingModal(funding, openModal, closeModal, removeFunding){
             <h3 style={{margin: '0'}}>File1.pdf</h3>
           </div>
         </div>
+        {edit ? <Button style={{position: 'absolute', right: '1rem', bottom: '1rem'}} variant='outlined' onClick={_ => (isNew ? checkNewFields(true) : setEdit(false))} disabled={checkChanged()}>Save</Button> : <></>}
         <Modal open={confirmDelete} onClose={_ => setConfirmDelete(false)}>
           <Box style={{width: '13.5%', backgroundColor: 'white', margin: '12.5% auto', padding: '1rem', display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between'}}>
             <h2 style={{marginTop: '0'}}>Are you sure you want to delete this event?</h2>
-            <Button variant='outlined' style={{marginRight: '1rem'}} onClick={_ => {removeFunding(funding.id); setConfirmDelete(false); closeModal(null)}}>Confrim</Button>
+            <Button variant='outlined' style={{marginRight: '1rem'}} onClick={_ => {if(!isNew){methods.removeFunding(funding.id)} setConfirmDelete(false); closeModal(null); setEdit(false)}}>Confrim</Button>
             <Button variant='outlined' onClick={_ => setConfirmDelete(false)}>Keep Event</Button>
           </Box>
         </Modal>
@@ -80,11 +100,17 @@ function FundingModal(funding, openModal, closeModal, removeFunding){
 export default function StudentFundingCard() {
 
   const [fundings, setFundings] = useState([{Name: "First", id: 1}]);
+  const [makeNew, setMakeNew] = useState(false);
   const [modal, setModal] = useState(null);
 
-  var addFunding = _ => {
-    setFundings(fundings.concat({Name: `${count}`, id: count}))
-    count += 1;
+  var closeModal = _ => {
+    setModal(null)
+    setMakeNew(false)
+  }
+  
+  var addFunding = newFunding => {
+    setFundings(fundings.concat(newFunding))
+    setMakeNew(false)
   }
 
   var removeFunding = id => {
@@ -93,7 +119,7 @@ export default function StudentFundingCard() {
 
   var makeFundingCards = _ => {
     return fundings.map( funding => { return(
-      <div style={{ marginX: 'auto', width: '90%', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderBottom: '1px solid lightgray'}} onClick={_ => setModal(funding)}>
+      <div style={{ marginX: 'auto', width: '90%', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderBottom: '1px solid lightgray'}} onClick={_ => {setModal(funding); setMakeNew(false)}}>
         <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
           <h2 style={{margin: '0'}}>{funding.Name}</h2>
           <p style={{margin: '0'}}>$$$$$</p>
@@ -112,7 +138,7 @@ export default function StudentFundingCard() {
       <CardContent>
         <Typography variant="h6" component="div" sx={{display: 'flex', justifyContent: 'space-between'}}>
           <strong>Student Funding</strong>
-          <IconButton onClick={ _ => addFunding()}>
+          <IconButton onClick={ _ => setMakeNew(true)}>
             <AddCircleOutlineIcon sx={{color: '#630031'}}/>
           </IconButton>
         </Typography>
@@ -123,7 +149,7 @@ export default function StudentFundingCard() {
         </div>
       </CardContent>
     </Card>
-    {FundingModal(modal, modal !== null, setModal, removeFunding)}
+    {FundingModal(modal, modal !== null, closeModal, {removeFunding, addFunding}, makeNew)}
     </>
   );
 };

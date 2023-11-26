@@ -3,8 +3,8 @@ import { AppBar, Toolbar, Box, Badge, Avatar } from '@mui/material';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import { UserAvatar, UserRole } from './MUIComponents';
 import DropDownMenu from './DropDownMenu';
-import { studentData } from '../../student/SampleStudentData.jsx';
-import logoSrc from '../../assets/images/VTLogo.png';
+import { studentData } from '../assets/data/SampleStudentData.jsx';
+import logoSrc from '../assets/images/VTLogo.png';
 
 const Header = () => {
   const [anchorEl, setAnchorEl] = useState(null);

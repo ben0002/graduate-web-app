@@ -1,26 +1,41 @@
-import React, { useState } from 'react';
-import { Box, Button, Card, CardContent, IconButton, Input, Modal, Switch, Typography } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Button, Card, CardContent, IconButton, Input, Modal, Switch, TextField, Typography } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import EditIcon from '@mui/icons-material/Edit';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
+import { DatePicker } from '@mui/x-date-pickers';
 
-var count = 2;
+function MilestoneModal(milestone, openModal, closeModal, methods, newMilestone){
+  const [isNew, setIsNew] = useState(false);
+  const [edit, setEdit] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
-function MilestoneModal(milestone, openModal, closeModal, removeMilestone){
-    const [edit, setEdit] = useState(false);
-    const [confirmDelete, setConfirmDelete] = useState(false);
-  
-    if(milestone == null) return(<></>)
+  useEffect(_ => {
+    setIsNew(newMilestone);
+    setEdit(newMilestone);
+  }, [newMilestone])
+
+  const checkChanged = _ => {
+    return true
+  }
+
+  const checkNewFields = save => {
+    var valid = true
+    if(save && valid) setIsNew(false)
+    return valid
+  }
+
+  if(milestone == null && !isNew) { console.log(newMilestone); return(<></>)}
   
     return(
-      <Modal open={openModal} onClose={_ => closeModal(null)}>
+      <Modal open={openModal || isNew} onClose={_ => {closeModal(null); setEdit(false)}}>
         <Box style={{width: '50%', height: '50%', backgroundColor: 'white', margin: '12.5% 25%', padding: '1rem', position: 'relative', borderRadius: '0.5rem', boxShadow: '0px 0px 15px 0 black'}}>
           <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', borderBottom: '2px solid gray', borderRadius: '0.25rem', marginBottom: '0.5rem'}}>
-            <h1 style={{margin: '0'}}>{milestone.Name}</h1>
+            {edit ? <TextField/> : <h1 style={{margin: '0'}}>{milestone ? milestone.Name : ''}</h1>}
             <div style={{display: 'flex'}}>
-              <IconButton onClick={_ => removeMilestone(milestone.id)}>
+              <IconButton onClick={_ => (isNew ? checkNewFields(false) ? setConfirmDelete(true) : closeModal() : setEdit(!edit))}>
                 <EditIcon sx={{color: '#630031'}}/>
               </IconButton>
               <IconButton onClick={_ => setConfirmDelete(true)}>
@@ -29,21 +44,21 @@ function MilestoneModal(milestone, openModal, closeModal, removeMilestone){
             </div>
           </div>
           <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: '.75rem'}}>
-            <Typography> <b>Ideal Completion:</b> mm/dd/yyyy</Typography>
-            <Typography> <b>Deadline:</b> mm/dd/yyyy</Typography>
-            <Typography> <b>Completed on:</b> mm/dd/yyyy</Typography>
+            <Typography style={{display: 'flex', flexDirection: `${edit ? 'column' : 'row'}`, justifyContent: 'left'}}> <b style={{marginRight: '0.25rem'}}>Ideal Completion:</b> {edit ? <DatePicker/> : 'mm/dd/yyyy'}</Typography>
+            <Typography style={{display: 'flex', flexDirection: `${edit ? 'column' : 'row'}`, justifyContent: 'center'}}> <b style={{marginRight: '0.25rem'}}>Deadline:</b> {edit ? <DatePicker/> : 'mm/dd/yyyy'}</Typography>
+            <Typography style={{display: 'flex', flexDirection: `${edit ? 'column' : 'row'}`, justifyContent: 'right'}}> <b style={{marginRight: '0.25rem'}}>Completed on:</b> {edit ? <DatePicker/> : 'mm/dd/yyyy'}</Typography>
           </div>
           <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: '.75rem'}}>
             <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
-              <Switch/>
+              <Switch disabled={!edit}/>
               <Typography> Approved </Typography>
             </div>
             <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
-              <Switch/>
+              <Switch disabled={!edit}/>
               <Typography> Exempt </Typography>
             </div>
             <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
-              <Switch/>
+              <Switch disabled={!edit}/>
               <Typography> Completed </Typography>
             </div>
           </div>
@@ -53,9 +68,13 @@ function MilestoneModal(milestone, openModal, closeModal, removeMilestone){
             <Typography>Placeholder text</Typography>
           </div>
           <h3 style={{margin: '0.25rem 0'}}>Notes:</h3>
-          <div style={{borderTop: '1px solid lightgray', borderBottom: '1px solid lightgray', borderRadius: '0.5rem', height: '7rem'}}>
-            <Typography>Placeholder text</Typography>
-          </div>
+          {edit ? 
+            <textarea style={{resize: 'none', height: '7rem', width: 'calc(100% - 0.5rem)'}}/>
+            :
+            <div style={{borderTop: '1px solid lightgray', borderBottom: '1px solid lightgray', borderRadius: '0.5rem', height: '7rem'}}>
+              <Typography>Placeholder text</Typography>
+            </div>
+          }
           <div style={{position: 'absolute', left: '1rem', bottom: '1rem'}}>
             <div style={{display: 'flex', alignItems: 'center'}}>
               <h3 style={{display: 'inline-block', margin: '0.5rem 0'}}> Files: </h3>
@@ -67,10 +86,11 @@ function MilestoneModal(milestone, openModal, closeModal, removeMilestone){
               <h3 style={{margin: '0'}}>File1.pdf</h3>
             </div>
           </div>
+          {edit ? <Button style={{position: 'absolute', right: '1rem', bottom: '1rem'}} variant='outlined' onClick={_ => (isNew ? checkNewFields(true) : setEdit(false))} disabled={checkChanged()}>Save</Button> : <></>}
           <Modal open={confirmDelete} onClose={_ => setConfirmDelete(false)}>
             <Box style={{width: '13.5%', backgroundColor: 'white', margin: '12.5% auto', padding: '1rem', display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between'}}>
               <h2 style={{marginTop: '0'}}>Are you sure you want to delete this event?</h2>
-              <Button variant='outlined' style={{marginRight: '1rem'}} onClick={_ => {removeMilestone(milestone.id); setConfirmDelete(false); closeModal(null)}}>Confrim</Button>
+              <Button variant='outlined' style={{marginRight: '1rem'}} onClick={_ => {if(!isNew){methods.removeMilestone(milestone.id)} setConfirmDelete(false); closeModal(null); setEdit(false)}}>Confrim</Button>
               <Button variant='outlined' onClick={_ => setConfirmDelete(false)}>Keep Event</Button>
             </Box>
           </Modal>
@@ -82,11 +102,17 @@ function MilestoneModal(milestone, openModal, closeModal, removeMilestone){
 export default function  StudentMilestoneCard() {
 
     const [milestones, setMilestones] = useState([{Name: "First", id: 1}]);
+    const [makeNew, setMakeNew] = useState(false);
     const [modal, setModal] = useState(null);
 
-    var addMilestone = _ => {
-        setMilestones(milestones.concat({Name: `${count}`, id: count}))
-        count += 1;
+    var closeModal = _ => {
+      setModal(null)
+      setMakeNew(false)
+    }
+  
+    var addMilestone = newMile => {
+      setMilestones(milestones.concat(newMile))
+      setMakeNew(false)
     }
 
     var removeMilestone = id => {
@@ -95,7 +121,7 @@ export default function  StudentMilestoneCard() {
 
     var makeMilestoneCards = _ => {
         return milestones.map( milestone => { return(
-            <div style={{ marginX: 'auto', width: '90%', position: 'relative', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid lightgray'}} onClick={_ => setModal(milestone)}>
+            <div style={{ marginX: 'auto', width: '90%', position: 'relative', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid lightgray'}} onClick={_ => {setModal(milestone); setMakeNew(false)}}>
                 <h2 style={{margin: '0'}}>{milestone.Name}</h2>
                 <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0.25rem 0'}}>
                     <RadioButtonUncheckedIcon/>
@@ -112,7 +138,7 @@ export default function  StudentMilestoneCard() {
             <CardContent>
                 <Typography variant="h6" component="div" sx={{display: 'flex', justifyContent: 'space-between'}}>
                     <strong>Milestones</strong>
-                    <IconButton onClick={ _ => addMilestone()}>
+                    <IconButton onClick={ _ => setMakeNew(true)}>
                         <AddCircleOutlineIcon sx={{color: '#630031'}}/>
                     </IconButton>
                 </Typography>
@@ -123,7 +149,7 @@ export default function  StudentMilestoneCard() {
                 </div>
             </CardContent>
         </Card>
-        {MilestoneModal(modal, modal !== null, setModal, removeMilestone)}
+        {MilestoneModal(modal, modal !== null, closeModal, {removeMilestone, addMilestone}, makeNew)}
         </>
     );
 }

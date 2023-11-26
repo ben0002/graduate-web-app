@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 
 import MainLayout from './layouts/mainLayout';
 import Login from './pages/login.js';
@@ -12,20 +14,22 @@ import { studentData } from './assets/data/SampleStudentData.jsx';
 
 function App() { 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<MainLayout/>}>
-          <Route index element={<Login/>}/>
-          <Route path="advisor" element={<AdvisorView/>}/>
-          <Route path="student" element={<StudentLayout/>}>
-            <Route path="progress" element={<StudentProgress/>} /> 
-            <Route path="profile" element={<StudentProfile/>}/>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<MainLayout/>}>
+            <Route index element={<Login/>}/>
+            <Route path="advisor" element={<AdvisorView/>}/>
+            <Route path="student" element={<StudentLayout/>}>
+              <Route path="progress" element={<StudentProgress/>} /> 
+              <Route path="profile" element={<StudentProfile/>}/>
+              <Route path="*" element={<NotFound/>}/>
+            </Route>
             <Route path="*" element={<NotFound/>}/>
           </Route>
-          <Route path="*" element={<NotFound/>}/>
-        </Route>
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+      </BrowserRouter>
+    </LocalizationProvider>
   );
 }
 
