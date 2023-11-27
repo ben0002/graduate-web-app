@@ -1,7 +1,9 @@
 import {useEffect} from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
-    
+    const navigate = useNavigate();
+
     useEffect(_ => {
         async function getCurrentUser() {
             await fetch("https://bktp-gradpro-api.discovery.cs.vt.edu/api/login", {
@@ -10,16 +12,16 @@ export default function Login() {
                     'Accept': 'application/json', // Explicitly tell the server that you want JSON
                 }
             })
-              .then((res) => res.json())
-              .then(data => {
+            .then(res => res.json())
+            .then(data => {
                 if(data.redirect_url) window.location.href = data.redirect_url
                 else{
                     console.log(data);
+                    navigate('/student/progress')
                 }
-              })
-              .catch((err) => {console.log(1); console.log(err)})
-                
-          }
+            })
+            .catch((err) => console.error('Error:', err.message))    
+        }
         getCurrentUser();      
     }, []);
 
