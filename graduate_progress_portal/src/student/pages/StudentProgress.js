@@ -14,7 +14,7 @@ const StudentProgress = () => {
     <Box sx={{ width: '65%', mx: 'auto', mt: 4 }}>
       <Grid container spacing={2}>
         <Grid item xs={12}>
-          <StudentCardInfo student={studentData} />
+          <StudentCardInfo student_id={1} />
         </Grid>
         <Grid item xs={12}>
           <ToDoList student={studentData.tasks} />

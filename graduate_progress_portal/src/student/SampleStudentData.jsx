@@ -1,5 +1,5 @@
 export const studentData = {
-    name: 'John Doe',
+    name: 'Sample Name',
     pronoun: "He/Him",
     image: 'https://example.com/path-to-image.jpg',
     advisor: 'Hannah Parks',

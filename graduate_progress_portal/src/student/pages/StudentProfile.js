@@ -14,9 +14,9 @@ const StudentProfile = () => {
             <Grid container justifyContent="center" alignItems="flex-start" spacing={2}>
                 <Grid item xs={12}>
                     <Card>
-                        <StudentCardInfo student={studentData} />
+                        <StudentCardInfo student_id={1} />
                         <Divider variant="middle" />
-                        <StudentPersonalCardInfo student={studentData} />
+                        <StudentPersonalCardInfo student_id={1} />
                     </Card>
                 </Grid>
             </Grid>
@@ -26,7 +26,7 @@ const StudentProfile = () => {
                 </Grid>
                 <Grid item xs={12} md={5} lg={5}>
                     <Card>
-                        <Box sx={{maxHeight: '19rem', overflowY: 'auto'}}>
+                        <Box sx={{ maxHeight: '19rem', overflowY: 'auto' }}>
                             <StudentAdvisorCommitteeCard />
                         </Box>
                     </Card>

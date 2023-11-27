@@ -13,9 +13,6 @@ from sqlalchemy import Enum
 from database import engine
 from enums import *
 
-from enums import *
-
-
 class Base(DeclarativeBase):
     """ Creates the base class that inherit DeclarativeBase which
     which allows for ORM and our database structure to be created.
@@ -74,7 +71,7 @@ class Student(Base):
     first_name: Mapped[str] = mapped_column(String(40))
     middle_name: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     last_name: Mapped[Optional[str]] = mapped_column(String(40))
-    citizenship: Mapped[str] = mapped_column(String(120))
+    citizenship: Mapped[str] = mapped_column(String(120), nullable=True)
     va_residency: Mapped[Residencies] = mapped_column(Enum(Residencies), nullable=True)
     type: Mapped[StudentTypes] = mapped_column(Enum(StudentTypes), nullable=True)
     status: Mapped[StudentStatus] = mapped_column(Enum(StudentStatus), nullable=True)
