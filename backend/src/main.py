@@ -1,10 +1,16 @@
 from fastapi import FastAPI, Depends, HTTPException, Request, Response, Cookie, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
-from pydantic import ValidationError
+from fastapi import status
+from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.security import OAuth2PasswordBearer
+from typing import Annotated
+
+from datetime import timedelta, datetime
 
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+
+from jose import JWTError, jwt
 
 from cas import CASClient
 
@@ -17,7 +23,7 @@ from database import SessionLocal, engine
 import csv
 
 #models.Base.metadata.drop_all(engine)
-#models.Base.metadata.create_all(engine)
+models.Base.metadata.create_all(engine)
 
 # Dependency
 def get_db():
@@ -46,10 +52,10 @@ def read_root():
     return {"message": "Hello, World!"}
 
 
-SERVICE_URL = "https://bktp-gradpro.discovery.cs.vt.edu/"
+SERVICE_URL = "https://bktp-gradpro-api.discovery.cs.vt.edu/"
 SECRET_KEY = "03588c9b6f5508ff6ab7175ba9b38a4d1366581fdc6468e8323015db7d68dac0" # key used to sign JWT token
 ALGORITHM = "HS256" # algorithm used to sign JWT Token
-ACCESS_TOKEN_EXPIRE = 120
+ACCESS_TOKEN_EXPIRE_MINUTES = 120
 
 # Creating the CAS CLIENT
 cas_client = CASClient(
@@ -62,33 +68,93 @@ cas_client = CASClient(
 
 # Routes related to CAS
 @app.get("/api/login")
-def login(request: Request):
+def login(request: Request, response: Response):
 
-    username = request.cookies.get("username")
-    if username: # return user info
-        return {"message": "Logged in!"}
+    jwt = request.cookies.get("access_token")
+    if jwt: # return user info
+        verify_jwt(jwt)
+        return JSONResponse(content={"message": "Logged in!"}, media_type="application/json")
 
     cas_ticket = request.query_params.get("ticket")
     if not cas_ticket:
         cas_login_url = cas_client.get_login_url()
-        return {"redirect_url": cas_login_url}
+        return JSONResponse(content={"redirect_url": cas_login_url}, media_type="application/json")
 
     (user, _, _) = cas_client.verify_ticket(cas_ticket)
     if not user:
         raise HTTPException(status_code=403, detail="Failed to verify ticket!")
-
-    response = RedirectResponse(SERVICE_URL)
-    response.set_cookie(key="username", value=user)
+    
+    access_token = role_based(user, cas_ticket)
+    if not access_token:
+        raise HTTPException(status=404, detail="Student or Faculty does not exist in the system.")
+    
+    web_app_url = "https://bktp-gradpro.discovery.cs.vt.edu/"
+    response = JSONResponse(content={"redirect_url": web_app_url}, media_type="application/json")
+    response.set_cookie(key="access_token", value=access_token, httponly=True, domain="discovery.cs.vt.edu",
+                        samesite="None", secure=True)
+    
     return response
 
 @app.get("/api/logout")
 def logout(response: Response):
     cas_logout_url = cas_client.get_logout_url(SERVICE_URL)
-    response.delete_cookie("username")
+    response.delete_cookie("access_token")
     return {"redirect_url": cas_logout_url}
 
 #------------------- non-cas --------------------#
 
+#------------------- JWT -----------------------#
+
+def role_based(pid: str, cas_ticket):
+    
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    email = f"{pid}@vt.edu"
+    faculty = crud.get_faculty(Depends(get_db()), filters={"email":email},
+                        skip=0, limit=1)
+    if(len(faculty) != 0):
+        data = {
+            "sub": email,
+            "faculty": True,
+            "privilege": faculty[0].privilege_level,
+            "id": faculty[0].id,
+            "cas_ticket": cas_ticket
+        }
+        return create_access_token(data=data, expires_delta=access_token_expires)
+    
+    student = crud.get_students(Depends(get_db()), filters={"email":email}, skip=0, limit=0)
+    if(len(student) != 0):
+        data = {
+            "sub": email,
+            "faculty": False,
+            "id": student[0].id,
+            "cas_ticket": cas_ticket
+        }
+        return create_access_token(data=data, expires_delta=access_token_expires)
+    
+    return None
+
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def verify_jwt(token: Annotated[str | None, Cookie()] = None):
+    try:
+        payload = token.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
 #------------------- helper functions -----------#
 def pagination(skip: int, limit: int, response: list):
     total_responses = len(response)
@@ -103,7 +169,7 @@ def pagination(skip: int, limit: int, response: list):
     return response
 
 #-------------------------------------- start of /students endpoints -------------------------------#
-@app.get("/students", response_model=list[schemas.StudentOut])
+@app.get("/api/students", response_model=list[schemas.StudentOut])
 def students(
     skip: int = 0, limit: int = 100, db: Session = Depends(get_db), 
     admit_type: AdmitType | None = None, residency: Residencies | None = None, 
@@ -126,7 +192,7 @@ def students(
     return students
 
 # add filters once all basic func. is done
-@app.get("/students/{student_id}", response_model=schemas.StudentOut)
+@app.get("/api/students/{student_id}", response_model=schemas.StudentOut)
 async def students_id(student_id: int, db: Session = Depends(get_db)):
     filter = {
         "id": student_id
@@ -137,7 +203,7 @@ async def students_id(student_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
     return student[0]
 
-@app.get("/students/{student_id}/employments", response_model=list[schemas.EmploymentOut])
+@app.get("/api/students/{student_id}/employments", response_model=list[schemas.EmploymentOut])
 def student_employments(student_id: int, skip: int | None = 0, limit: int | None = 100, 
                         db: Session = Depends(get_db)):
     
@@ -148,7 +214,7 @@ def student_employments(student_id: int, skip: int | None = 0, limit: int | None
     
     return pagination(skip=skip, limit=limit, response=student[0].employment)
 
-@app.get("/students/{student_id}/funding", response_model=list[schemas.FundingOut])
+@app.get("/api/students/{student_id}/funding", response_model=list[schemas.FundingOut])
 def student_funding(student_id: int, skip: int | None = 0, limit: int | None = 100, 
                         db: Session = Depends(get_db)):
     
@@ -159,7 +225,7 @@ def student_funding(student_id: int, skip: int | None = 0, limit: int | None = 1
     
     return pagination(skip=skip, limit=limit, response=student[0].funding)
 
-@app.get("/students/{student_id}/advisors", response_model=list[schemas.StudentAdvisorOut])
+@app.get("/api/students/{student_id}/advisors", response_model=list[schemas.StudentAdvisorOut])
 def student_advisors(student_id: int, skip: int | None = 0, limit: int | None = 100, 
                         db: Session = Depends(get_db)):
     
@@ -186,7 +252,7 @@ def student_advisors(student_id: int, skip: int | None = 0, limit: int | None = 
   
     
 
-@app.get("/students/{student_id}/events", response_model=list[schemas.EventOut])
+@app.get("/api/students/{student_id}/events", response_model=list[schemas.EventOut])
 def student_events(student_id: int, skip: int | None = 0, limit: int | None = 100, 
                         db: Session = Depends(get_db)):
     
@@ -206,7 +272,7 @@ def student_labs(student_id: int, skip: int | None = 0, limit: int | None = 100,
     if(len(student) == 0):
         raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
     
-    return pagination(skip=skip, limit=limit, respones=student[0].labs)
+    return pagination(skip=skip, limit=limit, response=student[0].labs)
 
 @app.get("/students/{student_id}/programs", response_model=list[schemas.ProgramEnrollmentOut])
 def student_programs(student_id: int, skip: int | None = 0, limit: int | None = 100, 
@@ -229,7 +295,7 @@ def student_programs(student_id: int, skip: int | None = 0, limit: int | None = 
         )
     return pagination(skip=skip, limit=limit, response=programs)
 
-@app.get("/students/{student_id}/progress-tasks", response_model=list[schemas.ProgressOut])
+@app.get("/api/students/{student_id}/progress-tasks", response_model=list[schemas.ProgressOut])
 def student_progress(student_id: int, skip: int | None = 0, limit: int | None = 100, 
                         db: Session = Depends(get_db)):
     
@@ -255,7 +321,7 @@ def student_progress(student_id: int, skip: int | None = 0, limit: int | None = 
         )
     return pagination(skip=skip, limit=limit, response=tasks)
 
-@app.get("/students/{student_id}/courses", response_model=list[schemas.CourseEnrollmentOut])
+@app.get("/api/students/{student_id}/courses", response_model=list[schemas.CourseEnrollmentOut])
 def student_courses(student_id: int, skip: int | None = 0, limit: int | None = 100, 
                         db: Session = Depends(get_db)):
     
@@ -275,6 +341,126 @@ def student_pos(student_id: int, skip: int | None = 0, limit: int | None = 100,
         raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
     return pagination(skip=skip, limit=limit, response=student[0].pos)
 
+@app.post("/students", status_code=201)
+async def create_students(students: list[schemas.StudentIn], db:Session = Depends(get_db)):
+    try:
+        for student in students:
+            db_studnet = models.Student(**student.dict())
+            db.add(db_studnet)
+    except IntegrityError as constraint_violation:
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+    db.commit()
+    
+    
+@app.delete("/students/{student_id}", status_code=204)
+async def delete_student(student_id : int, db:Session = Depends(get_db)):
+    filter = {"id" : student_id}
+    student = crud.delete_data(db=db, filter=filter, model=models.Student)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
+    
+"""  
+@app.delete("/students/{student_id}/employments", status_code=204)
+async def delete_employment(student_id : int, db:Session = Depends(get_db), job_name: str | None = None):
+    filter = {"student_id" : student_id,
+              "job_title" : job_name
+              }
+    student = crud.delete_data(db=db, filter=filter, model=models.Employment)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Employment with the given student id: {student_id} does not exist.")
+    """
+@app.delete("/students/{student_id}/employments", status_code=204)
+async def delete_employment(student_id : int, employment_id: int,db:Session = Depends(get_db)):
+    filter = {
+        "id" : employment_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.Employment)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Employment with the given student id: {student_id} does not exist.")
+
+    
+@app.delete("/students/{student_id}/fundings", status_code=204)
+async def delete_funding(student_id : int, funding_id : int, db:Session = Depends(get_db)):
+    filter = {
+        "id" : funding_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.Funding)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Funding with the given student id: {student_id} does not exist.")
+
+@app.delete("/students/{student_id}/advisors", status_code=204)
+async def delete_advisor(student_id : int, advisor_id : int, db:Session = Depends(get_db)):
+    filter = {
+        "advisor_id" : advisor_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.StudentAdvisor)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Student Advisor with the given student id: {student_id} does not exist.")
+    
+@app.delete("/students/{student_id}/events", status_code=204)
+async def delete_event(student_id : int, event_id: int, db:Session = Depends(get_db)):
+    filter = {
+        "id" : event_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.Event)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Event with the given student id: {student_id} does not exist.")
+
+@app.delete("/students/{student_id}/labs", status_code=204)
+async def delete_lab(student_id : int, lab_id: int, db:Session = Depends(get_db)):
+    filter = {
+        "id" : lab_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.StudentLabs)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Student Lab with the given student id: {student_id} does not exist.")
+    
+@app.delete("/students/{student_id}/progress", status_code=204)
+async def delete_progress(student_id : int, progress_id: int, db:Session = Depends(get_db)):
+    filter = {
+        "id" : progress_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.Progress)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Progress with the given student id: {student_id} does not exist.")
+"""Program Enrollment
+@app.delete("/students/{student_id}/{program_id}", status_code=204)
+async def delete_programEnrollment(student_id : int, program_id: int, db:Session = Depends(get_db)):
+    filter = {
+        "id" : program_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.ProgramEnrollment)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Program with the given student id: {student_id} does not exist.")
+"""
+@app.delete("/students/{student_id}/courses", status_code=204)
+async def delete_course(student_id : int, course_id: int, db:Session = Depends(get_db)):
+    filter = {
+        "id" : course_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.CourseEnrollment)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Course with the given student id: {student_id} does not exist.")
+"""Student POS
+@app.delete("/students/{student_id}/{pos_id}", status_code=204)
+async def delete_pos(student_id : int, pos_id: int, db:Session = Depends(get_db)):
+    filter = {
+        "id" : pos_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.StudentPOS)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Stuent POS with the given student id: {student_id} does not exist.")
+"""
+    
 #---------------------------------------- end of /students endpoints --------------------------------------------#
     
 @app.get("/faculty", response_model=list[schemas.FacultyOut])
@@ -536,7 +722,6 @@ async def studentPOS(studentPOS_id: int, db: Session = Depends(get_db)):
     if(len(studentPOS) == 0):
         raise HTTPException(status_code=404, detail=f"StudentPOS with the given id: {studentPOS_id} does not exist.")
     return studentPOS[0]
-
 
 #---------------------------------File Upload EndPoints----------------------------------------
 @app.post("/uploadstudentfile", response_model=list[schemas.StudentFileUpload])
