@@ -24,4 +24,4 @@ yarn-error.log*
 
 #database
 backend/src/database.py
-node_modules
+/.vscode
