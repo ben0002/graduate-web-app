@@ -23,7 +23,7 @@ from database import SessionLocal, engine
 import csv
 
 #models.Base.metadata.drop_all(engine)
-#models.Base.metadata.create_all(engine)
+models.Base.metadata.create_all(engine)
 
 # Dependency
 def get_db():
@@ -68,7 +68,7 @@ cas_client = CASClient(
 
 # Routes related to CAS
 @app.get("/api/login")
-def login(request: Request, response: Response):
+def login(request: Request, response: Response, db: Session = Depends(get_db)):
 
     jwt = request.cookies.get("access_token")
     if jwt: # return user info
@@ -84,13 +84,13 @@ def login(request: Request, response: Response):
     if not user:
         raise HTTPException(status_code=403, detail="Failed to verify ticket!")
     
-    access_token = role_based(user, cas_ticket)
+    access_token = role_based(pid=user, cas_ticket=cas_ticket, db=db)
     if not access_token:
-        raise HTTPException(status=404, detail="Student or Faculty does not exist in the system.")
+        raise HTTPException(status_code=404, detail="Student or Faculty does not exist in the system.")
     
     web_app_url = "https://bktp-gradpro.discovery.cs.vt.edu/"
     response = JSONResponse(content={"redirect_url": web_app_url}, media_type="application/json")
-    response.set_cookie(key="access_token", value=access_token, httponly=True, domain="discovery.cs.vt.edu",
+    response.set_cookie(key="access_token", value=access_token, httponly=True, domain=".discovery.cs.vt.edu",
                         samesite="None", secure=True)
     
     return response
@@ -105,11 +105,11 @@ def logout(response: Response):
 
 #------------------- JWT -----------------------#
 
-def role_based(pid: str, cas_ticket):
+def role_based(pid: str, cas_ticket, db: Session):
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     email = f"{pid}@vt.edu"
-    faculty = crud.get_faculty(Depends(get_db()), filters={"email":email},
+    faculty = crud.get_faculty(db=db, filters={"email":email},
                         skip=0, limit=1)
     if(len(faculty) != 0):
         data = {
@@ -121,7 +121,7 @@ def role_based(pid: str, cas_ticket):
         }
         return create_access_token(data=data, expires_delta=access_token_expires)
     
-    student = crud.get_students(Depends(get_db()), filters={"email":email}, skip=0, limit=0)
+    student = crud.get_students(db=db, filters={"email":email}, skip=0, limit=1)
     if(len(student) != 0):
         data = {
             "sub": email,
@@ -146,7 +146,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 
 def verify_jwt(token: Annotated[str | None, Cookie()] = None):
     try:
-        payload = token.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
     except JWTError as e:
         raise HTTPException(
@@ -170,7 +170,7 @@ def pagination(skip: int, limit: int, response: list):
     return response
 
 #-------------------------------------- start of /students endpoints -------------------------------#
-@app.get("/api/students", response_model=list[schemas.StudentOut])
+@app.get("/students", response_model=list[schemas.StudentOut])
 def students(
     skip: int = 0, limit: int = 100, db: Session = Depends(get_db), 
     admit_type: AdmitType | None = None, residency: Residencies | None = None, 
@@ -193,7 +193,7 @@ def students(
     return students
 
 # add filters once all basic func. is done
-@app.get("/api/students/{student_id}", response_model=schemas.StudentOut)
+@app.get("/students/{student_id}", response_model=schemas.StudentOut)
 async def students_id(student_id: int, db: Session = Depends(get_db)):
     filter = {
         "id": student_id
@@ -204,7 +204,7 @@ async def students_id(student_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
     return student[0]
 
-@app.get("/api/students/{student_id}/employments", response_model=list[schemas.EmploymentOut])
+@app.get("/students/{student_id}/employments", response_model=list[schemas.EmploymentOut])
 def student_employments(student_id: int, skip: int | None = 0, limit: int | None = 100, 
                         db: Session = Depends(get_db)):
     
@@ -215,7 +215,7 @@ def student_employments(student_id: int, skip: int | None = 0, limit: int | None
     
     return pagination(skip=skip, limit=limit, response=student[0].employment)
 
-@app.get("/api/students/{student_id}/funding", response_model=list[schemas.FundingOut])
+@app.get("/students/{student_id}/funding", response_model=list[schemas.FundingOut])
 def student_funding(student_id: int, skip: int | None = 0, limit: int | None = 100, 
                         db: Session = Depends(get_db)):
     
@@ -226,7 +226,7 @@ def student_funding(student_id: int, skip: int | None = 0, limit: int | None = 1
     
     return pagination(skip=skip, limit=limit, response=student[0].funding)
 
-@app.get("/api/students/{student_id}/advisors", response_model=list[schemas.StudentAdvisorOut])
+@app.get("/students/{student_id}/advisors", response_model=list[schemas.StudentAdvisorOut])
 def student_advisors(student_id: int, skip: int | None = 0, limit: int | None = 100, 
                         db: Session = Depends(get_db)):
     
@@ -253,7 +253,7 @@ def student_advisors(student_id: int, skip: int | None = 0, limit: int | None = 
   
     
 
-@app.get("/api/students/{student_id}/events", response_model=list[schemas.EventOut])
+@app.get("/students/{student_id}/events", response_model=list[schemas.EventOut])
 def student_events(student_id: int, skip: int | None = 0, limit: int | None = 100, 
                         db: Session = Depends(get_db)):
     
@@ -296,7 +296,7 @@ def student_programs(student_id: int, skip: int | None = 0, limit: int | None = 
         )
     return pagination(skip=skip, limit=limit, response=programs)
 
-@app.get("/api/students/{student_id}/progress-tasks", response_model=list[schemas.ProgressOut])
+@app.get("/students/{student_id}/progress-tasks", response_model=list[schemas.ProgressOut])
 def student_progress(student_id: int, skip: int | None = 0, limit: int | None = 100, 
                         db: Session = Depends(get_db)):
     
@@ -322,7 +322,7 @@ def student_progress(student_id: int, skip: int | None = 0, limit: int | None = 
         )
     return pagination(skip=skip, limit=limit, response=tasks)
 
-@app.get("/api/students/{student_id}/courses", response_model=list[schemas.CourseEnrollmentOut])
+@app.get("/students/{student_id}/courses", response_model=list[schemas.CourseEnrollmentOut])
 def student_courses(student_id: int, skip: int | None = 0, limit: int | None = 100, 
                         db: Session = Depends(get_db)):
     
