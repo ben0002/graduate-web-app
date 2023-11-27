@@ -169,7 +169,6 @@ class Major(Base):
     
     def __repr__(self) -> str:
         return f"Major(id={self.id!r}, name={self.name!r}, dept_code={self.dept_code!r}, description={self.description!r})"
-        return f"Major(id={self.id!r}, name={self.name!r}, dept_code={self.dept_code!r}, description={self.description!r})"
     
 class Department(Base):
     """Table that holds information about all departments.

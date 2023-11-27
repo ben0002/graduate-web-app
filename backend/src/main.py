@@ -10,7 +10,7 @@ from datetime import timedelta, datetime
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-#from jose import JWTError, jwt
+from jose import JWTError, jwt
 
 from cas import CASClient
 
