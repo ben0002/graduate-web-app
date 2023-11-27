@@ -1,9 +1,9 @@
 import React from 'react';
 import { Tooltip, Button, Card, CardContent, Typography, Avatar, Box, Grid } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
-import './StudentCard.css';
 
-const StudentCardInfo = ({ student }) => {
+
+export default function StudentCardInfo({ student }) {
     const defaultAvatar = '/path/to/default/avatar.jpg'; // Replace with some sort of endpoint later?
 
     const location = useLocation();
@@ -61,7 +61,8 @@ const StudentCardInfo = ({ student }) => {
                         <Box display="flex" flexDirection="column" alignItems="center">
                             <Button
                                 variant="contained"
-                                color="primary"
+                                //color="primary"
+                                sx = {{backgroundColor: "#630031"}}
                                 component={Link}
                                 to={location.pathname.includes('/student/profile') ? "/student/progress" : "/student/profile"}
                                 >
@@ -83,5 +84,3 @@ const StudentCardInfo = ({ student }) => {
         </Card>
     );
 };
-
-export default StudentCardInfo;

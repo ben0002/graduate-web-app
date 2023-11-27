@@ -1,16 +1,16 @@
 import React from 'react';
 import { Box, Grid, Card, Divider } from '@mui/material';
-import { studentData } from '../SampleStudentData';
-import StudentCardInfo from '../components/StudentCard';
-import StudentPersonalCardInfo from '../components/StudentPersonalInfoCard';
-import MessageBox from '../components/MessageBox';
-import StudentAdvisorCommitteeCard from '../components/StudentAdvisorCommitteeCard';
-import StudentLabInformationCard from '../components/StudentLabsCard.js';
-import StudentCourseHistoryCard from '../components/StudentCourseHistoryCard';
+import { studentData } from '../../assets/data/SampleStudentData.jsx';
+import StudentCardInfo from '../../components/student/StudentCard';
+import StudentPersonalCardInfo from '../../components/student/StudentPersonalInfoCard';
+import MessageBox from '../../components/student/MessageBox';
+import StudentAdvisorCommitteeCard from '../../components/student/StudentAdvisorCommitteeCard';
+import StudentLabInformationCard from '../../components/student/StudentLabsCard';
+import StudentCourseHistoryCard from '../../components/student/StudentCourseHistoryCard';
 
 const StudentProfile = () => {
     return (
-        <Box sx={{ width: '65%', mx: 'auto', my: 4 }}> {/* Adjust this width for the global container */}
+        <Box sx={{ width: '70%', paddingX: '2.5%', mx: 'auto', my: 4 , backgroundColor: '#f2f2f2', marginTop: '1rem', paddingBottom: '1rem'}}> {/* Adjust this width for the global container */}
             <Grid container justifyContent="center" alignItems="flex-start" spacing={2}>
                 <Grid item xs={12}>
                     <Card>

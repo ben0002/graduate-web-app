@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tooltip, Button, Card, CardContent, Typography, Avatar, Box, Grid } from '@mui/material';
-import './StudentPersonalInfoCard.css';
+//import './StudentPersonalInfoCard.css';
 
 const StudentPersonalCardInfo = ({ student }) => {
     return (
