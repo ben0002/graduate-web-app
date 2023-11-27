@@ -20,8 +20,8 @@ export default function StudentCourseHistoryCard() {
     }
 
     var makeCourseRows = _ => {
-        return courses.map( (course, idx) => { return(
-            <TableRow style={{backgroundColor: `${idx % 2 ? '#f5f5f5' : 'white'}`}}>
+        return courses.map( (course, idx) => { console.log(idx); return(
+            <TableRow style={{backgroundColor: `${idx % 2 === 0 ? '#f5f5f5' : 'white'}`}}>
                 <TableCell align='center'>{course.id}</TableCell>
                 <TableCell align='center'>{course.Name}</TableCell>
                 <TableCell align='center'>spring {course.id}</TableCell>

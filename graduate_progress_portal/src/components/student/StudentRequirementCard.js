@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Button, Card, CardContent, IconButton, Input, Modal, Switch, TextField, Typography } from '@mui/material';
+import { Box, Button, Card, CardContent, IconButton, Input, Modal, Switch, Tab, Tabs, TextField, Typography } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import EditIcon from '@mui/icons-material/Edit';
@@ -11,6 +11,7 @@ function RequirementModal(requirement, openModal, closeModal, methods, newRequir
   const [isNew, setIsNew] = useState(false);
   const [edit, setEdit] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [tab, setTab] = useState(0);
 
   useEffect(_ => {
     setIsNew(newRequirement);
@@ -26,6 +27,10 @@ function RequirementModal(requirement, openModal, closeModal, methods, newRequir
     if(save && valid) setIsNew(false)
     return valid
   }
+
+  const handleTabChange = (_, newTab) => {
+    setTab(newTab);
+  };
 
   if(requirement == null && !isNew) { console.log(newRequirement); return(<></>)}
   
@@ -62,19 +67,28 @@ function RequirementModal(requirement, openModal, closeModal, methods, newRequir
               <Typography> Completed </Typography>
             </div>
           </div>
-          {/* POSSIBLY CONVERT TO TABS */}
-          <h3 style={{margin: '0.25rem 0'}}>Description:</h3>
-          <div style={{borderTop: '1px solid lightgray', borderBottom: '1px solid lightgray', borderRadius: '0.5rem', height: '7rem'}}>
-            <Typography>Placeholder text</Typography>
+          <div style={{ width: '100%' }}>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+              <Tabs value={tab} onChange={handleTabChange} aria-label="basic tabs example">
+                <Tab label="Description"/>
+                <Tab label="Notes"/>
+              </Tabs>
+            </Box>
+            { tab === 0 &&
+              <div style={{borderTop: '1px solid lightgray', borderBottom: '1px solid lightgray', borderRadius: '0.5rem', height: '10rem'}}>
+                <Typography>Placeholder text</Typography>
+              </div>
+            }
+            { tab === 1 &&
+              (edit ? 
+                <textarea style={{resize: 'none', height: '10rem', width: 'calc(100% - 0.5rem)'}}/>
+                :
+                <div style={{borderTop: '1px solid lightgray', borderBottom: '1px solid lightgray', borderRadius: '0.5rem', height: '10rem'}}>
+                  <Typography>Placeholder text</Typography>
+                </div>
+              )
+            }
           </div>
-          <h3 style={{margin: '0.25rem 0'}}>Notes:</h3>
-          {edit ? 
-            <textarea style={{resize: 'none', height: '7rem', width: 'calc(100% - 0.5rem)'}}/>
-            :
-            <div style={{borderTop: '1px solid lightgray', borderBottom: '1px solid lightgray', borderRadius: '0.5rem', height: '7rem'}}>
-              <Typography>Placeholder text</Typography>
-            </div>
-          }
           <div style={{position: 'absolute', left: '1rem', bottom: '1rem'}}>
             <div style={{display: 'flex', alignItems: 'center'}}>
               <h3 style={{display: 'inline-block', margin: '0.5rem 0'}}> Files: </h3>
