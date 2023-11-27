@@ -22,6 +22,11 @@ from database import SessionLocal, engine
 
 import csv
 
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
 #models.Base.metadata.drop_all(engine)
 models.Base.metadata.create_all(engine)
 
@@ -72,8 +77,11 @@ def login(request: Request, response: Response, db: Session = Depends(get_db)):
 
     jwt = request.cookies.get("access_token")
     if jwt: # return user info
-        verify_jwt(jwt)
-        return JSONResponse(content={"message": "Logged in!"}, media_type="application/json")
+        response = getUserData(jwt, db)
+        if(response):
+            return response
+        else:
+            response.delete_cookie("access_token")
 
     cas_ticket = request.query_params.get("ticket")
     if not cas_ticket:
@@ -83,13 +91,13 @@ def login(request: Request, response: Response, db: Session = Depends(get_db)):
     (user, _, _) = cas_client.verify_ticket(cas_ticket)
     if not user:
         raise HTTPException(status_code=403, detail="Failed to verify ticket!")
-    
+
     access_token = role_based(pid=user, cas_ticket=cas_ticket, db=db)
     if not access_token:
         raise HTTPException(status_code=404, detail="Student or Faculty does not exist in the system.")
     
     web_app_url = "https://bktp-gradpro.discovery.cs.vt.edu/"
-    response = JSONResponse(content={"redirect_url": web_app_url}, media_type="application/json")
+    response = RedirectResponse(web_app_url)
     response.set_cookie(key="access_token", value=access_token, httponly=True, domain=".discovery.cs.vt.edu",
                         samesite="None", secure=True)
     
@@ -149,11 +157,7 @@ def verify_jwt(token: Annotated[str | None, Cookie()] = None):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
     except JWTError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        return None
     
 
 #------------------- helper functions -----------#
@@ -168,6 +172,35 @@ def pagination(skip: int, limit: int, response: list):
         response = response[:limit]
     
     return response
+
+def getUserData(jwt: str, db: Session):
+    token = verify_jwt(jwt)
+    if(not token):
+        return token
+    
+    student_id = token.get('id')
+
+    student = crud.get_students(db=db, filters={"id": student_id})
+    if(len(student) == 0):
+        raise HTTPException(status_code=404, detail=f"Student with valid access token does not exist.")
+    userData = student[0].as_dict()
+
+    userData.update({'advisors': []})
+    advisors = crud.get_studentAdvisor(db=db, filters={"student_id": student_id})
+    if(len(advisors) == 0):
+        raise HTTPException(status_code=404, detail=f"advisors with valid access token does not exist.")
+    for advisor in advisors:
+        advisor_dict = advisor.as_dict()
+        advisor_id = advisor_dict.get("advisor_id")
+        advisor_info = crud.get_faculty(db=db, filters={"id": advisor_id})
+        if(len(advisors) == 0):
+            "temp"
+            #raise HTTPException(status_code=404, detail=f"Student with valid access token does not exist.")
+        else:
+            advisor_info_dict = advisor_info[0].as_dict()
+            userData.get('advisors').append({'name': advisor_info_dict.get('first_name') + ' ' + advisor_info_dict.get('last_name'), 'role': advisor_dict.get('advisor_role')})
+
+    return JSONResponse(content=userData, media_type='application/json')
 
 #-------------------------------------- start of /students endpoints -------------------------------#
 @app.get("/students", response_model=list[schemas.StudentOut])
@@ -251,8 +284,6 @@ def student_advisors(student_id: int, skip: int | None = 0, limit: int | None = 
         
     return pagination(skip=skip, limit=limit, response=advisors)
   
-    
-
 @app.get("/students/{student_id}/events", response_model=list[schemas.EventOut])
 def student_events(student_id: int, skip: int | None = 0, limit: int | None = 100, 
                         db: Session = Depends(get_db)):

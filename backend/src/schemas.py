@@ -11,7 +11,7 @@ class StudentIn(BaseModel):
     first_name: str = Field(..., max_length=40)
     middle_name: Optional[str] = Field(None, max_length=40)
     last_name: str = Field(..., max_length=40)
-    citizenship: Optional[str] = Field(None, max_length=60)
+    citizenship: str = Field(..., max_length=60)
     va_residency: Residencies | None = None
     type: StudentTypes | None = None
     status: StudentStatus | None = None
@@ -74,6 +74,7 @@ class FacultyIn(BaseModel):
     first_name: str = Field(..., max_length=40)
     middle_name: str | None = None
     last_name: str = Field(..., max_length=30)
+    email: str = Field(..., max_length=70)
     dept_code: int # could be int or str; testing purposes = it is int rn
     faculty_type: Optional[str] = Field(None, max_length=20)
     privilege_level: int | None = 1

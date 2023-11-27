@@ -25,4 +25,4 @@ ENV ENVIROMENT=production \
     DB_NAME=VTGrads_db
 
 # Command to start the FastAPI app
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--log-level", "debug", "--host", "0.0.0.0", "--port", "8000"]

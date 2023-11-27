@@ -4,11 +4,9 @@ the schema """
 from typing import Optional
 from sqlalchemy import ForeignKey, UniqueConstraint, PrimaryKeyConstraint
 from sqlalchemy import Boolean, String, Integer
-from sqlalchemy import ForeignKey, UniqueConstraint, PrimaryKeyConstraint
-from sqlalchemy import Boolean, String, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm import DeclarativeBase, relationship
-from sqlalchemy.orm import DeclarativeBase, relationship
+from sqlalchemy.orm import class_mapper
 from sqlalchemy import Enum
 from database import engine
 from enums import *
@@ -22,6 +20,14 @@ class Base(DeclarativeBase):
     
     Returns: None
     """
+    __abstract__ = True
+
+    def as_dict(self):
+        # Return the dictionary representation of the model. This will only include
+        # columns that are present in the database and ignores any extra attributes
+        # that have been added to the model instance.
+        return {c.key: getattr(self, c.key)
+                for c in class_mapper(self.__class__).columns}
 
 class Student(Base):
     """Models the student table in the database that contains information about all

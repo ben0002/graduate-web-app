@@ -338,7 +338,7 @@ def validation_student_data_from_file(data: dict, db: Session, row_number: int):
         first_term = data.get("First Term") or None,
         email = data.get("E-mail") or None,
         phone_number = data.get("Phone") or None,
-        country_citizenship = data.get("Country of Citizenship") or None,
+        citizenship = data.get("Country of Citizenship") or None,
         advisory_committee = data.get("Adviser Name") or None,
         plan_submit_date = data.get("Plan Submitted") or None,
         prelim_exam_pass = data.get("Prelim Exam Passed") or None,
@@ -388,7 +388,8 @@ def validation_faculty_data_from_file(data: dict, db:Session, row_number: int):
         last_name = last_name or None,
         first_name = first_name or None,
         faculty_type = data.get("faculty type") or None,
-        privilege_level = data.get("privilege level") or None
+        privilege_level = data.get("privilege level") or None,
+        email = data.get("E-mail") or None
     )
     return validation_data
 #----------------------------------------------------------------------------------------------------------------------
