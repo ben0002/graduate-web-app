@@ -131,8 +131,6 @@ class Degree(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(30))
     description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    name: Mapped[str] = mapped_column(String(30))
-    description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     
      # way to list multiple unique constraints that are constrained together
      # make sure that the degree name and degree level should be unique to each other.

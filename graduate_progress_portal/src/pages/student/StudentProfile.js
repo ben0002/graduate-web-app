@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Grid, Card, Divider } from '@mui/material';
 import { studentData } from '../../assets/data/SampleStudentData.jsx';
-import StudentCardInfo from '../../components/student/StudentCard.js';
+import StudentCardInfo from '../../components/student/StudentInfoCard.js';
 import StudentPersonalCardInfo from '../../components/student/StudentPersonalInfoCard';
 import MessageBox from '../../components/student/MessageBox';
 import StudentAdvisorCommitteeCard from '../../components/student/StudentAdvisorCommitteeCard';
