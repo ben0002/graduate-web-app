@@ -12,7 +12,7 @@ export default function StudentCardInfo({ student }) {
     const user = useSelector(state => state.user)
 
     return (
-        <Card className="student-card-container" sx={{ height: '165px', backgroundColor: '#F0F0F0'
+        <Card className="student-card-container" sx={{ height: '165px', backgroundColor: '#F0F0F0', border: '.3rem solid #75787b'
     }}>
             <CardContent>
                 <Grid container spacing={2} alignItems="flex-start">

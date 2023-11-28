@@ -57,7 +57,7 @@ def read_root():
     return {"message": "Hello, World!"}
 
 
-SERVICE_URL = "https://bktp-gradpro-api.discovery.cs.vt.edu/"
+SERVICE_URL = "https://bktp-gradpro-api2.discovery.cs.vt.edu/"
 SECRET_KEY = "03588c9b6f5508ff6ab7175ba9b38a4d1366581fdc6468e8323015db7d68dac0" # key used to sign JWT token
 ALGORITHM = "HS256" # algorithm used to sign JWT Token
 ACCESS_TOKEN_EXPIRE_MINUTES = 120
@@ -96,7 +96,7 @@ def login(request: Request, response: Response, db: Session = Depends(get_db)):
     if not access_token:
         raise HTTPException(status_code=404, detail="Student or Faculty does not exist in the system.")
     
-    web_app_url = "https://bktp-gradpro.discovery.cs.vt.edu/"
+    web_app_url = "https://bktp-gradpro2.discovery.cs.vt.edu/"
     response = RedirectResponse(web_app_url)
     response.set_cookie(key="access_token", value=access_token, httponly=True, domain=".discovery.cs.vt.edu",
                         samesite="None", secure=True)
