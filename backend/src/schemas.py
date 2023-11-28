@@ -42,6 +42,19 @@ class StudentOut(StudentIn):
     
     class Config:
         from_attributes = True
+        
+class CreateStudent(StudentIn):
+    major_name : str = Field(..., max_length=30)
+    degree_name : str = Field(..., max_length=30)
+    enrollment_date : date | None = None
+    advisor_first_name : str = Field(..., max_length=40)
+    advisor_midlle_name : Optional[str] = Field(None, max_length=40)
+    advisor_last_name : str = Field(..., max_length=40)
+    campus_name: str = Field(..., max_length=50)
+    co_advisor_name: str | None = None
+    
+    class Config:
+        from_attributes = True
 
 class StudentFileUpload(StudentIn):
     #---------------------------Validator----------------------------------

@@ -409,7 +409,7 @@ def validation_faculty_data_from_file(data: dict, db:Session, row_number: int):
     return validation_data
 #----------------------------------------------------------------------------------------------------------------------
 
-#----------------------------------------------------------End Point Helper Function--------------------------------------------
+#--------------------------------------------File Upload EndPoint Helper Function--------------------------------------------
 # This will process student data from csv file, and add them to the corresponding database.
 def process_student_data_from_file(file: UploadFile, db: Session):
     with TextIOWrapper(file.file, 'utf-8') as text_file:

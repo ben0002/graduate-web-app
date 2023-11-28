@@ -342,7 +342,7 @@ def student_pos(student_id: int, skip: int | None = 0, limit: int | None = 100,
     return pagination(skip=skip, limit=limit, response=student[0].pos)
 
 @app.post("/students", status_code=201)
-async def create_students(students: list[schemas.StudentIn], db:Session = Depends(get_db)):
+async def create_students(students: list[schemas.StudentIn], major: list[str | None], db:Session = Depends(get_db), degree: list[str] | None = None, ):
     try:
         for student in students:
             db_studnet = models.Student(**student.dict())
