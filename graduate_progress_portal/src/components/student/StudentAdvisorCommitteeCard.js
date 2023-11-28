@@ -25,7 +25,7 @@ const StudentAdvisorCommittee = () => {
 
   return (
     <Paper>
-      <Box sx={{ display: 'flex', flexDirection: 'column', p: 2, border: '.3rem solid #75787b', height:'100%' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', p: 2, border: '.3rem solid #75787b', height:'100%', backgroundColor: '#F0F0F0'}}>
         {/* Advisor Section */}
         <Box sx={{ flex: 1, borderBottom: '1px solid black', mb: 2, paddingBottom: "0.5rem" }}>
           <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#630031', mb: 1 }}>Advisor(s)</Typography>
