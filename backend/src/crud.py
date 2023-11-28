@@ -290,6 +290,20 @@ def find_advisor(advisor_name: str, db:Session, row_number: int):
         return advisor.id
     else:
         raise CustomValueError(message="The advisor \"" + advisor_name + "\" is not found in the Database.", original_exception=None, row_data=row_number)
+
+def find_co_advisor(advisor_name: str, db:Session, row_number: int):
+    if not advisor_name:
+        return None
+    list_name = re.split(r'\s{2,}', advisor_name)
+    advisor_id = []
+    for name in list_name:
+        last_name, first_name = map(str.strip, name.split(',', 1))
+        advisor = db.query(models.Faculty).filter(models.Faculty.last_name == last_name, models.Faculty.first_name == first_name).first()
+        if advisor:
+            advisor_id.append(advisor.id)
+        else:
+            raise CustomValueError(message="The advisor \"" + advisor_name + "\" is not found in the Database.", original_exception=None, row_data=row_number)
+    return advisor_id
     
 # This will find degree and return degree id. 
 def find_degree(degree_name: str, db: Session, row_number: int):
@@ -318,7 +332,7 @@ def find_major_name(major_name: str, db: Session, row_number: int):
     if major:
         return major.id
     else:
-        raise CustomValueError(message="The major \"" + major_description + "\" is not found in the Database.", original_exception=None, row_data=row_number)
+        raise CustomValueError(message="The major \"" + major_name + "\" is not found in the Database.", original_exception=None, row_data=row_number)
 
 # This will find department and return the id itself 
 def find_department(department_name: str, db: Session, row_number: int):
