@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import { Grid, Card, Divider, Box } from '@mui/material';
 import { studentData } from '../../assets/data/SampleStudentData.jsx';
@@ -9,8 +9,34 @@ import StudentRequirementCard from '../../components/student/StudentRequirementC
 import StudentFundingCard from '../../components/student/StudentFundingCard.js'; 
 import StudentEmploymentCard from '../../components/student/StudentEmploymentCard.js'; 
 import StudentCourseHistoryCard from '../../components/student/StudentCourseHistoryCard.js';
+import { useDispatch } from 'react-redux';
 
 const StudentProgress = () => {
+
+  const dispatch = useDispatch();
+
+  useEffect(_ => {
+    async function progress() {
+      await fetch("https://bktp-gradpro-api.discovery.cs.vt.edu/student/progress", {
+        credentials: 'include', // To include cookies in the request
+        headers: { 'Accept': 'application/json', }
+      })
+      .then(res => {
+        if(res.ok) return res.json();
+        else console.log(res.status);
+      })
+      .then(data => {
+        if (data == undefined) console.error('Error: Non ok http response');
+        else{
+          console.log(data)
+          dispatch({type: 'pop_stu_prog', payload: data});
+        }
+      })
+      .catch((err) => console.error('Error:', err.message))    
+    }
+    progress();      
+  }, []);
+
   return (
     <Box sx={{ width: '70%', paddingX: '2.5%', mx: 'auto', backgroundColor: '#f2f2f2', marginTop: '1rem', paddingBottom: '1rem'}}>
       <Grid container spacing={2}>

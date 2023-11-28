@@ -8,7 +8,7 @@ export default function Login() {
 
     useEffect(_ => {
         async function login() {
-            await fetch("https://bktp-gradpro-api.discovery.cs.vt.edu/api/login", {
+            await fetch("https://bktp-gradpro-api.discovery.cs.vt.edu/login", {
                 credentials: 'include', // To include cookies in the request
                 headers: {
                     'Accept': 'application/json', // Explicitly tell the server that you want JSON
@@ -23,7 +23,7 @@ export default function Login() {
                 else if(data.redirect_url) window.location.href = data.redirect_url;
                 else{
                     console.log(data)
-                    dispatch({type: 'populate_user', payload: data});
+                    dispatch({type: 'pop_user', payload: {data: data, type: 'student'}});
                     navigate('/student/progress')
                 }
             })

@@ -52,7 +52,7 @@ def read_root():
     return {"message": "Hello, World!"}
 
 
-SERVICE_URL = "https://bktp-gradpro-api2.discovery.cs.vt.edu/"
+SERVICE_URL = "https://bktp-gradpro-api.discovery.cs.vt.edu/"
 SECRET_KEY = "03588c9b6f5508ff6ab7175ba9b38a4d1366581fdc6468e8323015db7d68dac0" # key used to sign JWT token
 ALGORITHM = "HS256" # algorithm used to sign JWT Token
 ACCESS_TOKEN_EXPIRE_MINUTES = 120
@@ -60,14 +60,14 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 120
 # Creating the CAS CLIENT
 cas_client = CASClient(
     version=2,
-    service_url=f"{SERVICE_URL}/api/login?",
+    service_url=f"{SERVICE_URL}/login?",
     server_url="https://login.vt.edu/profile/cas/",
     # CHANGE: If you want VT CS CAS, to be used instead of VT CAS
     # change the server_url to https://login.cs.vt.edu/cas/
 )
 
 # Routes related to CAS
-@app.get("/api/login")
+@app.get("/login")
 def login(request: Request, response: Response, db: Session = Depends(get_db)):
 
     delete_token = False
@@ -95,14 +95,14 @@ def login(request: Request, response: Response, db: Session = Depends(get_db)):
     if not access_token:
         raise HTTPException(status_code=404, detail="Student or Faculty does not exist in the system.")
     
-    web_app_url = "https://bktp-gradpro2.discovery.cs.vt.edu/"
+    web_app_url = "https://bktp-gradpro.discovery.cs.vt.edu/"
     response = RedirectResponse(web_app_url)
     response.set_cookie(key="access_token", value=access_token, httponly=True, domain=".discovery.cs.vt.edu",
                         samesite="None", secure=True)
     
     return response
 
-@app.get("/api/logout")
+@app.get("/logout")
 def logout(response: Response):
     cas_logout_url = cas_client.get_logout_url(SERVICE_URL)
     response.delete_cookie("access_token")
@@ -177,70 +177,168 @@ def getUserData(jwt: str, db: Session):
     if(not token):
         return token
     
-    student_id = token.get('id')
+    isFaculty = token.get("faculty")
+    if(isFaculty):
+        "retrieve faculty info and list of students or other permission based information"
+        return JSONResponse(content={'faculty': {}}, media_type='application/json')
 
-    student = crud.get_students(db=db, filters={"id": student_id})
-    if(len(student) == 0):
+    userData = {'student': {}, 'advisors': [], 'programs': [], 'campus': {}, 'POS_info': []}
+
+    students = crud.get_students(db=db, filters={"id": token.get("id")})
+    if len(students) == 0:
         raise HTTPException(status_code=404, detail=f"Student with valid access token does not exist.")
-    userData = student[0].as_dict()
+    student = students[0]
 
-    userData.update({'advisors': []})
-    advisors = crud.get_studentAdvisor(db=db, filters={"student_id": student_id})
-    for advisor in advisors:
-        advisor_dict = advisor.as_dict()
-        advisor_id = advisor_dict.get("advisor_id")
-        advisor_info = crud.get_faculty(db=db, filters={"id": advisor_id})
-        if(len(advisors) == 0):
-            raise HTTPException(status_code=404, detail=f"faculty with valid access token does not exist.")
-        else:
-            advisor_info_dict = advisor_info[0].as_dict()
-            userData.get('advisors').append({'name': advisor_info_dict.get('first_name') + ' ' + advisor_info_dict.get('last_name'), 'role': advisor_dict.get('advisor_role')})
+    # Fetch student information
+    userData['student'] = student.as_dict()
 
-    userData.update({'programs': []})
-    programEnrollments = crud.get_programEnrollment(db=db, filters={"student_id": student_id})
-    for program in programEnrollments:
-        program_dict = program.as_dict()
+    # Fetch advisors
+    if student.advisors:
+        userData['advisors'] = [{'name': advisor.advisor.first_name + ' ' + advisor.advisor.last_name, 'role': advisor.advisor_role} for advisor in student.advisors]
 
-        major_id = program_dict.get("major_id")
-        majors = crud.get_majors(db=db, filters={"id": major_id})
-        if(len(majors) == 0):
-            raise HTTPException(status_code=404, detail=f"major with valid access token does not exist.")
-        major_info = majors[0].as_dict()
+    # Fetch program enrollments
+    if student.programs:
+        for program_enrollment in student.programs:
+            program_data = {
+                "enrollment_date": program_enrollment.enrollment_date,
+                "major": program_enrollment.major.name,
+                "department": program_enrollment.major.dept_code,
+                "degree": program_enrollment.degree.name
+            }
+            userData['programs'].append(program_data)
 
-        degree_id = program_dict.get("degree_id")
-        degrees = crud.get_degrees(db=db, filters={"id": degree_id})
-        if(len(degrees) == 0):
-            raise HTTPException(status_code=404, detail=f"degree with valid access token does not exist.")
-        degree_info = degrees[0].as_dict()
+    # Fetch campus information
+    if student.campus:
+        userData['campus'] = {
+            "name": student.campus.name,
+            "address": student.campus.address
+        }
 
-        userData.get("programs").append({"enrollment_date": program_dict.get("enrollment_date"), "major": major_info.get("name"), "department": major_info.get("dept_code"), "degree": degree_info.get("name")})
-        
-    campus_id = userData.get("campus_id")
-    campuses = crud.get_campus(db=db, filters={"id": campus_id})
-    if(len(campuses) == 0):
-        raise HTTPException(status_code=404, detail=f"campus with valid access token does not exist.")
-    campus_info = campuses[0].as_dict()
-
-    userData.update({"campus_info": {"campus": campus_info.get("name"), "campus_addr": campus_info.get("address")}})
-
-    userData.update({"POS_info": {}})
-    #POS = crud.get_studentPOS(db=db, filters={"student_id": student_id})
-    #if(len(POS) == 0):
-    #    raise HTTPException(status_code=404, detail=f"POS with valid access token does not exist.")
-    #POS_info = POS[0].as_dict()
-
-    #userData.update({"POS_info": {"approved": POS_info.get("approved"), "approved_date": POS_info.get("approved_date"), "chair": POS_info.get("chair"), "co_chair": POS_info.get("co_chair"), "submitted": POS_info.get("submitted")}})
-
-    userData.update({"courses": []})
-    courses = crud.get_courseEnrollment(db=db, filters={"student_id": student_id})
-    for course in courses:
-        course_info = course.as_dict()
-        course_info.pop("id")
-        course_info.pop("student_id")
-        course_info.pop("pos_id")
-        userData.get("courses").append(course_info)
+    if student.pos:
+        userData['POS_info'] = {
+            "approved": pos.approved,
+            "approved_date": pos.approved_date,
+            "chair": pos.chair,
+            "co_chair": pos.co_chair,
+            "submitted": pos.submitted
+        }
 
     return JSONResponse(content=userData, media_type='application/json')
+
+@app.get("/student/progress")
+async def student_progress(request: Request, db: Session = Depends(get_db)):
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if not payload: 
+        return HTTPException(status_code=401, detail="Access token has expired, please log in again")
+    
+    progressData = {"events": [], "milestones": [], "requirements": [], "funding": [], "employment": [], "courses": []}
+
+    students = crud.get_students(db=db, filters={"id": payload.get("id")})
+    if len(students) == 0:
+        raise HTTPException(status_code=404, detail=f"Student with valid access token does not exist.")
+    student = students[0]
+
+    # Fetch events
+    progressData['events'] = [event.as_dict() for event in student.events]
+
+    # Fetch milestones
+    for progress in student.progress_tasks:
+        progress_info = progress.as_dict()
+        progress_info.pop("student_id")
+        if progress.milestone:
+            milestone_info = progress.milestone.as_dict()
+            progress_info.update({"name": milestone_info.get("name"), "desc": milestone_info.get("description")})
+            progressData['milestones'].append(progress_info)
+        else:
+            requirement_info = progress.requirement.as_dict()
+            progress_info.update({"name": requirement_info.get("name"), "desc": requirement_info.get("description")})
+            progressData['requirements'].append(progress_info)
+
+    # Fetch funding
+    if student.funding:
+        progressData['funding'] = [funding.as_dict() for funding in student.funding]
+
+    # Fetch employment
+    if student.employment:
+        progressData['employment'] = [employment.as_dict() for employment in student.employment]
+
+    return JSONResponse(content=progressData, media_type='application/json')
+
+@app.get("/student/profile")
+async def student_profile(request: Request, db: Session = Depends(get_db)):
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+
+    profileData = {"labs": [], 'messages': []}
+
+    students = crud.get_students(db=db, filters={"id": payload.get("id")})
+    if len(students) == 0:
+        raise HTTPException(status_code=404, detail=f"Student with valid access token does not exist.")
+    student = students[0]
+
+    # Fetch student's labs
+    if student.labs:
+        profileData['labs'] = [lab.as_dict() for lab in student.labs]
+
+    return JSONResponse(content=profileData, media_type='application/json')
+
+@app.post("/student/event")
+async def create_event(request: Request, event_data: schemas.EventIn, db: Session = Depends(get_db)):
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+
+    db_event = models.Event(**event_data.dict())
+    db.add(db_event)
+    db.commit()
+    db.refresh(db_event)
+    return db_event
+
+@app.put("/student/event/{event_id}")
+async def update_event(request: Request, event_id: int, db: Session = Depends(get_db)):
+
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+    student_id = payload['id']
+
+    event_data = await request.json()  # Get the request body as JSON
+
+    # Retrieve the event from the database using event_id
+    event = db.query(models.Event).filter(models.Event.id == event_id, models.Event.student_id == student_id).first()
+
+    if not event:
+        return {"message": "Event not found"}
+
+    # Update the event attributes dynamically
+    for field, value in event_data.items():
+        setattr(event, field, value)
+
+    db.add(event)
+    db.commit()
+    db.refresh(event)
+
+    return event  # Return the updated event
+
+@app.delete("/student/event/{event_id}")
+async def delete_event(request: Request, event_id: int, db: Session = Depends(get_db)):
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+    student_id = payload['id']
+
+    db_event = db.query(models.Event).filter(models.Event.id == event_id, models.Event.student_id == student_id).first()
+    if db_event is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    db.delete(db_event)
+    db.commit()
+    return {"message": "Event deleted successfully"}
 
 #-------------------------------------- start of /students endpoints -------------------------------#
 @app.get("/students", response_model=list[schemas.StudentOut])
@@ -318,7 +416,8 @@ def student_advisors(student_id: int, skip: int | None = 0, limit: int | None = 
                 last_name=student_advisor.advisor.last_name,
                 dept_code=student_advisor.advisor.dept_code,
                 privilege_level=student_advisor.advisor.privilege_level,
-                advisor_role=student_advisor.advisor_role   
+                advisor_role=student_advisor.advisor_role,
+                email=student_advisor.advisor.email   
             )
         )
         
@@ -540,7 +639,6 @@ async def programEnrollment(programEnrollment_id: int, db: Session = Depends(get
         raise HTTPException(status_code=404, detail=f"Program Enrollment with the given id: {programEnrollment_id} does not exist.")
     return programEnrollment[0]
 
-
 @app.get("/studentLabs/{studentLab_id}", response_model=schemas.StudentLabsOut)
 async def studentLab(studentLab_id: int, db: Session = Depends(get_db)):
     filter = { "id": studentLab_id}
@@ -678,8 +776,8 @@ async def studentPOS(studentPOS_id: int, db: Session = Depends(get_db)):
 @app.post("/students", status_code=201)
 async def create_students(students: list[schemas.StudentIn], db:Session = Depends(get_db)):
     for student in students:
-        db_studnet = models.Student(**student.dict())
-        db.add(db_studnet)
+        db_student = models.Student(**student.dict())
+        db.add(db_student)
     db.commit()
 
 #---------------------------------File Upload EndPoints----------------------------------------

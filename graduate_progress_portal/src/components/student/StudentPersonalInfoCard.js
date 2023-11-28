@@ -8,8 +8,6 @@ const StudentPersonalCardInfo = ({ student }) => {
             <CardContent>
                 <Grid container spacing={2} alignItems={'flex-start'}>
                     <Grid item xs={12} sm={4}>
-                        <Box sx={{ flexGrow: 1 }}>
-                            </Box>
                     {/* Column 1: Email, Phone, Ethnicity, Country/Residence */}
                         <Typography 
                             variant='body1' 
