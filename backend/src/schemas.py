@@ -239,7 +239,6 @@ class RequirementOut(RequirementIn):
 class MilestoneIn(BaseModel):
     name : str = Field(..., max_length=50)
     description : Optional[str] = Field(None, max_length=100)
-    stage_id : int
     class Config:
         from_attributes = True
         

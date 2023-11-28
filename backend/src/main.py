@@ -214,14 +214,13 @@ def getUserData(jwt: str, db: Session):
             "address": student.campus.address
         }
 
-    if student.pos:
-        userData['POS_info'] = {
-            "approved": pos.approved,
-            "approved_date": pos.approved_date,
-            "chair": pos.chair,
-            "co_chair": pos.co_chair,
-            "submitted": pos.submitted
-        }
+    #if student.student_pos:
+    #    userData['POS_info'] = {
+    #        "approved": student.student_pos.approved,
+    #        "approved_date": student.student_pos.approved_date,
+    #        "chair": student.student_pos.chair,
+    #        "co_chair": student.student_pos.co_chair
+    #    }
 
     return JSONResponse(content=userData, media_type='application/json')
 
@@ -339,6 +338,424 @@ async def delete_event(request: Request, event_id: int, db: Session = Depends(ge
     db.delete(db_event)
     db.commit()
     return {"message": "Event deleted successfully"}
+
+@app.post("/students/milestone")
+async def create_milestone(request: Request, milestone_data: schemas.MilestoneIn, db: Session = Depends(get_db)):
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+    isFaculty = payload['faculty']
+
+    if isFaculty:
+        if payload['privilege'] < 3:
+            return HTTPException(status_code=401, detail="you do not have permission to perform this action")
+    else:
+        return HTTPException(status_code=401, detail="you do not have permission to perform this action")
+
+    #populate progress table too
+    db_milestone = models.Milestone(**milestone_data.dict())
+    db.add(db_milestone)
+    db.commit()
+    db.refresh(db_milestone)
+    return db_milestone
+
+@app.put("/students/milestone/{milestone_id}")
+async def update_milestone(request: Request, milestone_id: int, db: Session = Depends(get_db)):
+
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+    isFaculty = payload['faculty']
+
+    if isFaculty:
+        if payload['privilege'] < 3:
+            return HTTPException(status_code=401, detail="you do not have permission to perform this action")
+    else:
+        return HTTPException(status_code=401, detail="you do not have permission to perform this action")
+
+    # Retrieve the event from the database using event_id
+    milestone = db.query(models.Milestone).filter(models.Milestone.id == milestone_id).first()
+    if not milestone:
+        return {"message": "Milestone not found"}
+
+    milestone_data = await request.json()  # Get the request body as JSON
+    # Update the event attributes dynamically
+    for field, value in milestone_data.items():
+        setattr(milestone, field, value)
+
+    db.add(milestone)
+    db.commit()
+    db.refresh(milestone)
+
+    return milestone  # Return the updated event
+
+@app.delete("/students/milestone/{milestone_id}")
+async def delete_milestone(request: Request, milestone_id: int, db: Session = Depends(get_db)):
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+    isFaculty = payload['faculty']
+
+    if isFaculty:
+        if payload['privilege'] < 3:
+            return HTTPException(status_code=401, detail="you do not have permission to perform this action")
+    else:
+        return HTTPException(status_code=401, detail="you do not have permission to perform this action")
+
+    db_milestone = db.query(models.Milestone).filter(models.Milestone.id == milestone_id).first()
+    if db_milestone is None:
+        raise HTTPException(status_code=404, detail="Milestone not found")
+    db.delete(db_milestone)
+    db.commit()
+    return {"message": "Milestone deleted successfully"}
+
+@app.post("/students/requirement")
+async def create_requirement(request: Request, requirement_data: schemas.RequirementIn, db: Session = Depends(get_db)):
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+    isFaculty = payload['faculty']
+
+    if isFaculty:
+        if payload['privilege'] < 3:
+            return HTTPException(status_code=401, detail="you do not have permission to perform this action")
+    else:
+        return HTTPException(status_code=401, detail="you do not have permission to perform this action")
+
+    #populate progress table too
+    db_requirement = models.Requirement(**requirement_data.dict())
+    db.add(db_requirement)
+    db.commit()
+    db.refresh(db_requirement)
+    return db_requirement
+
+@app.put("/students/requirement/{requirement_id}")
+async def update_requirement(request: Request, requirement_id: int, db: Session = Depends(get_db)):
+
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+    isFaculty = payload['faculty']
+
+    if isFaculty:
+        if payload['privilege'] < 3:
+            return HTTPException(status_code=401, detail="you do not have permission to perform this action")
+    else:
+        return HTTPException(status_code=401, detail="you do not have permission to perform this action")
+
+    # Retrieve the event from the database using event_id
+    requirement = db.query(models.Requirement).filter(models.Requirement.id == requirement_id).first()
+    if not requirement:
+        return {"message": "Requirement not found"}
+
+    requirement_data = await request.json()  # Get the request body as JSON
+    # Update the event attributes dynamically
+    for field, value in requirement_data.items():
+        setattr(requirement, field, value)
+
+    db.add(requirement)
+    db.commit()
+    db.refresh(requirement)
+
+    return requirement  # Return the updated event
+
+@app.delete("/students/requirement/{requirement_id}")
+async def delete_requirement(request: Request, requirement_id: int, db: Session = Depends(get_db)):
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+    isFaculty = payload['faculty']
+
+    if isFaculty:
+        if payload['privilege'] < 3:
+            return HTTPException(status_code=401, detail="you do not have permission to perform this action")
+    else:
+        return HTTPException(status_code=401, detail="you do not have permission to perform this action")
+
+    db_requirement = db.query(models.Requirement).filter(models.Requirement.id == requirement_id).first()
+    if db_requirement is None:
+        raise HTTPException(status_code=404, detail="Requirement not found")
+    db.delete(db_requirement)
+    db.commit()
+    return {"message": "Requirement deleted successfully"}
+
+@app.post("/student/funding")
+async def create_funding(request: Request, funding_data: schemas.FundingIn, db: Session = Depends(get_db)):
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+
+    db_funding = models.Funding(**funding_data.dict())
+    db.add(db_funding)
+    db.commit()
+    db.refresh(db_funding)
+    return db_funding
+
+@app.put("/student/funding/{funding_id}")
+async def update_funding(request: Request, funding_id: int, db: Session = Depends(get_db)):
+
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+    student_id = payload['id']
+
+    # Retrieve the event from the database using event_id
+    funding = db.query(models.Funding).filter(models.Funding.id == funding_id, models.Funding.student_id == student_id).first()
+    if not funding:
+        return {"message": "Funding not found"}
+
+    funding_data = await request.json()
+    # Update the event attributes dynamically
+    for field, value in funding_data.items():
+        setattr(funding, field, value)
+
+    db.add(funding)
+    db.commit()
+    db.refresh(funding)
+
+    return funding  # Return the updated event
+
+@app.delete("/student/funding/{funding_id}")
+async def delete_funding(request: Request, funding_id: int, db: Session = Depends(get_db)):
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+    student_id = payload['id']
+
+    db_funding = db.query(models.Funding).filter(models.Funding.id == funding_id, models.Funding.student_id == student_id).first()
+    if db_funding is None:
+        raise HTTPException(status_code=404, detail="Funding not found")
+    db.delete(db_funding)
+    db.commit()
+    return {"message": "Funding deleted successfully"}
+
+@app.post("/student/employment")
+async def create_employment(request: Request, employment_data: schemas.EmploymentIn, db: Session = Depends(get_db)):
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+
+    db_employment = models.Employment(**employment_data.dict())
+    db.add(db_employment)
+    db.commit()
+    db.refresh(db_employment)
+    return db_employment
+
+@app.put("/student/employment/{employment_id}")
+async def update_employment(request: Request, employment_id: int, db: Session = Depends(get_db)):
+
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+    student_id = payload['id']
+
+    # Retrieve the event from the database using event_id
+    employment = db.query(models.Employment).filter(models.Employment.id == employment_id, models.Employment.student_id == student_id).first()
+    if not employment:
+        return {"message": "Employment not found"}
+
+    employment_data = await request.json()
+    # Update the event attributes dynamically
+    for field, value in employment_data.items():
+        setattr(employment, field, value)
+
+    db.add(employment)
+    db.commit()
+    db.refresh(employment)
+
+    return employment  # Return the updated event
+
+@app.delete("/student/employment/{employment_id}")
+async def delete_employment(request: Request, employment_id: int, db: Session = Depends(get_db)):
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+    student_id = payload['id']
+
+    db_employment = db.query(models.Employment).filter(models.Employment.id == employment_id, models.Employment.student_id == student_id).first()
+    if db_employment is None:
+        raise HTTPException(status_code=404, detail="Employment not found")
+    db.delete(db_employment)
+    db.commit()
+    return {"message": "Employment deleted successfully"}
+
+##TODO: check courses after POS
+@app.post("/student/course")
+async def create_course(request: Request, course_data: schemas.CourseEnrollmentIn, db: Session = Depends(get_db)):
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+
+    db_course = models.CourseEnrollment(**course_data.dict())
+    db.add(db_course)
+    db.commit()
+    db.refresh(db_course)
+    return db_course
+
+@app.put("/student/course/{course_id}")
+async def update_course(request: Request, course_id: int, db: Session = Depends(get_db)):
+
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+    student_id = payload['id']
+
+    # Retrieve the event from the database using event_id
+    course = db.query(models.CourseEnrollment).filter(models.CourseEnrollment.id == course_id, models.CourseEnrollment.student_id == student_id).first()
+    if not course:
+        return {"message": "Course not found"}
+
+    course_data = await request.json()
+    # Update the event attributes dynamically
+    for field, value in course_data.items():
+        setattr(course, field, value)
+
+    db.add(course)
+    db.commit()
+    db.refresh(course)
+
+    return course  # Return the updated event
+
+@app.delete("/student/course/{course_id}")
+async def delete_course(request: Request, course_id: int, db: Session = Depends(get_db)):
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+    student_id = payload['id']
+
+    db_course = db.query(models.CourseEnrollment).filter(models.CourseEnrollment.id == course_id, models.CourseEnrollment.student_id == student_id).first()
+    if db_course is None:
+        raise HTTPException(status_code=404, detail="Course not found")
+    db.delete(db_course)
+    db.commit()
+    return {"message": "Course deleted successfully"}
+
+@app.post("/student/lab")
+async def create_lab(request: Request, lab_data: schemas.StudentLabsIn, db: Session = Depends(get_db)):
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+
+    db_lab = models.StudentLabs(**lab_data.dict())
+    db.add(db_lab)
+    db.commit()
+    db.refresh(db_lab)
+    return db_lab
+
+@app.put("/student/lab/{lab_id}")
+async def update_lab(request: Request, lab_id: int, db: Session = Depends(get_db)):
+
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+    student_id = payload['id']
+
+    # Retrieve the event from the database using event_id
+    lab = db.query(models.StudentLabs).filter(models.StudentLabs.id == lab_id, models.StudentLabs.student_id == student_id).first()
+    if not lab:
+        return {"message": "Lab not found"}
+
+    lab_data = await request.json()
+    # Update the event attributes dynamically
+    for field, value in lab_data.items():
+        setattr(lab, field, value)
+
+    db.add(lab)
+    db.commit()
+    db.refresh(lab)
+
+    return lab  # Return the updated event
+
+@app.delete("/student/lab/{lab_id}")
+async def delete_lab(request: Request, lab_id: int, db: Session = Depends(get_db)):
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+    student_id = payload['id']
+
+    db_lab = db.query(models.StudentLabs).filter(models.StudentLabs.id == lab_id, models.StudentLabs.student_id == student_id).first()
+    if db_lab is None:
+        raise HTTPException(status_code=404, detail="Lab not found")
+    db.delete(db_lab)
+    db.commit()
+    return {"message": "Lab deleted successfully"}
+
+"""
+@app.post("/student/pos")
+async def create_pos(request: Request, pos_data: schemas.StudentPOSIn, db: Session = Depends(get_db)):
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+
+    db_pos = models.StudentPOS(**pos_data.dict())
+    db.add(db_pos)
+    db.commit()
+    db.refresh(db_pos)
+    return db_pos
+"""
+
+@app.put("/student/pos/{pos_id}")
+async def update_pos(request: Request, pos_id: int, db: Session = Depends(get_db)):
+
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+    student_id = payload['id']
+
+    # Retrieve the event from the database using event_id
+    pos = db.query(models.StudentPOS).filter(models.StudentPOS.id == pos_id, models.StudentPOS.student_id == student_id).first()
+    if not pos:
+        return {"message": "POS not found"}
+
+    pos_data = await request.json()
+    # Update the event attributes dynamically
+    for field, value in pos_data.items():
+        setattr(pos, field, value)
+
+    db.add(pos)
+    db.commit()
+    db.refresh(pos)
+
+    return pos  # Return the updated event
+
+"""
+@app.delete("/student/pos/{pos_id}")
+async def delete_lab(request: Request, pos_id: int, db: Session = Depends(get_db)):
+    jwt = request.cookies.get("access_token")
+    payload = verify_jwt(jwt)
+    if(not payload): 
+        return HTTPException(status_code=401, detail="access token has expired, please log in again")
+    student_id = payload['id']
+
+    db_pos = db.query(models.StudentPOS).filter(models.StudentPOS.id == pos_id, models.StudentPOS.student_id == student_id).first()
+    if db_pos is None:
+        raise HTTPException(status_code=404, detail="POS not found")
+    db.delete(db_pos)
+    db.commit()
+    return {"message": "POS deleted successfully"}
+"""
+
+#TODO: messages
 
 #-------------------------------------- start of /students endpoints -------------------------------#
 @app.get("/students", response_model=list[schemas.StudentOut])

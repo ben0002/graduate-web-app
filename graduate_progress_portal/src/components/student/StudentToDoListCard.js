@@ -16,16 +16,17 @@ function ToDoModal(task, openModal, closeModal, methods, newTask){
     setEdit(newTask);
   }, [newTask])
 
+  /*
   useEffect(_ => {
     async function newEvent(){
-      await fetch("https://bktp-gradpro-api.discovery.cs.vt.edu/student/milestone", {
-          method: 'POST',
+      await fetch("https://bktp-gradpro-api.discovery.cs.vt.edu/student/course/4", {
+          method: 'DELETE',
           credentials: 'include', // To include cookies in the request
           headers: {
               'Accept': 'application/json', // Explicitly tell the server that you want JSON
               'Content-Type': 'application/json',
           },
-          body: JSON.stringify({name: "new event name", description: " wrong description", stage_id: 1})
+          
       })
       .then(res => {
           if(res.ok) return res.json();
@@ -41,6 +42,7 @@ function ToDoModal(task, openModal, closeModal, methods, newTask){
     }
     newEvent()
   }, [])
+  */
 
   const checkChanged = _ => {
     return true
