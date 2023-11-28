@@ -1,4 +1,12 @@
-
+/******************** GLOBAL STUDENT BACKGROUND ***********************/
+.student-page-background {
+    width: 100%;
+    height: 100%;
+    background-color: #861F41;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 /******************** START OF STUDENT INFO CARD **********************/
 
 /*Holds the CSS for the StudentCard component*/
@@ -8,6 +16,7 @@
     margin-right: auto;
     box-sizing: border-box;
     padding: 16px;
+    
 }
 
 /*
@@ -34,6 +43,8 @@
 .student-course-history-container {
     width: 100%;
     box-sizing: border-box;
+    border: .3rem solid #75787b;
+
   }
   
   .student-course-history-placeholder {
@@ -58,6 +69,9 @@
     align-items: center;
     justify-content: left;
     width: 100%;
+    border: .3rem solid #75787b;
+    
+
 }
 
 /********************* END OF STUDENT EMPLOYMENT **********************/
@@ -69,6 +83,8 @@
 .student-funding-card-container {
     width: 100%;
     box-sizing: border-box;
+    border: .3rem solid #75787b;
+
 }
 
 .student-funding-card-placeholder {
@@ -88,6 +104,7 @@
 .student-milestones-container {
     width: 100%;
     box-sizing: border-box;
+    border: .3rem solid #75787b;
 }
 
 /* Styling for contents inside */
@@ -107,7 +124,8 @@
 
 .student-requirements-container {
     width: 100%;
-    box-sizing: border-box
+    box-sizing: border-box;
+    border: .3rem solid #75787b;
 }
 
 /* Styling for contents inside */
@@ -128,6 +146,7 @@
 .to-do-list-container {
     width: 100%;
     box-sizing: border-box;
+    border: .3rem solid #75787b;
 }
 
 /* Styling for contents inside */

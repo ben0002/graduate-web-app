@@ -152,7 +152,7 @@ export default function StudentEmploymentCard() {
 
   return (
     <>
-    <Card className="student-employment-card-container">
+    <Card className="student-employment-card-container" sx={{backgroundColor: '#F0F0F0'}}>
       <CardContent>
         <Typography variant="h6" component="div" sx={{display: 'flex', justifyContent: 'space-between'}}>
           <strong>Student Employment</strong>
@@ -160,8 +160,8 @@ export default function StudentEmploymentCard() {
             <AddCircleOutlineIcon sx={{color: '#630031'}}/>
           </IconButton>
         </Typography>
-        <div style={{overflowY: 'scroll', overflowX: 'hidden', minHeight: '16.25rem', maxHeight: '16.25rem'}}>
-          <div className="student-employment-card-placeholder">
+        <div style={{scrollbarColor: 'white', overflowY: 'scroll', overflowX: 'hidden', minHeight: '16.25rem', maxHeight: '16.25rem'}}>
+          <div className="student-employment-card-placeholder" >
             {makeEmploymentCards()}
           </div>
         </div>

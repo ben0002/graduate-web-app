@@ -12,7 +12,8 @@ export default function StudentCardInfo({ student }) {
     const user = useSelector(state => state.user)
 
     return (
-        <Card className="student-card-container" sx={{ height: '165px' }}>
+        <Card className="student-card-container" sx={{ height: '165px', backgroundColor: '#F0F0F0'
+    }}>
             <CardContent>
                 <Grid container spacing={2} alignItems="flex-start">
                     {/* Column 1: Avatar and basic info */}
@@ -65,7 +66,11 @@ export default function StudentCardInfo({ student }) {
                             <Button
                                 variant="contained"
                                 //color="primary"
-                                sx = {{backgroundColor: "#630031"}}
+                                sx = {{backgroundColor: "#630031",
+                                '&:hover': {
+                                  backgroundColor: '#4E342E'
+                                },
+                            }}
                                 component={Link}
                                 to={location.pathname.includes('/student/profile') ? "/student/progress" : "/student/profile"}
                                 >

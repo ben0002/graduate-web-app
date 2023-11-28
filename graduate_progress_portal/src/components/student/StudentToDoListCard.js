@@ -117,7 +117,7 @@ export default function  ToDoList() {
 
   return (
     <>
-    <Card className="to-do-list-container">
+    <Card className="to-do-list-container" sx={{backgroundColor: '#F0F0F0'}}>
       <CardContent sx={{ padding: '8px 16px'}}>
         <Typography variant="h6" component="div" sx={{display: 'flex', justifyContent: 'space-between'}}>
           <strong>To Do List</strong>

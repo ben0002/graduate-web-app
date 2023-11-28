@@ -152,7 +152,7 @@ export default function StudentFundingCard() {
 
   return (
     <>
-    <Card className="student-funding-card-container">
+    <Card className="student-funding-card-container" sx={{backgroundColor: '#F0F0F0'}}>
       <CardContent>
         <Typography variant="h6" component="div" sx={{display: 'flex', justifyContent: 'space-between'}}>
           <strong>Student Funding</strong>

@@ -8,7 +8,7 @@ export default function Login() {
 
     useEffect(_ => {
         async function login() {
-            await fetch("https://bktp-gradpro-api.discovery.cs.vt.edu/api/login", {
+            await fetch("https://bktp-gradpro-api2.discovery.cs.vt.edu/api/login", {
                 credentials: 'include', // To include cookies in the request
                 headers: {
                     'Accept': 'application/json', // Explicitly tell the server that you want JSON

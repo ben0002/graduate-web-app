@@ -4,7 +4,7 @@ import { Tooltip, Button, Card, CardContent, Typography, Avatar, Box, Grid } fro
 
 const StudentPersonalCardInfo = ({ student }) => {
     return (
-        <Card className="student-personal-info-container">
+        <Card className="student-personal-info-container" sx={{backgroundColor: '#F0F0F0'}}>
             <CardContent>
                 <Grid container spacing={2} alignItems={'flex-start'}>
                     <Grid item xs={12} sm={4}>

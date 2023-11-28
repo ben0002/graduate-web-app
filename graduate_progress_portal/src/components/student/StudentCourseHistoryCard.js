@@ -35,7 +35,7 @@ export default function StudentCourseHistoryCard() {
     }
 
     return (
-        <Card className="student-course-history-container">
+        <Card className="student-course-history-container" sx={{backgroundColor: '#F0F0F0'}}>
             <CardContent>
                 <Typography variant="h6" component="div" sx={{display: 'flex', justifyContent: 'space-between'}}>
                     <strong>Course History</strong>

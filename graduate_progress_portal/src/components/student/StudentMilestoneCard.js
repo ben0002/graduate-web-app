@@ -148,7 +148,7 @@ export default function  StudentMilestoneCard() {
 
     return (
         <>
-        <Card className="student-milestones-container">
+        <Card className="student-milestones-container" sx={{backgroundColor: '#F0F0F0'}}>
             <CardContent>
                 <Typography variant="h6" component="div" sx={{display: 'flex', justifyContent: 'space-between'}}>
                     <strong>Milestones</strong>

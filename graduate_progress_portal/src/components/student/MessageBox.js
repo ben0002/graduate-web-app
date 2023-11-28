@@ -21,7 +21,7 @@ const MessageBox = () => {
   const tabsToShow = tabsByRole[userRole] || [];
 
   return (
-    <Paper sx={{ padding: '1em', margin: 'auto' }}>
+    <Paper sx={{ padding: '1em', margin: 'auto', backgroundColor: '#F0F0F0', border: '.3rem solid #75787b'}}>
       {/** Renders the tabs based on userRole */}
       <Tabs value={value} onChange={handleChange} aria-label="message tabs" >
         {tabsToShow.map((label, index) => (

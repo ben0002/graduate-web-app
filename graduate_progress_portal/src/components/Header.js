@@ -22,7 +22,7 @@ const Header = () => {
     <AppBar position="static" style={{
       backgroundColor: '#630031',
       height: '4rem',
-      borderBottom: '.2rem solid #E5751F'
+      borderBottom: '.3rem solid #E5751F'
     }}>
       <Toolbar style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '100%' }}>
         <UserRole studentData={studentData} />
