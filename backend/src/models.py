@@ -135,7 +135,7 @@ class Degree(Base):
     
      # make sure that the degree name and degree level should be unique to each other.
     
-    requirements = relationship("Requirement", back_populates="degree") 
+    milestones = relationship("Milestone", back_populates="degree") 
     
 
     def __repr__(self) -> str:
@@ -166,6 +166,7 @@ class Major(Base):
     
     department = relationship("Department", back_populates="majors") 
     requirements = relationship("Requirement", back_populates="major") 
+    milestones = relationship("Milestone", back_populates="major") 
     
     def __repr__(self) -> str:
         return f"Major(id={self.id!r}, name={self.name!r}, dept_code={self.dept_code!r}, description={self.description!r})"
@@ -420,7 +421,8 @@ class Milestone(Base):
     """Holds the information of milestone:
         - name
         - description
-        - stage id ----- do we still need it?
+        - major id
+        - degree id
         
     Args:
         Base: Inherited base class from SQLAlchemy that allows ORM
@@ -429,10 +431,12 @@ class Milestone(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(50))
     description: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    stage_id: Mapped[int] = mapped_column(Integer, ForeignKey("stage.id"))
+    major_id: Mapped[int] = mapped_column(Integer, ForeignKey("major.id"))
+    degree_id: Mapped[int] = mapped_column(Integer, ForeignKey("degree.id"))
     
-    stage = relationship("Stage", back_populates="milestones")
-    
+    degree = relationship("Degree", back_populates="milestones")
+    major = relationship("Major", back_populates="milestones")
+
     def __repr__(self) -> str:
         return f"Milestone(id={self.id!r},name={self.name!r})"
 
@@ -493,7 +497,7 @@ class CourseEnrollment(Base):
     course_type: Mapped[CourseType] = mapped_column(Enum(CourseType)) 
     credits: Mapped[int] = mapped_column(Integer)
     term: Mapped[int] = mapped_column(Integer)
-    pos_id: Mapped[int] = mapped_column(Integer, ForeignKey("student_pos.id"))
+    pos_id: Mapped[int] = mapped_column(Integer, ForeignKey("student_pos.id"), nullable=True)
     year: Mapped[Optional[int]] = mapped_column(Integer, nullable=True) # Do We need the years for the CourseEnrollment? add it just in case we need
     
     student = relationship("Student", back_populates="courses")
@@ -503,28 +507,6 @@ class CourseEnrollment(Base):
     def __repr__(self) -> str:
         return f"CourseEnrollment(id={self.id!r},student_id={self.student_id!r},course_title={self.course_title!r})"
         
-class Stage(Base): 
-    """Holds the stage information:
-        - name
-        - description
-        - major id
-        - degree id
-        
-    Args:
-        Base: Inherited base class from SQLAlchemy that allows ORM
-    """
-    __tablename__ = 'stage'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(40))
-    description: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
-    major_id: Mapped[int] = mapped_column(Integer, ForeignKey("major.id"))
-    degree_id: Mapped[int] = mapped_column(Integer, ForeignKey("degree.id"))
-    
-    milestones = relationship("Milestone", back_populates="stage")
-    
-    
-    def __repr__(self) -> str:
-        return f"Stage(id={self.id!r},major_id={self.major_id!r},degree_id={self.degree_id!r})"
 
 class StudentPOS(Base):
     """Holds the information of student pos (Plan of Study):

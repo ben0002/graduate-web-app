@@ -290,20 +290,6 @@ def find_advisor(advisor_name: str, db:Session, row_number: int):
         return advisor.id
     else:
         raise CustomValueError(message="The advisor \"" + advisor_name + "\" is not found in the Database.", original_exception=None, row_data=row_number)
-
-def find_co_advisor(advisor_name: str, db:Session, row_number: int):
-    if not advisor_name:
-        return None
-    list_name = re.split(r'\s{2,}', advisor_name)
-    advisor_id = []
-    for name in list_name:
-        last_name, first_name = map(str.strip, name.split(',', 1))
-        advisor = db.query(models.Faculty).filter(models.Faculty.last_name == last_name, models.Faculty.first_name == first_name).first()
-        if advisor:
-            advisor_id.append(advisor.id)
-        else:
-            raise CustomValueError(message="The advisor \"" + advisor_name + "\" is not found in the Database.", original_exception=None, row_data=row_number)
-    return advisor_id
     
 # This will find degree and return degree id. 
 def find_degree(degree_name: str, db: Session, row_number: int):
@@ -314,11 +300,21 @@ def find_degree(degree_name: str, db: Session, row_number: int):
         return degree.id
     else:
         raise CustomValueError(message="The degree \"" + degree_name + "\" is not found in the Database.", original_exception=None, row_data=row_number)
-# This will find major and return the id itself 
-def find_major(major_description: str, db: Session, row_number: int):
+# This will find major with its description and return the id itself 
+def find_major_description(major_description: str, db: Session, row_number: int):
     if not major_description:
         raise CustomValueError(message="The major is need.", original_exception=None)
     major = db.query(models.Major).filter(models.Major.description == major_description).one_or_none()
+    if major:
+        return major.id
+    else:
+        raise CustomValueError(message="The major \"" + major_description + "\" is not found in the Database.", original_exception=None, row_data=row_number)
+
+# This will find major with its name and return the id itself 
+def find_major_name(major_name: str, db: Session, row_number: int):
+    if not major_name:
+        raise CustomValueError(message="The major is need.", original_exception=None)
+    major = db.query(models.Major).filter(models.Major.name == major_name).one_or_none()
     if major:
         return major.id
     else:
@@ -340,7 +336,7 @@ def find_department(department_name: str, db: Session, row_number: int):
 # This will help to validate the data from csv file when insert the data for student
 def validation_student_data_from_file(data: dict, db: Session, row_number: int):
     degree_id = find_degree(data.get("Degree") or None, db, row_number)
-    major_id = find_major(data.get("Major") or None, db, row_number)
+    major_id = find_major_description(data.get("Major") or None, db, row_number)
     advisor_id = find_advisor(data.get("Advisor") or None, db, row_number)
     co_advisor_id = find_co_advisor(data.get("Co-Advisor") or None, db, row_number)
     validation_data = schemas.StudentFileUpload(

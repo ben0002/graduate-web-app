@@ -340,9 +340,9 @@ def student_pos(student_id: int, skip: int | None = 0, limit: int | None = 100,
     if(len(student) == 0):
         raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
     return pagination(skip=skip, limit=limit, response=student[0].pos)
-
+#-----------------------------Student Post Endpoint--------------------------------
 @app.post("/students", status_code=201)
-async def create_students(students: list[schemas.StudentIn], major: list[str | None], db:Session = Depends(get_db), degree: list[str] | None = None, ):
+async def create_students(students: list[schemas.StudentIn], db:Session = Depends(get_db)):
     try:
         for student in students:
             db_studnet = models.Student(**student.dict())
@@ -351,7 +351,146 @@ async def create_students(students: list[schemas.StudentIn], major: list[str | N
         HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
     db.commit()
     
+@app.post("/students/{student_id}/event", response_model=schemas.EventIn)
+async def create_student_event(student_id: int, event: schemas.EventIn, db:Session = Depends(get_db)):
+    try:
+        event.student_id = student_id
+        db_event = models.Event(**event.dict())
+        db.add(db_event)
+        db.commit()
+        return db_event
+    except IntegrityError as constraint_violation:
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+
+@app.post("/students/{student_id}/employment", response_model=schemas.EmploymentIn)
+async def create_student_employment(student_id: int, employment: schemas.EmploymentIn, db:Session = Depends(get_db)):
+    try:
+        employment.student_id = student_id
+        db_employment = models.Employment(**employment.dict())
+        db.add(db_employment)
+        db.commit()
+        return db_employment
+    except IntegrityError as constraint_violation:
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+
+@app.post("/students/{student_id}/funding", response_model=schemas.FundingIn)
+async def create_student_funding(student_id: int, funding: schemas.FundingIn, db:Session = Depends(get_db)):
+    try:
+        funding.student_id = student_id
+        db_funding = models.Funding(**funding.dict())
+        db.add(db_funding)
+        db.commit()
+        return db_funding
+    except IntegrityError as constraint_violation:
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+
+@app.post("/students/{student_id}/lab", response_model=schemas.StudentLabsIn)
+async def create_student_lab(student_id: int, lab: schemas.StudentLabsIn, db:Session = Depends(get_db)):
+    try:
+        lab.student_id = student_id
+        db_lab = models.StudentLabs(**lab.dict())
+        db.add(db_lab)
+        db.commit()
+        return db_lab
+    except IntegrityError as constraint_violation:
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+
+@app.post("/students/{student_id}/course", response_model=schemas.CourseEnrollmentIn)
+async def create_student_course(student_id: int, course: schemas.CourseEnrollmentIn, db:Session = Depends(get_db)):
+    try:
+        course.student_id = student_id
+        db_course = models.CourseEnrollment(**course.dict())
+        db.add(db_course)
+        db.commit()
+        return db_course
+    except IntegrityError as constraint_violation:
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+
+@app.post("/students/{student_id}/advisor", response_model=schemas.CreateStudentAdvisor)
+async def create_student_advisor(student_id: int, adviosr: schemas.CreateStudentAdvisor, db:Session = Depends(get_db)):
+    try:
     
+        advisor_id = crud.find_advisor(adviosr.advisor_name, db, 1)
+        db_advisor = models.StudentAdvisor(
+            advisor_id = advisor_id,
+            student_id = student_id,
+            advisor_role = adviosr.advisor_role
+        )
+        db.add(db_advisor)
+        db.commit()
+        return adviosr
+    except crud.CustomValueError as value_error:
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data}) 
+    except IntegrityError as constraint_violation:
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+
+@app.post("/requirement")
+async def create_requirement(progress_requirement: schemas.CreateRequirement, db:Session = Depends(get_db)):
+    try:
+        major_id = crud.find_major_name(progress_requirement.major_name, db, 1)
+        degree_id = crud.find_degree(progress_requirement.degree_name, db, 1)
+        progress_requirement.major_id = major_id
+        progress_requirement.degree_id = degree_id
+        requirement_data = db.query(models.Requirement).filter(models.Requirement.name == progress_requirement.name).first()
+        if not requirement_data:
+            requirement = schemas.RequirementIn(**progress_requirement.dict())
+            db_requirement = models.Requirement(**requirement.dict())
+            db.add(db_requirement)
+            db.commit()
+            requirement_id = db.query(models.Requirement).filter(models.Requirement.name == progress_requirement.name).first().id
+            programEnrollments = db.query(models.ProgramEnrollment).filter(models.ProgramEnrollment.degree_id==degree_id, models.ProgramEnrollment.major_id==major_id).all()
+            if not programEnrollments:
+                raise HTTPException(status_code=404, detail=f"Student with the given major and degree id: {major_id} , {degree_id} does not exist.")
+            else :
+                for programEnrollment in programEnrollments:
+                    progress_data = schemas.ProgressIn(
+                        student_id=programEnrollment.student_id,
+                        requirement_id=requirement_id              
+                                                  )
+                    progress = models.Progress(**progress_data.dict())
+                    db.add(progress)
+                    db.commit()
+                    return progress_data
+        return progress_requirement
+    except crud.CustomValueError as value_error:
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data})
+    except IntegrityError as constraint_violation:
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+        
+@app.post("/milestone", status_code=201)
+async def create_milestone(progress_milestone: schemas.CreateMilestone, db:Session = Depends(get_db)):
+    try:
+        major_id = crud.find_major_name(progress_milestone.major_name, db, 1)
+        degree_id = crud.find_degree(progress_milestone.degree_name, db, 1)
+        progress_milestone.major_id = major_id
+        progress_milestone.degree_id = degree_id
+        milestone_data = db.query(models.Milestone).filter(models.Milestone.name == progress_milestone.name).first()
+        if not milestone_data:
+            milestone = schemas.MilestoneIn(**progress_milestone.dict())
+            db_milestone = models.Milestone(**milestone.dict())
+            db.add(db_milestone)
+            db.commit()
+            milestone_id = db.query(models.Milestone).filter(models.Milestone.name == progress_milestone.name).first().id
+            programEnrollments = db.query(models.Milestone).filter(models.Milestone.degree_id==degree_id, models.Milestone.major_id==major_id).all()
+            if not programEnrollments:
+                raise HTTPException(status_code=404, detail=f"Student with the given major and degree id: {major_id} , {degree_id} does not exist.")
+            else :
+                for programEnrollment in programEnrollments:
+                    progress_data = schemas.ProgressIn(
+                        student_id=programEnrollment.student_id,
+                        milestone_id=milestone_id             
+                                                  )
+                    progress = models.Progress(**progress_data.dict())
+                    db.add(progress)
+                    db.commit()
+    except crud.CustomValueError as value_error:
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data})
+    except IntegrityError as constraint_violation:
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+#------------------------------Student Delete Endpoint--------------------------    
 @app.delete("/students/{student_id}", status_code=204)
 async def delete_student(student_id : int, db:Session = Depends(get_db)):
     filter = {"id" : student_id}
@@ -368,7 +507,7 @@ async def delete_employment(student_id : int, db:Session = Depends(get_db), job_
     student = crud.delete_data(db=db, filter=filter, model=models.Employment)
     if not student:
         raise HTTPException(status_code=404, detail=f"Employment with the given student id: {student_id} does not exist.")
-    """
+"""
 @app.delete("/students/{student_id}/employments", status_code=204)
 async def delete_employment(student_id : int, employment_id: int,db:Session = Depends(get_db)):
     filter = {
@@ -691,24 +830,6 @@ async def courseEnrollment(courseEnrollment_id: int, db: Session = Depends(get_d
     if(len(courseEnrollment) == 0):
         raise HTTPException(status_code=404, detail=f"CourseEnrollment with the given id: {courseEnrollment_id} does not exist.")
     return courseEnrollment[0]
-
-@app.get("/stages", response_model=list[schemas.StageOut])
-async def stages(skip: int | None = 0, limit: int | None = 100, db: Session = Depends(get_db), stage_name: str | None = None, major_id: int | None = None, degree_id : int | None = None):
-    filter = {
-        "name" : stage_name,
-        "major_id" : major_id,
-        "degree_id" : degree_id
-    }
-    stages = crud.get_stage(db, None, skip, limit)
-    return stages
-
-@app.get("/stages/{stage_id}", response_model=schemas.StageOut)
-async def stage(stage_id: int, db: Session = Depends(get_db)):
-    filter = { "id": stage_id}
-    stage = crud.get_stage(db, filter, 0, 1)
-    if(len(stage) == 0):
-        raise HTTPException(status_code=404, detail=f"Stage with the given id: {stage_id} does not exist.")
-    return stage[0]
 
 @app.get("/studentPOS", response_model=list[schemas.StudentPOSOut])
 async def studentPOSs(skip: int | None = 0, limit: int | None = 100, db: Session = Depends(get_db)):
