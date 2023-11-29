@@ -377,6 +377,16 @@ def find_major(db: Session, row_number: int, major_description: str = None, majo
         raise CustomValueError(message="The major \"" + major_name + "\" is not found in the Database.", original_exception=None, row_data=row_number)
         
 
+# This will find major with its name and return the id itself 
+def find_major_name(major_name: str, db: Session, row_number: int):
+    if not major_name:
+        raise CustomValueError(message="The major is need.", original_exception=None)
+    major = db.query(models.Major).filter(models.Major.name == major_name).one_or_none()
+    if major:
+        return major.id
+    else:
+        raise CustomValueError(message="The major \"" + major_name + "\" is not found in the Database.", original_exception=None, row_data=row_number)
+
 # This will find department and return the id itself 
 def find_department(department_name: str, db: Session, row_number: int):
     # Not sure if it can be none
@@ -387,6 +397,17 @@ def find_department(department_name: str, db: Session, row_number: int):
         return department.dept_code
     else:
         raise CustomValueError(message="The department \"" + department_name + "\" is not found in the Database.", original_exception=None, row_data=row_number)
+
+# This will find student pos and return the id itself 
+def find_studentpos(student_id: int, db: Session, row_number: int):
+    # Not sure if it can be none
+    if not student_id:
+        raise CustomValueError(message="The student id is need.", original_exception=None)
+    studentpos = db.query(models.StudentPOS).filter(models.StudentPOS.student_id == student_id).one_or_none()
+    if studentpos:
+        return studentpos.id
+    else:
+        return None
 #--------------------------------------------------------------------------------------------------------------------------------
 
 #----------------------------------------------------------Validation Function--------------------------------------------

@@ -198,6 +198,9 @@ class StudentAdvisorIn(BaseModel):
     advisor_role : AdvisorRole
     class Config:
         from_attributes = True
+
+class CreateStudentAdvisor(StudentAdvisorIn):
+    advisor_name : str = Field(..., max_length=120)
         
 class StudentAdvisorOut(StudentAdvisorIn, FacultyOut):
     
@@ -264,7 +267,8 @@ class RequirementOut(RequirementIn):
 class MilestoneIn(BaseModel):
     name : str = Field(..., max_length=50)
     description : Optional[str] = Field(None, max_length=100)
-    stage_id : int
+    major_id: int
+    degree_id: int
     class Config:
         from_attributes = True
         
@@ -273,12 +277,18 @@ class MilestoneOut(MilestoneIn):
     class Config:
         from_attributes = True
 
+class CreateMilestone(MilestoneIn):
+    major_name : str = Field(..., max_length=30)
+    degree_name : str = Field(..., max_length=30)
+    class Config:
+        from_attributes = True
+
 class ProgressIn(BaseModel):
     student_id : int
-    ideal_completion_date: date
+    ideal_completion_date: date | None = None
     requirement_id: int | None = None
     milestone_id: int | None = None
-    deadline: date
+    deadline: date | None = None
     completion_date: date | None = None
     approved: bool | None = False
     note : Optional[str] = Field(None, max_length=200)
@@ -289,8 +299,8 @@ class ProgressIn(BaseModel):
 
 class ProgressOut(BaseModel):
     id : int
-    ideal_completion_date: date
-    deadline: date
+    ideal_completion_date: date | None = None
+    deadline: date | None = None
     completion_date: date | None = None
     approved: bool | None = False
     exempt: bool | None = False
@@ -302,13 +312,19 @@ class ProgressOut(BaseModel):
         from_attributes = True
         exclude_unset = True  # Exclude fields with None (null) values
 
+class CreateRequirement(RequirementIn):
+    major_name : str = Field(..., max_length=30)
+    degree_name : str = Field(..., max_length=30)
+    class Config:
+        from_attributes = True
+
 class CourseEnrollmentIn(BaseModel):
     student_id: int
     course_title: str = Field(..., max_length=50)   
     transfer: bool = False
     credits: int
     term: int
-    pos_id: int
+    pos_id: int | None = None
     year: int | None = None
     class Config:
         from_attributes = True
@@ -318,18 +334,6 @@ class CourseEnrollmentOut(CourseEnrollmentIn):
     class Config:
         from_attributes = True
         
-class StageIn(BaseModel):
-    name: str = Field(..., max_length=40)
-    description: Optional[str] = Field(None, max_length=150)
-    major_id: int
-    degree_id: int
-    class Config:
-        from_attributes = True
-        
-class StageOut(StageIn):
-    id : int
-    class Config:
-        from_attributes = True
         
 class StudentPOSIn(BaseModel):
     student_id: int

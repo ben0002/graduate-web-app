@@ -58,7 +58,7 @@ class Student(Base):
     citizenship: Mapped[str] = mapped_column(String(120), default="United States Of America")
     va_residency: Mapped[Residencies] = mapped_column(Enum(Residencies), nullable=True)
     status: Mapped[StudentStatus] = mapped_column(Enum(StudentStatus), nullable=True)
-    campus_id: Mapped[Optional[int]] = mapped_column(Integer,ForeignKey("campus.id"), nullable=True)
+    campus_id: Mapped[Optional[int]] = mapped_column(Integer,ForeignKey("campus.id", ondelete="SET NULL"), nullable=True)
     email: Mapped[Optional[str]] = mapped_column(String(70))
     phone_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True) 
     pronouns: Mapped[Optional[str]] = mapped_column(String(15), nullable=True)
@@ -138,6 +138,7 @@ class Major(Base):
     department = relationship("Department", back_populates="majors") 
     requirements = relationship("Requirement", back_populates="major") 
     
+    milestones = relationship("Milestone", back_populates="major") 
     
     def __repr__(self) -> str:
         return f"Major(id={self.id!r}, name={self.name!r}, dept_code={self.dept_code!r}, description={self.description!r})"
@@ -389,7 +390,8 @@ class Milestone(Base):
     """Holds the information of milestone:
         - name
         - description
-        - stage id ----- do we still need it?
+        - major id
+        - degree id
         
     Args:
         Base: Inherited base class from SQLAlchemy that allows ORM
@@ -402,7 +404,8 @@ class Milestone(Base):
     degree_id: Mapped[int] = mapped_column(Integer, ForeignKey("degree.id"))
     
     degree = relationship("Degree", back_populates="milestones")
-    
+    major = relationship("Major", back_populates="milestones")
+
     def __repr__(self) -> str:
         return f"Milestone(id={self.id!r},name={self.name!r})"
 
@@ -425,10 +428,10 @@ class Progress(Base):
     __tablename__ = 'progress'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     student_id: Mapped[int] = mapped_column(Integer, ForeignKey("student.id"))
-    ideal_completion_date: Mapped[str] = mapped_column(String(10))
+    ideal_completion_date: Mapped[str] = mapped_column(String(10), nullable=True)
     requirement_id: Mapped[int] = mapped_column(Integer, ForeignKey("requirement.id"), nullable=True)
     milestone_id: Mapped[int] = mapped_column(Integer, ForeignKey("milestone.id"), nullable=True)
-    deadline: Mapped[str] = mapped_column(String(10))
+    deadline: Mapped[str] = mapped_column(String(10), nullable=True)
     completion_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     approved: Mapped[bool] = mapped_column(Boolean)
     note: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
@@ -463,7 +466,7 @@ class CourseEnrollment(Base):
     transfer: Mapped[bool] = mapped_column(Boolean, default=False)
     credits: Mapped[int] = mapped_column(Integer)
     term: Mapped[int] = mapped_column(Integer)
-    pos_id: Mapped[int] = mapped_column(Integer, ForeignKey("student_pos.id"))
+    pos_id: Mapped[int] = mapped_column(Integer, ForeignKey("student_pos.id", ondelete="SET NULL"), nullable=True)
     year: Mapped[Optional[int]] = mapped_column(Integer, nullable=True) # Do We need the years for the CourseEnrollment? add it just in case we need
     
     student = relationship("Student", back_populates="courses")
