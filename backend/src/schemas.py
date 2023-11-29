@@ -197,9 +197,6 @@ class StudentAdvisorIn(BaseModel):
     advisor_role : AdvisorRole
     class Config:
         from_attributes = True
-
-class CreateStudentAdvisor(StudentAdvisorIn):
-    advisor_id : int
         
 class StudentAdvisorOut(StudentAdvisorIn, FacultyOut):
     
