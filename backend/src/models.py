@@ -45,25 +45,6 @@ class Student(Base):
         - prelim exam pass
         - first term 
         - profile picture
-        student's
-        - first name
-        - last name
-        - middle name
-        - residency
-        - type
-        - status
-        - admit type
-        - campus id
-        - email
-        - phone number
-        - citizenship
-        - gender
-        - ethnicity
-        - committee members
-        - prelim exam date
-        - prelim exam pass
-        - first term 
-        - profile picture
 
     Args:
         Base: Inherited superclass that allows ORM
@@ -74,16 +55,14 @@ class Student(Base):
     first_name: Mapped[str] = mapped_column(String(40))
     middle_name: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     last_name: Mapped[Optional[str]] = mapped_column(String(40))
-    citizenship: Mapped[str] = mapped_column(String(120), nullable=True)
+    citizenship: Mapped[str] = mapped_column(String(120), default="United States Of America")
     va_residency: Mapped[Residencies] = mapped_column(Enum(Residencies), nullable=True)
-    type: Mapped[StudentTypes] = mapped_column(Enum(StudentTypes), nullable=True)
     status: Mapped[StudentStatus] = mapped_column(Enum(StudentStatus), nullable=True)
     campus_id: Mapped[Optional[int]] = mapped_column(Integer,ForeignKey("campus.id"), nullable=True)
     email: Mapped[Optional[str]] = mapped_column(String(70))
     phone_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True) 
     pronouns: Mapped[Optional[str]] = mapped_column(String(15), nullable=True)
     gender : Mapped[str] = mapped_column(String(40), nullable=True) 
-    ethnicity : Mapped[str] = mapped_column(String(50), nullable=True) 
     advisory_committee : Mapped[Optional[str]] = mapped_column(String(200), nullable=True) 
     prelim_exam_date : Mapped[Optional[str]] = mapped_column(String(10), nullable=True) # do we drop this column?
     plan_submit_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
@@ -107,6 +86,7 @@ class Student(Base):
     progress_tasks = relationship("Progress", back_populates = "student", cascade="all, delete, delete-orphan") 
     courses = relationship("CourseEnrollment", back_populates = "student", cascade="all, delete, delete-orphan") 
     pos = relationship("StudentPOS", back_populates = "student", cascade="all, delete, delete-orphan") 
+    messages = relationship("Message", back_populates="student", cascade="all, delete, delete-orphan")
     
     def __repr__(self) -> str:
         return f"Student(id={self.id!r}, name={self.first_name!r}, lastname={self.last_name!r}, email={self.email!r})"
@@ -132,10 +112,7 @@ class Degree(Base):
      # make sure that the degree name and degree level should be unique to each other.
     
     requirements = relationship("Requirement", back_populates="degree") 
-    
-     # make sure that the degree name and degree level should be unique to each other.
-    
-    requirements = relationship("Requirement", back_populates="degree") 
+    milestones = relationship("Milestone", back_populates="degree") 
     
 
     def __repr__(self) -> str:
@@ -160,12 +137,7 @@ class Major(Base):
     
     department = relationship("Department", back_populates="majors") 
     requirements = relationship("Requirement", back_populates="major") 
-    name: Mapped[str] = mapped_column(String(30))
-    dept_code: Mapped[Integer] = mapped_column(Integer, ForeignKey("department.dept_code"))
-    description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     
-    department = relationship("Department", back_populates="majors") 
-    requirements = relationship("Requirement", back_populates="major") 
     
     def __repr__(self) -> str:
         return f"Major(id={self.id!r}, name={self.name!r}, dept_code={self.dept_code!r}, description={self.description!r})"
@@ -185,11 +157,8 @@ class Department(Base):
     
     faculty = relationship("Faculty", back_populates="department")
     majors = relationship("Major", back_populates="department") 
-    dept_code: Mapped[Integer] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(100))
+
     
-    faculty = relationship("Faculty", back_populates="department")
-    majors = relationship("Major", back_populates="department") 
     
     def __repr__(self) -> str:
         return f"Department(id={self.id!r}, name={self.name!r})"
@@ -378,7 +347,6 @@ class Faculty(Base):
     __tablename__ = 'faculty'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     first_name: Mapped[str] = mapped_column(String(40))
-    middle_name: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     last_name: Mapped[Optional[str]] = mapped_column(String(40))
     dept_code: Mapped[Integer] = mapped_column(Integer, ForeignKey("department.dept_code"))
     email: Mapped[str] = mapped_column(String(70))
@@ -387,6 +355,7 @@ class Faculty(Base):
     
     department = relationship("Department", back_populates="faculty")
     advisor_students = relationship("StudentAdvisor", back_populates="advisor")
+    messages = relationship("Message", back_populates="advisor", cascade="all, delete, delete-orphan")
     
     def __repr__(self) -> str:
         return f"Faculty(id={self.id!r},first_name={self.first_name!r},last_name={self.last_name!r})"
@@ -429,9 +398,10 @@ class Milestone(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(50))
     description: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    stage_id: Mapped[int] = mapped_column(Integer, ForeignKey("stage.id"))
+    major_id: Mapped[int] = mapped_column(Integer, ForeignKey("major.id"))
+    degree_id: Mapped[int] = mapped_column(Integer, ForeignKey("degree.id"))
     
-    stage = relationship("Stage", back_populates="milestones")
+    degree = relationship("Degree", back_populates="milestones")
     
     def __repr__(self) -> str:
         return f"Milestone(id={self.id!r},name={self.name!r})"
@@ -490,7 +460,7 @@ class CourseEnrollment(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     student_id: Mapped[int] = mapped_column(Integer, ForeignKey("student.id"))
     course_title: Mapped[str] = mapped_column(String(50))    
-    course_type: Mapped[CourseType] = mapped_column(Enum(CourseType)) 
+    transfer: Mapped[bool] = mapped_column(Boolean, default=False)
     credits: Mapped[int] = mapped_column(Integer)
     term: Mapped[int] = mapped_column(Integer)
     pos_id: Mapped[int] = mapped_column(Integer, ForeignKey("student_pos.id"))
@@ -503,28 +473,6 @@ class CourseEnrollment(Base):
     def __repr__(self) -> str:
         return f"CourseEnrollment(id={self.id!r},student_id={self.student_id!r},course_title={self.course_title!r})"
         
-class Stage(Base): 
-    """Holds the stage information:
-        - name
-        - description
-        - major id
-        - degree id
-        
-    Args:
-        Base: Inherited base class from SQLAlchemy that allows ORM
-    """
-    __tablename__ = 'stage'
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(40))
-    description: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
-    major_id: Mapped[int] = mapped_column(Integer, ForeignKey("major.id"))
-    degree_id: Mapped[int] = mapped_column(Integer, ForeignKey("degree.id"))
-    
-    milestones = relationship("Milestone", back_populates="stage")
-    
-    
-    def __repr__(self) -> str:
-        return f"Stage(id={self.id!r},major_id={self.major_id!r},degree_id={self.degree_id!r})"
 
 class StudentPOS(Base):
     """Holds the information of student pos (Plan of Study):
@@ -551,6 +499,19 @@ class StudentPOS(Base):
     
     def __repr__(self) -> str:
         return f"StudentPOS(id={self.id!r},student_id={self.student_id!r})"
+    
+class Message(Base):
+    
+    __tablename__ = 'message'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    student_id: Mapped[int] = mapped_column(Integer, ForeignKey("student.id"))
+    advisor_id: Mapped[int] = mapped_column(Integer, ForeignKey('faculty.id'), nullable=True)
+    text: Mapped[str] = mapped_column(String(200))
+    private: Mapped[bool] = mapped_column(Boolean, default=False)
+    
+    student = relationship("Student", back_populates="messages")
+    advisor = relationship("Faculty", back_populates="messages")
+    
 
     
     

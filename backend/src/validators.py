@@ -7,5 +7,5 @@ def validate_date(value):
         try:
             value = datetime.strptime(value, '%d-%b-%y').date()
         except ValueError:
-            raise ValueError("Invalid date format. Should be in the format '31-MAR-22'.")
+            raise ValueError("Invalid date format. Should be in the format '30-MAR-22'.")
         return value

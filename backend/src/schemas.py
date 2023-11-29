@@ -1,4 +1,4 @@
-from pydantic import BaseModel, validator, conint, Field
+from pydantic import BaseModel, validator, Field
 from pydantic.types import constr
 from pydantic import EmailStr
 from typing import Optional
@@ -6,14 +6,16 @@ from datetime import date
 from validators import *
 from enums import *
 
+# clean up dates and just require one date format
+
+#---------------------- student schemas -----------------------------#
 
 class StudentIn(BaseModel):
     first_name: str = Field(..., max_length=40)
     middle_name: Optional[str] = Field(None, max_length=40)
     last_name: str = Field(..., max_length=40)
-    citizenship: Optional[str] = Field(None, max_length=60)
+    citizenship: str | None = Field(default="United States of America", max_length=60)
     va_residency: Residencies | None = None
-    type: StudentTypes | None = None
     status: StudentStatus | None = None
     campus_id: int | None = None
     email: EmailStr 
@@ -23,6 +25,7 @@ class StudentIn(BaseModel):
         strip_whitespace=True  # Remove leading/trailing whitespace (default is True)
     ) | None = None
     pronouns: Optional[str] = Field(None, max_length=15)
+    gender: Optional[str] = Field(None, max_length=10)
     advisory_committee: Optional[str] = Field(None, max_length=200)
     plan_submit_date: date | None = None
     prelim_exam_date: date | None = None
@@ -42,19 +45,25 @@ class StudentOut(StudentIn):
     
     class Config:
         from_attributes = True
-        
+
+class StudentProgramEnrollment(BaseModel):
+    major: str = Field(..., max_length=30)
+    degree: str = Field(..., max_length=30)   
+    enrollment_date: date | None = None  
+
+class StudentAdvisor(BaseModel):
+    first_name: str = Field(..., max_length=40)
+    last_name : str = Field(..., max_length=40)
+    
 class CreateStudent(StudentIn):
-    major_name : str = Field(..., max_length=30)
-    degree_name : str = Field(..., max_length=30)
-    enrollment_date : date | None = None
-    advisor_first_name : str = Field(..., max_length=40)
-    advisor_midlle_name : Optional[str] = Field(None, max_length=40)
-    advisor_last_name : str = Field(..., max_length=40)
+    program_enrollments: list[StudentProgramEnrollment]
+    main_advisor: StudentAdvisor
+    co_advisors: list[StudentAdvisor]
     campus_name: str = Field(..., max_length=50)
-    co_advisor_name: str | None = None
+   
     
     class Config:
-        from_attributes = True
+        exclude = ['campus_id', 'profile_picture']
 
 class StudentFileUpload(StudentIn):
     #---------------------------Validator----------------------------------
@@ -85,7 +94,6 @@ class StudentFileUpload(StudentIn):
 
 class FacultyIn(BaseModel):
     first_name: str = Field(..., max_length=40)
-    middle_name: str | None = None
     last_name: str = Field(..., max_length=30)
     dept_code: int # could be int or str; testing purposes = it is int rn
     email: EmailStr
@@ -157,11 +165,15 @@ class ProgramEnrollmentIn(BaseModel):
     degree_id: int
     major_id: int
     enrollment_date: date
+    
+    class Config:
+        from_attributes = True
+
+class ProgramEnrollmentFileIn(ProgramEnrollmentIn):
     @validator("enrollment_date", pre=True, always=True)
     def validate_enrollment_date(cls, value):
         return validate_date(value)
-    class Config:
-        from_attributes = True
+    
 
 class ProgramEnrollmentOut(BaseModel):
     id: int
@@ -293,7 +305,7 @@ class ProgressOut(BaseModel):
 class CourseEnrollmentIn(BaseModel):
     student_id: int
     course_title: str = Field(..., max_length=50)   
-    course_type: CourseType
+    transfer: bool = False
     credits: int
     term: int
     pos_id: int
@@ -333,3 +345,42 @@ class StudentPOSOut(StudentPOSIn):
     class Config:
         from_attributes = True
 
+
+# ----------------------- lump schemas ------------------------- #
+class studentCard(BaseModel):
+    info: StudentOut
+    campus: CampusOut
+    advisors: list[StudentAdvisorOut]
+    programs: list[ProgramEnrollmentOut]
+    pos: list[StudentPOSOut]
+    
+class progressPage(BaseModel):
+    #   To do box --> events
+    #Milestones --> milestones progress
+    #Requirements --> requirement progress
+    #Funding --> funding 
+    #Employment --> employment
+    milestones: list[ProgressOut]
+    requirements: list[ProgressOut]
+    funding: list[FundingOut]
+    employment: list[EmploymentOut]
+    to_do_list: list[EventOut]
+    courses: list[CourseEnrollmentOut]
+    
+class ProfilePage(BaseModel):
+    # add messages once table is in
+    advisors: list[StudentAdvisorOut]
+    advisory_committee: str | None = ""
+    labs: list[StudentLabsIn]
+    courses: list[CourseEnrollmentOut] 
+    
+
+class MessageOut(BaseModel):
+    id: int 
+    student_id: int
+    advisor_id: int | None = None
+    text: str
+    private: bool | None = False
+    
+
+    

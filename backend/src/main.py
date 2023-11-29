@@ -23,7 +23,7 @@ from database import SessionLocal, engine
 import csv
 
 #models.Base.metadata.drop_all(engine)
-models.Base.metadata.create_all(engine)
+#models.Base.metadata.create_all(engine)
 
 # Dependency
 def get_db():
@@ -146,13 +146,13 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 
 def verify_jwt(token: Annotated[str | None, Cookie()] = None):
     try:
-        payload = token.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
     except JWTError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
-            headers={"WWW-Authenticate": "Bearer"},
+            headers={"access_token": "jwt"},
         )
     
 #------------------- helper functions -----------#
@@ -169,18 +169,66 @@ def pagination(skip: int, limit: int, response: list):
     return response
 
 #-------------------------------------- start of /students endpoints -------------------------------#
+
+# ----------- lump info student page endpoints --------------------#
+# 'student': {}, 'advisors': [], 'programs': [], 'campus': {}, 'POS_info': []}
+@app.get("/api/students/login_info", response_model=schemas.studentCard)
+def get_login_page_info(access_token:str = Cookie(...), db: Session=Depends(get_db)):
+    
+    payload = verify_jwt(access_token)
+    student = crud.get_students(db=db, filters={"id": payload.get("id")}, skip=0, limit=1)[0]
+    #student = crud.get_students(db=db, filters={"id": student_id}, skip=0, limit=1)[0]
+    
+    response = schemas.loginPage(
+        info=student,
+        campus=student.campus,
+        advisors=[schemas.StudentAdvisorOut(
+                    id=student_advisor.advisor.id,
+                    first_name=student_advisor.advisor.first_name,
+                    email=student_advisor.advisor.email,
+                    last_name=student_advisor.advisor.last_name,
+                    dept_code=student_advisor.advisor.dept_code,
+                    privilege_level=student_advisor.advisor.privilege_level,
+                    advisor_role=student_advisor.advisor_role   
+                ) for student_advisor in student.advisors],
+        programs=[schemas.ProgramEnrollmentOut(id=program.id, major=program.major, degree=program.degree,
+                                               enrollment_date=program.enrollment_date) for program in student.programs],
+        pos=student.pos
+    )
+    
+    return response
+
+@app.get("/api/students/progress_page_info", response_model=schemas.progressPage)
+def get_progress_page(db: Session=Depends(get_db), access_token:str = Cookie(...)):
+    
+    payload = verify_jwt(access_token)
+    student_id = payload.get("id")
+    
+    tasks = student_progress(student_id=student_id, skip=0, limit=100, db=db)
+    response = schemas.progressPage(
+        milestones= [task for task in tasks if task.milestone],
+        requirements= [task for task in tasks if task.requirement],
+        funding=student_funding(student_id=student_id, skip=0, limit=100, db=db),
+        employment=student_employments(student_id=student_id, skip=0, limit=100, db=db),
+        to_do_list=student_events(student_id=student_id, skip=0, limit=0, db=db),
+        courses=student_courses(student_id=student_id, skip=0, limit=100, db=db)
+    )
+    
+    return response
+    
+    
+    
+    
 @app.get("/api/students", response_model=list[schemas.StudentOut])
 def students(
-    skip: int = 0, limit: int = 100, db: Session = Depends(get_db), 
-    admit_type: AdmitType | None = None, residency: Residencies | None = None, 
-    student_type: StudentTypes | None = None, prelim_exam_date: date | None = None, 
+    skip: int = 0, limit: int = 100, db: Session = Depends(get_db), residency: Residencies | None = None, 
+    student_status: StudentStatus | None = None, prelim_exam_date: date | None = None, 
     prelim_exam_passed: bool | None = None, first_term: int | None = None, 
     status: StudentStatus | None = None, campus_id: int | None = None 
 ):
     filters = {
-        "admit_type": admit_type,
         "va_residency": residency,
-        "student_type": student_type,
+        "student_status": student_status,
         "prelim_exam_date": prelim_exam_date,
         "prelim_exam_passed": prelim_exam_passed,
         "first_term": first_term,
@@ -193,7 +241,7 @@ def students(
 
 # add filters once all basic func. is done
 @app.get("/api/students/{student_id}", response_model=schemas.StudentOut)
-async def students_id(student_id: int, db: Session = Depends(get_db)):
+def students_id(student_id: int, db: Session = Depends(get_db)) -> schemas.StudentOut:
     filter = {
         "id": student_id
     }
@@ -240,7 +288,7 @@ def student_advisors(student_id: int, skip: int | None = 0, limit: int | None = 
             schemas.StudentAdvisorOut(
                 id=student_advisor.advisor.id,
                 first_name=student_advisor.advisor.first_name,
-                middle_name=student_advisor.advisor.middle_name,
+                email=student_advisor.advisor.email,
                 last_name=student_advisor.advisor.last_name,
                 dept_code=student_advisor.advisor.dept_code,
                 privilege_level=student_advisor.advisor.privilege_level,
@@ -251,7 +299,6 @@ def student_advisors(student_id: int, skip: int | None = 0, limit: int | None = 
     return pagination(skip=skip, limit=limit, response=advisors)
   
     
-
 @app.get("/api/students/{student_id}/events", response_model=list[schemas.EventOut])
 def student_events(student_id: int, skip: int | None = 0, limit: int | None = 100, 
                         db: Session = Depends(get_db)):
@@ -333,7 +380,7 @@ def student_courses(student_id: int, skip: int | None = 0, limit: int | None = 1
 
 @app.get("/students/{student_id}/pos", response_model=list[schemas.StudentPOSOut])
 def student_pos(student_id: int, skip: int | None = 0, limit: int | None = 100, 
-                        db: Session = Depends(get_db)):
+                        db: Session = Depends(get_db), access_token: str = Cookie(...)):
     
     filter = {"id": student_id}
     student = crud.get_students(db=db, filters=filter)
@@ -341,14 +388,76 @@ def student_pos(student_id: int, skip: int | None = 0, limit: int | None = 100,
         raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
     return pagination(skip=skip, limit=limit, response=student[0].pos)
 
+@app.get("/students/{student_id}/messages", response_model=list[schemas.MessageOut])
+def student_messages(student_id: int, db: Session = Depends(get_db), skip: int | None = 0, limit: int | None = 100, access_token: str = Cookie(...)):
+    
+    payload = verify_jwt(access_token)
+    
+    filter = {"id": student_id}
+    if(payload.get('faculty') == True):
+        filter.update({"private", False})
+        
+    messages=crud.get_messages(db=db, filters=filter,skip=skip, limit=limit)
+    return messages
+    
+    
 @app.post("/students", status_code=201)
-async def create_students(students: list[schemas.StudentIn], major: list[str | None], db:Session = Depends(get_db), degree: list[str] | None = None, ):
+async def create_students(students: list[schemas.CreateStudent], db:Session = Depends(get_db)):
     try:
         for student in students:
-            db_studnet = models.Student(**student.dict())
-            db.add(db_studnet)
+            
+            student_data = {
+                "first_name" :student.first_name,
+                "middle_name": student.middle_name,
+                "last_name":student.last_name,
+                "citizenship":student.citizenship,
+                "va_residency":student.va_residency,
+                "type":student.type,
+                "status":student.status,
+                "email":student.email,
+                "phone_number": student.phone_number,
+                "pronouns": student.pronouns,
+                "gender":student.gender,
+                "advisory_committee":student.advisory_committee,
+                "prelim_exam_date":student.prelim_exam_date, # do we drop this column?
+                "plan_submit_date":student.plan_submit_date,
+                "prelim_exam_pass":student.prelim_exam_pass,
+                "proposal_meeting":student.proposal_meeting,
+                "progress_meeting":student.progress_meeting,
+                "ETD_submitted":student.ETD_submitted,
+                "final_exam":student.final_exam,
+                "first_term":student.first_term,
+                "graduation_date":student.graduation_date
+            }
+            
+            student_id = crud.insert_student(data=student_data, db=db)
+            for program in student.program_enrollments:
+                
+                major_id = crud.find_major(major_name=program.major, db=db, row_number=0)
+                degree_id = crud.find_degree(degree_name=program.degree, db=db, row_number=0)
+                program_data = schemas.ProgramEnrollmentIn(
+                    student_id=student_id,
+                    degree_id=degree_id,
+                    major_id=major_id,
+                    enrollment_date=program.enrollment_date
+                )
+                crud.insert_program_enrollment(program=program_data, db=db)
+            
+            advisor_name = f"{student.main_advisor.last_name},{student.main_advisor.first_name}"
+            advisor_id = crud.find_advisor(advisor_name=advisor_name, db=db, row_number=0)
+
+            crud.insert_student_advisor_from_file(advisor_id=advisor_id, student_id=student_id, role=AdvisorRole.MAIN_ADVISOR, db=db)
+            
+            for co_advisor in student.co_advisors:
+                advisor_name = f"{co_advisor.last_name},{co_advisor.first_name}"
+                advisor_id = crud.find_advisor(advisor_name=advisor_name, db=db, row_number=0)
+
+                crud.insert_student_advisor_from_file(advisor_id=advisor_id, student_id=student_id, role=AdvisorRole.CO_ADVISOR, db=db)
+            
+            
     except IntegrityError as constraint_violation:
-        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
     db.commit()
     
     
