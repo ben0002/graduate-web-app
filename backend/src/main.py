@@ -69,7 +69,7 @@ cas_client = CASClient(
 
 # Routes related to CAS
 @app.get("/login")
-def login(request: Request, response: Response):
+def login(request: Request, response: Response, db:Session = Depends(get_db)):
 
     jwt = request.cookies.get("access_token")
     if jwt: # return user info
