@@ -46,9 +46,9 @@ class StudentOut(StudentIn):
     class Config:
         from_attributes = True
 
-class StudentProgramEnrollment(BaseModel):
-    major: str = Field(..., max_length=30)
-    degree: str = Field(..., max_length=30)   
+class CreateProgramEnrollment(BaseModel):
+    major_id: str = Field(..., max_length=30)
+    degree_id: str = Field(..., max_length=30)   
     enrollment_date: date | None = None  
 
 class StudentAdvisor(BaseModel):
@@ -56,11 +56,10 @@ class StudentAdvisor(BaseModel):
     last_name : str = Field(..., max_length=40)
     
 class CreateStudent(StudentIn):
-    program_enrollments: list[StudentProgramEnrollment]
-    main_advisor: StudentAdvisor
-    co_advisors: list[StudentAdvisor]
-    campus_name: str = Field(..., max_length=50)
-   
+    program_enrollments: list[CreateProgramEnrollment]
+    main_advisor_id: int 
+    co_advisors_ids: list[int] | None = None
+    campus_id: int 
     
     class Config:
         exclude = ['campus_id', 'profile_picture']

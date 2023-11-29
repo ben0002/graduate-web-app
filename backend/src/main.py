@@ -432,12 +432,12 @@ async def create_students(students: list[schemas.CreateStudent], db:Session = De
             student_id = crud.insert_student(data=student_data, db=db)
             for program in student.program_enrollments:
                 
-                major_id = crud.find_major(major_name=program.major, db=db, row_number=0)
-                degree_id = crud.find_degree(degree_name=program.degree, db=db, row_number=0)
+                #major_id = crud.find_major(major_name=program.major, db=db, row_number=0)
+                #degree_id = crud.find_degree(degree_name=program.degree, db=db, row_number=0)
                 program_data = schemas.ProgramEnrollmentIn(
                     student_id=student_id,
-                    degree_id=degree_id,
-                    major_id=major_id,
+                    degree_id=program.degree_id_id,
+                    major_id=program.major_id,
                     enrollment_date=program.enrollment_date
                 )
                 crud.insert_program_enrollment(program=program_data, db=db)
@@ -445,13 +445,12 @@ async def create_students(students: list[schemas.CreateStudent], db:Session = De
             advisor_name = f"{student.main_advisor.last_name},{student.main_advisor.first_name}"
             advisor_id = crud.find_advisor(advisor_name=advisor_name, db=db, row_number=0)
 
-            crud.insert_student_advisor_from_file(advisor_id=advisor_id, student_id=student_id, role=AdvisorRole.MAIN_ADVISOR, db=db)
+            crud.insert_student_advisor_from_file(advisor_id=student.main_advisor_id, student_id=student_id, role=AdvisorRole.MAIN_ADVISOR, db=db)
             
-            for co_advisor in student.co_advisors:
-                advisor_name = f"{co_advisor.last_name},{co_advisor.first_name}"
-                advisor_id = crud.find_advisor(advisor_name=advisor_name, db=db, row_number=0)
-
-                crud.insert_student_advisor_from_file(advisor_id=advisor_id, student_id=student_id, role=AdvisorRole.CO_ADVISOR, db=db)
+            for co_advisor_id in student.co_advisors_ids:
+                #advisor_name = f"{co_advisor.last_name},{co_advisor.first_name}"
+                #advisor_id = crud.find_advisor(advisor_name=advisor_name, db=db, row_number=0)
+                crud.insert_student_advisor_from_file(advisor_id=co_advisor_id, student_id=student_id, role=AdvisorRole.CO_ADVISOR, db=db)
             
             
     except IntegrityError as constraint_violation:
@@ -558,7 +557,7 @@ async def create_student_advisor(student_id: int, advisor: schemas.CreateStudent
     except IntegrityError as constraint_violation:
         HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
 
-@app.post("/requirement", response_model=schemas.CreateRequirement)
+@app.post("api/requirement", response_model=schemas.CreateRequirement)
 async def create_requirement(progress_requirement: schemas.CreateRequirement, access_token = Cookie(...), db:Session = Depends(get_db)):
     try:
         ##payload = verify_jwt(access_token) this may need for privilege level
@@ -592,7 +591,7 @@ async def create_requirement(progress_requirement: schemas.CreateRequirement, ac
     except IntegrityError as constraint_violation:
         HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
         
-@app.post("/milestone", response_model= schemas.CreateMilestone)
+@app.post("/api/milestone", response_model= schemas.CreateMilestone)
 async def create_milestone(progress_milestone: schemas.CreateMilestone, access_token = Cookie(...), db:Session = Depends(get_db)):
     try:
         #payload = verify_jwt(access_token) this may need for privilege level
