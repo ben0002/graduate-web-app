@@ -16,6 +16,34 @@ function ToDoModal(task, openModal, closeModal, methods, newTask){
     setEdit(newTask);
   }, [newTask])
 
+  /*
+  useEffect(_ => {
+    async function newEvent(){
+      await fetch("https://bktp-gradpro-api.discovery.cs.vt.edu/student/course/4", {
+          method: 'DELETE',
+          credentials: 'include', // To include cookies in the request
+          headers: {
+              'Accept': 'application/json', // Explicitly tell the server that you want JSON
+              'Content-Type': 'application/json',
+          },
+          
+      })
+      .then(res => {
+          if(res.ok) return res.json();
+          else console.log(res.status);
+      })
+      .then(data => {
+          if (data == undefined) console.error('Error: Non ok http response');
+          else{
+              console.log(data)
+          }
+      })
+      .catch((err) => console.error('Error:', err.message))
+    }
+    newEvent()
+  }, [])
+  */
+
   const checkChanged = _ => {
     return true
   }

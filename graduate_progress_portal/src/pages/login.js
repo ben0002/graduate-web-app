@@ -8,28 +8,28 @@ export default function Login() {
 
     useEffect(_ => {
         async function login() {
-            await fetch("https://bktp-gradpro-api2.discovery.cs.vt.edu/api/login", {
+            await fetch("https://bktp-gradpro-api2.discovery.cs.vt.edu/login", {
                 credentials: 'include', // To include cookies in the request
                 headers: {
                     'Accept': 'application/json', // Explicitly tell the server that you want JSON
                 }
             })
-                .then(res => {
-                    if (res.ok) return res.json();
-                    else console.log(res.status);
-                })
-                .then(data => {
-                    if (data === undefined) console.error('Error: Non ok http response');
-                    else if (data.redirect_url) window.location.href = data.redirect_url;
-                    else {
-                        console.log(data)
-                        dispatch({ type: 'populate_user', payload: data });
-                        navigate('/student/progress')
-                    }
-                })
-                .catch((err) => console.error('Error:', err.message))
+            .then(res => {
+                if(res.ok) return res.json();
+                else console.log(res.status);
+            })
+            .then(data => {
+                if (data == undefined) console.error('Error: Non ok http response');
+                else if(data.redirect_url) window.location.href = data.redirect_url;
+                else{
+                    console.log(data)
+                    dispatch({type: 'pop_user', payload: {data: data, type: 'student'}});
+                    navigate('/student/progress')
+                }
+            })
+            .catch((err) => console.error('Error:', err.message))    
         }
-        login();
+        login();      
     }, []);
 
     return (

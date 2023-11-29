@@ -434,9 +434,6 @@ class Milestone(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(50))
     description: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    stage_id: Mapped[int] = mapped_column(Integer, ForeignKey("stage.id"))
-    
-    stage = relationship("Stage", back_populates="milestones")
     
     def __repr__(self) -> str:
         return f"Milestone(id={self.id!r},name={self.name!r})"
@@ -524,8 +521,6 @@ class Stage(Base):
     description: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
     major_id: Mapped[int] = mapped_column(Integer, ForeignKey("major.id"))
     degree_id: Mapped[int] = mapped_column(Integer, ForeignKey("degree.id"))
-    
-    milestones = relationship("Milestone", back_populates="stage")
     
     
     def __repr__(self) -> str:

@@ -39,7 +39,6 @@ const StudentAdvisorCommittee = () => {
               size="medium"
               placeholder="Enter Advisor Name"
               InputProps={{
-                disableUnderline: true,
                 sx: {
                   fontSize: 16,
                   '&::placeholder': {
@@ -79,7 +78,6 @@ const StudentAdvisorCommittee = () => {
               size="medium"
               placeholder="Enter Committee Member Name"
               InputProps={{
-                disableUnderline: true,
                 sx: {
                   fontSize: 16,
                   '&::placeholder': {

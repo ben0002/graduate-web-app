@@ -10,8 +10,40 @@ const studentReducer = (state = initialState, action) => {
   // Handle actions here - example
   switch (action.type) {
     // Add case for each action type
-    case 'populate_user':
-      return {...state, user: action.payload}
+    case 'pop_user':
+      if(action.payload.type == 'student'){
+        return {...state, 
+          user: action.payload.type,
+          student: {...state.student, 
+            info: action.payload.data.student, 
+            advisors: action.payload.data.advisors, 
+            programs: action.payload.data.programs, 
+            campus: action.payload.data.campus, 
+            pos: action.payload.data.POS_info
+          }
+        }
+      }
+      else{
+        return {...state}
+      }
+    case 'pop_stu_prog':
+      return {...state, 
+        student: { ...state.student,
+          tasks: action.payload.events, 
+          milestones: action.payload.milestones, 
+          requirements: action.payload.requirements, 
+          funding: action.payload.funding, 
+          employment: action.payload.employment, 
+          courses: action.payload.courses
+        }
+      }
+    case 'pop_stu_profile':
+      return {...state,
+        student: { ...state.student, 
+          labs: action.payload.labs, 
+          messages: action.payload.messages
+        }
+      }
     default:
       return state;
   }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tooltip, Button, Card, CardContent, Typography, Avatar, Box, Grid } from '@mui/material';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
 
@@ -8,9 +8,12 @@ export default function StudentCardInfo({ student }) {
     const defaultAvatar = '/path/to/default/avatar.jpg'; // Replace with some sort of endpoint later?
 
     const location = useLocation();
+    const navigate = useNavigate();
 
     const user = useSelector(state => state.user)
 
+    if(user == undefined) return (<></>)
+    
     return (
         <Card className="student-card-container" sx={{ height: '165px', backgroundColor: '#F0F0F0', border: '.3rem solid #75787b'
     }}>
