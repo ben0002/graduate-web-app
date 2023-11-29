@@ -400,8 +400,8 @@ def student_messages(student_id: int, db: Session = Depends(get_db), skip: int |
     return messages
     
     
-@app.post("api/students", status_code=201)
-async def create_students(students: list[schemas.CreateStudent], db:Session = Depends(get_db)):
+@app.post("/api/students", status_code=201)
+def create_students(students: list[schemas.CreateStudent], db:Session = Depends(get_db)):
     try:
         for student in students:
             
@@ -411,7 +411,6 @@ async def create_students(students: list[schemas.CreateStudent], db:Session = De
                 "last_name":student.last_name,
                 "citizenship":student.citizenship,
                 "va_residency":student.va_residency,
-                "type":student.type,
                 "status":student.status,
                 "email":student.email,
                 "phone_number": student.phone_number,
@@ -436,14 +435,14 @@ async def create_students(students: list[schemas.CreateStudent], db:Session = De
                 #degree_id = crud.find_degree(degree_name=program.degree, db=db, row_number=0)
                 program_data = schemas.ProgramEnrollmentIn(
                     student_id=student_id,
-                    degree_id=program.degree_id_id,
+                    degree_id=program.degree_id,
                     major_id=program.major_id,
                     enrollment_date=program.enrollment_date
                 )
                 crud.insert_program_enrollment(program=program_data, db=db)
             
-            advisor_name = f"{student.main_advisor.last_name},{student.main_advisor.first_name}"
-            advisor_id = crud.find_advisor(advisor_name=advisor_name, db=db, row_number=0)
+            #advisor_name = f"{student.main_advisor.last_name},{student.main_advisor.first_name}"
+            #advisor_id = crud.find_advisor(advisor_name=advisor_name, db=db, row_number=0)
 
             crud.insert_student_advisor_from_file(advisor_id=student.main_advisor_id, student_id=student_id, role=AdvisorRole.MAIN_ADVISOR, db=db)
             
@@ -452,13 +451,13 @@ async def create_students(students: list[schemas.CreateStudent], db:Session = De
                 #advisor_id = crud.find_advisor(advisor_name=advisor_name, db=db, row_number=0)
                 crud.insert_student_advisor_from_file(advisor_id=co_advisor_id, student_id=student_id, role=AdvisorRole.CO_ADVISOR, db=db)
             
-            
+        db.commit()    
     except IntegrityError as constraint_violation:
         db.rollback()
         raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
-    db.commit()
     
-@app.post("api/event", response_model=schemas.EventIn)
+    
+@app.post("/api/event", response_model=schemas.EventIn)
 async def create_student_event(event: schemas.EventIn, access_token = Cookie(...), db:Session = Depends(get_db)):
     try:
         payload = verify_jwt(access_token)
@@ -469,8 +468,8 @@ async def create_student_event(event: schemas.EventIn, access_token = Cookie(...
         db.commit()
         return db_event
     except IntegrityError as constraint_violation:
+        db.rollback()
         HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
-    db.commit()
 
 @app.post("/api/employment", response_model=schemas.EmploymentIn)
 async def create_student_employment(employment: schemas.EmploymentIn, access_token = Cookie(...), db:Session = Depends(get_db)):
@@ -482,9 +481,12 @@ async def create_student_employment(employment: schemas.EmploymentIn, access_tok
         db.add(db_employment)
         db.commit()
         return db_employment
+        
     except IntegrityError as constraint_violation:
+        db.rollback()
         HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
-
+   
+    
 @app.post("/api/funding", response_model=schemas.FundingIn)
 async def create_student_funding(funding: schemas.FundingIn, access_token = Cookie(...), db:Session = Depends(get_db)):
     try:
@@ -495,9 +497,13 @@ async def create_student_funding(funding: schemas.FundingIn, access_token = Cook
         db.add(db_funding)
         db.commit()
         return db_funding
+       
     except IntegrityError as constraint_violation:
+        db.rollback()
         HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
-
+    
+    
+    
 @app.post("/api/lab", response_model=schemas.StudentLabsIn)
 async def create_student_lab(lab: schemas.StudentLabsIn, access_token = Cookie(...), db:Session = Depends(get_db)):
     try:
@@ -508,8 +514,12 @@ async def create_student_lab(lab: schemas.StudentLabsIn, access_token = Cookie(.
         db.add(db_lab)
         db.commit()
         return db_lab
+    
     except IntegrityError as constraint_violation:
+        
         HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+   
+    
 
 @app.post("/api/course", response_model=schemas.CourseEnrollmentIn)
 async def create_student_course(course: schemas.CourseEnrollmentIn, access_token = Cookie(...), db:Session = Depends(get_db)):
@@ -522,7 +532,9 @@ async def create_student_course(course: schemas.CourseEnrollmentIn, access_token
         db.add(db_course)
         db.commit()
         return db_course
+    
     except IntegrityError as constraint_violation:
+        db.rollback()
         HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
 
 @app.post("/api/pos", response_model=schemas.StudentPOSIn)
@@ -535,7 +547,9 @@ async def create_student_pos(pos: schemas.StudentPOSIn,access_token = Cookie(...
         db.add(db_pos)
         db.commit()
         return db_pos
+    
     except IntegrityError as constraint_violation:
+        db.rollback()
         HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
 
 @app.post("/students/{student_id}/advisor", response_model=schemas.CreateStudentAdvisor)
@@ -552,12 +566,14 @@ async def create_student_advisor(student_id: int, advisor: schemas.CreateStudent
         db.add(db_advisor)
         db.commit()
         return advisor
+    
     except crud.CustomValueError as value_error:
         raise HTTPException(status_code=422, detail={"error_message": str(value_error), "problematic_row": value_error.row_data}) 
     except IntegrityError as constraint_violation:
+        db.rollback()
         HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
 
-@app.post("api/requirement", response_model=schemas.CreateRequirement)
+@app.post("/api/requirement", response_model=schemas.CreateRequirement)
 async def create_requirement(progress_requirement: schemas.CreateRequirement, access_token = Cookie(...), db:Session = Depends(get_db)):
     try:
         ##payload = verify_jwt(access_token) this may need for privilege level

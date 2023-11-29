@@ -47,9 +47,9 @@ class StudentOut(StudentIn):
         from_attributes = True
 
 class CreateProgramEnrollment(BaseModel):
-    major_id: str = Field(..., max_length=30)
-    degree_id: str = Field(..., max_length=30)   
-    enrollment_date: date | None = None  
+    major_id: int
+    degree_id: int  
+    enrollment_date: date 
 
 class StudentAdvisor(BaseModel):
     first_name: str = Field(..., max_length=40)

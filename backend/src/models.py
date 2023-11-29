@@ -59,7 +59,7 @@ class Student(Base):
     va_residency: Mapped[Residencies] = mapped_column(Enum(Residencies), nullable=True)
     status: Mapped[StudentStatus] = mapped_column(Enum(StudentStatus), nullable=True)
     campus_id: Mapped[Optional[int]] = mapped_column(Integer,ForeignKey("campus.id", ondelete="SET NULL"), nullable=True)
-    email: Mapped[Optional[str]] = mapped_column(String(70))
+    email: Mapped[Optional[str]] = mapped_column(String(70), unique=True)
     phone_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True) 
     pronouns: Mapped[Optional[str]] = mapped_column(String(15), nullable=True)
     gender : Mapped[str] = mapped_column(String(40), nullable=True) 

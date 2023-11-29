@@ -184,14 +184,14 @@ def insert_student_pos_from_file(data : dict, db: Session, student_id: int):
     # Feel free to reutrn id if it needs
     
 # Processing data from file to Student table
+
+# it is on the calling function to do db.commit()
 def insert_student(data : dict, db: Session):
     student = models.Student(**data)
     db.add(student)
-    db.commit()
-    table = db.query(models.Student).filter(models.Student.email == student.email).first()
-    # Since the primary key will be generate after commit(), I need to search the database agian in order to get the primary id    
+    db.flush()
     # This will return the primary id for ForeignKey that other table may need
-    return table.id
+    return student.id
 
 def insert_student_advisor_from_file(advisor_id: int, student_id: int, role: enums.AdvisorRole, db: Session,):
     student_advisor = models.StudentAdvisor(
@@ -200,7 +200,7 @@ def insert_student_advisor_from_file(advisor_id: int, student_id: int, role: enu
         advisor_role = role
     )
     db.add(student_advisor)
-    db.commit()
+    db.flush()
 
 def insert_program_enrollment(program: schemas.ProgramEnrollmentIn, db: Session):
     
@@ -236,8 +236,9 @@ def insert_program_enrollment(program: schemas.ProgramEnrollmentIn, db: Session)
             exempt=False   
         )
         db.add(progress)
+        
+    db.flush()
     
-    db.commit()
     
 # Processing data from file to ProgramEnrollment table
 def insert_program_enrollment_from_file(data : dict, db: Session, student_id: int, degree_id: int, major_id: int):
@@ -259,7 +260,7 @@ def insert_program_enrollment_from_file(data : dict, db: Session, student_id: in
             enrollment_date = validation.enrollment_date
         )
         db.add(programEnrollment)
-        db.commit()
+        db.flush()
         
 # Processing data from file to Campus table
 def insert_campus_from_file(data: dict, db: Session):
@@ -270,7 +271,7 @@ def insert_campus_from_file(data: dict, db: Session):
     if not campus:
         campus = models.Campus(**data)
         db.add(campus)
-        db.commit()
+        db.flush()
 
 # Processing data from file to Department table.
 # These inserted value below is non-real data, and it is for testing.
@@ -281,7 +282,7 @@ def insert_department_from_file(data : dict, db: Session):
     if not department:
         department = models.Department(**data)
         db.add(department)
-        db.commit()
+        db.flush()
 
 # Processing data from file to Major table
 def insert_major_from_file(data : dict, db: Session):
@@ -292,7 +293,7 @@ def insert_major_from_file(data : dict, db: Session):
     if not major:
         major = models.Major(**data)
         db.add(major)
-        db.commit()
+        db.flush()
         
 # Processing data from file to Degree table
 def insert_degree_from_file(data : dict, db: Session):
@@ -302,14 +303,14 @@ def insert_degree_from_file(data : dict, db: Session):
         # Modeling the field with the data from file
         degree = models.Degree(**data)  
         db.add(degree)
-        db.commit()
+        db.flush()
         
 # Processing data from file to Degree table
 def insert_faculty_from_file(data : dict, db: Session):
     # Modeling the field with the data from file
     faculty = models.Faculty(**data)  
     db.add(faculty)
-    db.commit() 
+    db.flush()
 #------------------------------------------------------------------------------------------------------------
 
 #----------------------------------------------------------Helper function for validation--------------------------------------------
@@ -506,6 +507,7 @@ def process_student_data_from_file(file: UploadFile, db: Session):
                     insert_student_advisor_from_file(advisor_id=id, student_id=student_id, role=enums.AdvisorRole.CO_ADVISOR, db=db)
             #-----------------------------------------------------------------
             number_row += 1
+        db.commit()
     return inserted_student_data
 
 
@@ -524,6 +526,7 @@ def process_campus_data_from_file(file: UploadFile, db: Session):
             insert_campus_from_file(dict(validation_data), db)
             #-----------------------------------------------------------------
             number_row += 1
+        db.commit()
     return inserted_campus_data
 
 # This will process department data from csv file, and add them to the corresponding database.
@@ -541,6 +544,7 @@ def process_department_data_from_file(file: UploadFile, db: Session):
             insert_department_from_file(dict(validation_data), db)
             #-----------------------------------------------------------------
             number_row += 1
+        db.commit()
     return inserted_department_data
 
 # This will process major data from csv file, and add them to the corresponding database.
@@ -558,6 +562,7 @@ def process_major_data_from_file(file: UploadFile, db: Session):
             insert_major_from_file(dict(validation_data), db)
             #-----------------------------------------------------------------
             number_row += 1
+        db.commit()
     return inserted_major_data
 
 # This will process major data from csv file, and add them to the corresponding database.
@@ -575,6 +580,7 @@ def process_degree_data_from_file(file: UploadFile, db: Session):
             insert_degree_from_file(dict(validation_data), db)
             #-----------------------------------------------------------------
             number_row += 1
+        db.commit()
     return inserted_degree_data
 
 # This will process major data from csv file, and add them to the corresponding database.
@@ -592,6 +598,7 @@ def process_faculty_data_from_file(file: UploadFile, db: Session):
             insert_faculty_from_file(dict(validation_data), db)
             #-----------------------------------------------------------------
             number_row += 1
+        db.commit()
     return inserted_faculty_data
 
 #------------------------------------------------------------------------------------------------------------------------------
