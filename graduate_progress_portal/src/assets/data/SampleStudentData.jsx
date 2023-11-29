@@ -11,4 +11,7 @@ export const studentData = {
     degreeType: 'MENG',
     employment: "Amazon",
     funding: "Yes",
+    avatar: 'https://example.com/path-to-image.jpg',
+    userRole: 'Student',
+    messageCount: '5',
 };

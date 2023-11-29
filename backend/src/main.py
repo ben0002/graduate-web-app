@@ -23,7 +23,7 @@ from database import SessionLocal, engine
 import csv
 
 #models.Base.metadata.drop_all(engine)
-#models.Base.metadata.create_all(engine)
+models.Base.metadata.create_all(engine)
 
 # Dependency
 def get_db():
@@ -88,13 +88,13 @@ def login(request: Request, response: Response):
     if not user:
         raise HTTPException(status_code=403, detail="Failed to verify ticket!")
     
-    access_token = role_based(user, cas_ticket)
+    access_token = role_based(pid=user, cas_ticket=cas_ticket, db=db)
     if not access_token:
-        raise HTTPException(status=404, detail="Student or Faculty does not exist in the system.")
+        raise HTTPException(status_code=404, detail="Student or Faculty does not exist in the system.")
     
     web_app_url = "https://bktp-gradpro.discovery.cs.vt.edu/"
     response = JSONResponse(content={"redirect_url": web_app_url}, media_type="application/json")
-    response.set_cookie(key="access_token", value=access_token, httponly=True, domain="discovery.cs.vt.edu",
+    response.set_cookie(key="access_token", value=access_token, httponly=True, domain=".discovery.cs.vt.edu",
                         samesite="None", secure=True)
     
     return response
@@ -109,11 +109,11 @@ def logout(response: Response):
 
 #------------------- JWT -----------------------#
 
-def role_based(pid: str, cas_ticket):
+def role_based(pid: str, cas_ticket, db: Session):
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     email = f"{pid}@vt.edu"
-    faculty = crud.get_faculty(Depends(get_db()), filters={"email":email},
+    faculty = crud.get_faculty(db=db, filters={"email":email},
                         skip=0, limit=1)
     if(len(faculty) != 0):
         data = {
@@ -125,7 +125,7 @@ def role_based(pid: str, cas_ticket):
         }
         return create_access_token(data=data, expires_delta=access_token_expires)
     
-    student = crud.get_students(Depends(get_db()), filters={"email":email}, skip=0, limit=0)
+    student = crud.get_students(db=db, filters={"email":email}, skip=0, limit=1)
     if(len(student) != 0):
         data = {
             "sub": email,

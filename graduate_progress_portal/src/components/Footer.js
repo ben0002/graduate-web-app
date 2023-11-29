@@ -3,13 +3,12 @@ import React from 'react';
 const Footer = () => {
   const footerStyle = {
     backgroundColor: '#630031', // Chicago Maroon 
-    height: '30px',
+    height: '3rem',
     width: '100%', 
     display: 'flex',
     justifyContent: 'center', 
     alignItems: 'center', 
     position: 'static', 
-    marginTop: '40px',
   };
 
   const paragraphStyle = {
