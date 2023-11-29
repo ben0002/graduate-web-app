@@ -53,7 +53,7 @@ def read_root():
     return {"message": "Hello, World!"}
 
 
-SERVICE_URL = "https://bktp-gradpro-api.discovery.cs.vt.edu/"
+SERVICE_URL = "https://bktp-gradpro-api2.discovery.cs.vt.edu/"
 SECRET_KEY = "03588c9b6f5508ff6ab7175ba9b38a4d1366581fdc6468e8323015db7d68dac0" # key used to sign JWT token
 ALGORITHM = "HS256" # algorithm used to sign JWT Token
 ACCESS_TOKEN_EXPIRE_MINUTES = 45
@@ -61,7 +61,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 45
 # Creating the CAS CLIENT
 cas_client = CASClient(
     version=2,
-    service_url=f"{SERVICE_URL}/api/login?",
+    service_url=f"{SERVICE_URL}/login?",
     server_url="https://login.vt.edu/profile/cas/",
     # CHANGE: If you want VT CS CAS, to be used instead of VT CAS
     # change the server_url to https://login.cs.vt.edu/cas/
@@ -92,8 +92,8 @@ def login(request: Request, response: Response, db:Session = Depends(get_db)):
     if not access_token:
         raise HTTPException(status_code=404, detail="Student or Faculty does not exist in the system.")
     
-    web_app_url = "https://bktp-gradpro.discovery.cs.vt.edu/"
-    response = JSONResponse(content={"redirect_url": web_app_url}, media_type="application/json")
+    web_app_url = "https://bktp-gradpro2.discovery.cs.vt.edu/"
+    response = RedirectResponse(web_app_url)
     response.set_cookie(key="access_token", value=access_token, httponly=True, domain=".discovery.cs.vt.edu",
                         samesite="None", secure=True)
     
@@ -176,14 +176,16 @@ def pagination(skip: int, limit: int, response: list):
 
 # ----------- lump info student page endpoints --------------------#
 # 'student': {}, 'advisors': [], 'programs': [], 'campus': {}, 'POS_info': []}
-@app.get("/students/{student_id}/login_info", response_model=schemas.studentCard)
-def get_login_page_info(student_id: int, access_token:str = Cookie(...), db: Session=Depends(get_db)):
+@app.get("/students/login_info", response_model=schemas.studentCard)
+def get_login_page_info(student_id: int | None = None, access_token:str = Cookie(...), db: Session=Depends(get_db)):
     
-    verify_jwt(access_token)
+    payload = verify_jwt(access_token)
+    if student_id is None:
+        student_id = payload.get("id")
     student = crud.get_students(db=db, filters={"id": student_id}, skip=0, limit=1)[0]
     #student = crud.get_students(db=db, filters={"id": student_id}, skip=0, limit=1)[0]
     
-    response = schemas.loginPage(
+    response = schemas.studentCard(
         info=student,
         campus=student.campus,
         advisors=[schemas.StudentAdvisorOut(
@@ -202,10 +204,12 @@ def get_login_page_info(student_id: int, access_token:str = Cookie(...), db: Ses
     
     return response
 
-@app.get("/students/{student_id}/progress_page_info", response_model=schemas.progressPage)
-def get_progress_page(student_id: int, db: Session=Depends(get_db), access_token:str = Cookie(...)):
+@app.get("/students/progress_page_info", response_model=schemas.progressPage)
+def get_progress_page(student_id: int | None = None, db: Session=Depends(get_db), access_token:str = Cookie(...)):
     
-    verify_jwt(access_token)
+    payload = verify_jwt(access_token)
+    if student_id is None:
+        student_id = payload.get("id")
     
     tasks = student_progress(student_id=student_id, skip=0, limit=100, db=db)
     response = schemas.progressPage(
@@ -950,7 +954,7 @@ async def courseEnrollment(courseEnrollment_id: int, db: Session = Depends(get_d
         raise HTTPException(status_code=404, detail=f"CourseEnrollment with the given id: {courseEnrollment_id} does not exist.")
     return courseEnrollment[0]
 
-@app.get("/studentPOS", response_model=list[schemas.StudentPOSOut])
+@app.get("/pos", response_model=list[schemas.StudentPOSOut])
 async def studentPOSs(skip: int | None = 0, limit: int | None = 100, db: Session = Depends(get_db)):
     studentPOS = crud.get_studentPOS(db, None, skip, limit)
     return studentPOS
