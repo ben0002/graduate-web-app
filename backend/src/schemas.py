@@ -200,7 +200,7 @@ class StudentAdvisorIn(BaseModel):
         from_attributes = True
 
 class CreateStudentAdvisor(StudentAdvisorIn):
-    advisor_name : str = Field(..., max_length=120)
+    advisor_id : int
         
 class StudentAdvisorOut(StudentAdvisorIn, FacultyOut):
     
@@ -277,11 +277,6 @@ class MilestoneOut(MilestoneIn):
     class Config:
         from_attributes = True
 
-class CreateMilestone(MilestoneIn):
-    major_name : str = Field(..., max_length=30)
-    degree_name : str = Field(..., max_length=30)
-    class Config:
-        from_attributes = True
 
 class ProgressIn(BaseModel):
     student_id : int
@@ -311,12 +306,6 @@ class ProgressOut(BaseModel):
     class Config:
         from_attributes = True
         exclude_unset = True  # Exclude fields with None (null) values
-
-class CreateRequirement(RequirementIn):
-    major_name : str = Field(..., max_length=30)
-    degree_name : str = Field(..., max_length=30)
-    class Config:
-        from_attributes = True
 
 class CourseEnrollmentIn(BaseModel):
     student_id: int

@@ -543,10 +543,8 @@ async def create_student_pos(pos: schemas.StudentPOSIn,access_token = Cookie(...
 async def create_student_advisor(student_id: int, advisor: schemas.CreateStudentAdvisor, access_token = Cookie(...), db:Session = Depends(get_db)):
     try:
         #payload = verify_jwt(access_token) this may need for privilege level
-        
-        advisor_id = crud.find_advisor(advisor.advisor_name, db, 1)
         db_advisor = models.StudentAdvisor(
-            advisor_id = advisor_id,
+            advisor_id = advisor.advisor_id,
             student_id = student_id,
             advisor_role = advisor.advisor_role
         )
@@ -558,15 +556,10 @@ async def create_student_advisor(student_id: int, advisor: schemas.CreateStudent
     except IntegrityError as constraint_violation:
         HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
 
-@app.post("/requirement", response_model=schemas.CreateRequirement)
-async def create_requirement(progress_requirement: schemas.CreateRequirement, access_token = Cookie(...), db:Session = Depends(get_db)):
+@app.post("/requirement", response_model=schemas.RequirementIn)
+async def create_requirement(progress_requirement: schemas.RequirementIn, access_token = Cookie(...), db:Session = Depends(get_db)):
     try:
         ##payload = verify_jwt(access_token) this may need for privilege level
-        
-        major_id = crud.find_major_name(progress_requirement.major_name, db, 1)
-        degree_id = crud.find_degree(progress_requirement.degree_name, db, 1)
-        progress_requirement.major_id = major_id
-        progress_requirement.degree_id = degree_id
         requirement_data = db.query(models.Requirement).filter(models.Requirement.name == progress_requirement.name).first()
         if not requirement_data:
             requirement = schemas.RequirementIn(**progress_requirement.dict())
@@ -574,9 +567,9 @@ async def create_requirement(progress_requirement: schemas.CreateRequirement, ac
             db.add(db_requirement)
             db.commit()
             requirement_id = db.query(models.Requirement).filter(models.Requirement.name == progress_requirement.name).first().id
-            programEnrollments = db.query(models.ProgramEnrollment).filter(models.ProgramEnrollment.degree_id==degree_id, models.ProgramEnrollment.major_id==major_id).all()
+            programEnrollments = db.query(models.ProgramEnrollment).filter(models.ProgramEnrollment.degree_id==progress_requirement.degree_id, models.ProgramEnrollment.major_id==progress_requirement.major_id).all()
             if not programEnrollments:
-                raise HTTPException(status_code=404, detail=f"Student with the given major and degree id: {major_id} , {degree_id} does not exist.")
+                raise HTTPException(status_code=404, detail=f"Student with the given major and degree id: {progress_requirement.major_id} , {progress_requirement.degree_id} does not exist.")
             else :
                 for programEnrollment in programEnrollments:
                     progress_data = schemas.ProgressIn(
@@ -592,15 +585,10 @@ async def create_requirement(progress_requirement: schemas.CreateRequirement, ac
     except IntegrityError as constraint_violation:
         HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
         
-@app.post("/milestone", response_model= schemas.CreateMilestone)
-async def create_milestone(progress_milestone: schemas.CreateMilestone, access_token = Cookie(...), db:Session = Depends(get_db)):
+@app.post("/milestone", response_model= schemas.MilestoneIn)
+async def create_milestone(progress_milestone: schemas.MilestoneIn, access_token = Cookie(...), db:Session = Depends(get_db)):
     try:
         #payload = verify_jwt(access_token) this may need for privilege level
-        
-        major_id = crud.find_major_name(progress_milestone.major_name, db, 1)
-        degree_id = crud.find_degree(progress_milestone.degree_name, db, 1)
-        progress_milestone.major_id = major_id
-        progress_milestone.degree_id = degree_id
         milestone_data = db.query(models.Milestone).filter(models.Milestone.name == progress_milestone.name).first()
         if not milestone_data:
             milestone = schemas.MilestoneIn(**progress_milestone.dict())
@@ -608,9 +596,9 @@ async def create_milestone(progress_milestone: schemas.CreateMilestone, access_t
             db.add(db_milestone)
             db.commit()
             milestone_id = db.query(models.Milestone).filter(models.Milestone.name == progress_milestone.name).first().id
-            programEnrollments = db.query(models.ProgramEnrollment).filter(models.ProgramEnrollment.degree_id==degree_id, models.ProgramEnrollment.major_id==major_id).all()
+            programEnrollments = db.query(models.ProgramEnrollment).filter(models.ProgramEnrollment.degree_id==progress_milestone.degree_id, models.ProgramEnrollment.major_id==progress_milestone.major_id).all()
             if not programEnrollments:
-                raise HTTPException(status_code=404, detail=f"Student with the given major and degree id: {major_id} , {degree_id} does not exist.")
+                raise HTTPException(status_code=404, detail=f"Student with the given major and degree id: {progress_milestone.major_id} , {progress_milestone.degree_id} does not exist.")
             else :
                 for programEnrollment in programEnrollments:
                     progress_data = schemas.ProgressIn(
