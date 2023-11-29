@@ -1,8 +1,12 @@
 import React from 'react';
 import { Tooltip, Button, Card, CardContent, Typography, Avatar, Box, Grid } from '@mui/material';
+import { useSelector } from 'react-redux';
 //import './StudentPersonalInfoCard.css';
 
 const StudentPersonalCardInfo = ({ student }) => {
+
+    const user = useSelector(state => state.student)
+
     return (
         <Card className="student-personal-info-container">
             <CardContent>
@@ -13,25 +17,19 @@ const StudentPersonalCardInfo = ({ student }) => {
                             variant='body1' 
                             component='div'>
                                 <strong>Email: </strong>
-                                {student.email}
+                                {user.info.email || 'johndoe@vt.edu'}
                         </Typography>
                         <Typography 
                             variant='body1' 
                             component='div'>
                                 <strong>Phone: </strong>
-                                {student.phone}
-                        </Typography>
-                        <Typography
-                            variant='body1'
-                            component={'div'}>
-                                <strong>Ethnicity: </strong>
-                                {student.ethnicity}
+                                {user.info.phone_number || '(123) 456-7890'}
                         </Typography>
                         <Typography
                             variant='body1'
                             component={'div'}>
                                 <strong>Country/Residence: </strong>
-                                {student.ethnicity}
+                                {user.info.citizenship || 'citizenship'}
                         </Typography>
                     </Grid>
                     <Grid item xs={12} sm={4}>
@@ -40,13 +38,13 @@ const StudentPersonalCardInfo = ({ student }) => {
                             variant='body1' 
                             component='div'>
                                 <strong>Program Entry: </strong>
-                                {student.programEntry}
+                                {user.programs[0].enrollment_date || 'Today'}
                         </Typography>
                         <Typography 
                             variant='body1' 
                             component='div'>
                                 <strong>Admit Camp: </strong>
-                                {student.admitCamp}
+                                {user.campus.name || 'campus'}, {user.campus.address || 'located here'}
                         </Typography>
                     </Grid>
                     <Grid item xs={12} sm={4}>
@@ -55,7 +53,7 @@ const StudentPersonalCardInfo = ({ student }) => {
                             variant='body1' 
                             component='div'>
                                 <strong>POS: </strong>
-                                {student.planOfStudy}
+                                {user.POS_info || ''}
                         </Typography>
                         {/** Add in logic to check if the status of POS */}
                     </Grid>

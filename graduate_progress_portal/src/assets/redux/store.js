@@ -2,7 +2,22 @@ import { createStore } from 'redux';
 
 // Define an initial state
 const initialState = {
-    user: undefined
+    user: undefined,
+    student: {
+        info: {},
+        advisors: [],
+        programs: [],
+        campus: {},
+        pos: {},
+        tasks: [],
+        milestones: [],
+        requirements: [],
+        funding: [],
+        employment: [],
+        courses: [],
+        labs: [],
+        messages: []
+    }
 };
 
 // Create a reducer
@@ -44,6 +59,24 @@ const studentReducer = (state = initialState, action) => {
           messages: action.payload.messages
         }
       }
+    case 'add_funding':
+        return {...state,
+            student: { ...state.student,
+                funding: [...state.student.funding, action.payload]
+            }
+        }
+    case 'update_funding':
+        return {...state,
+            student: { ...state.student,
+                funding: state.student.funding.map(fund => fund.id == action.payload.id ? action.payload.data : fund )
+            }
+        }
+    case 'delete_funding':
+        return {...state,
+            student: { ...state.student,
+                funding: state.student.funding.filter(fund => fund.id != action.payload.id)
+            }
+        }
     default:
       return state;
   }

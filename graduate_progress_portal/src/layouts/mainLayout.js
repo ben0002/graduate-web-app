@@ -7,10 +7,10 @@ import Footer from "../components/Footer";
 import '../assets/styling/global.css';
 
 export default function MainLayout() {
-    const user = useSelector(state => state.user)
+    const state = useSelector(state => state)
     const navigate = useNavigate()
 
-    useEffect(_ => {if(user == undefined) navigate('/')}, [user])
+    useEffect(_ => {if(state.user == undefined || state.student == undefined) navigate('/')}, [state])
 
     return (
         <>
