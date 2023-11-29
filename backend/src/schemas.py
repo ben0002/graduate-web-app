@@ -319,4 +319,3 @@ class StudentPOSOut(StudentPOSIn):
     id: int
     class Config:
         from_attributes = True
-

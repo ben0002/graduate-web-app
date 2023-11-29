@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Tooltip, Button, Card, CardContent, Typography, Avatar, Box, Grid } from '@mui/material';
-import { Link, useLocation, useParams } from 'react-router-dom';
-import { useFetchStudent } from '../StudentEffects';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import '../../assets/styling/students.css'
 
 import './StudentCard.css';
 
