@@ -151,12 +151,13 @@
 
 /* Styling for contents inside */
 .to-do-list-placeholder {
-    min-width: 100%;
-    height: 250px;
-    border: 1px dashed #ccc;
+    max-width: 14rem;
+    height: 14rem;
+    border: 2px double #861F41;
+    background: #E5751F;
     display: flex;
     align-items: center;
-    justify-content: left;
+    justify-content: center;
     flex-direction: row;
     width: fit-content;
     padding-right: 0.5rem;

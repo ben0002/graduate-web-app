@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Grid, Card, Divider, Box } from '@mui/material';
+import { Grid, Divider, Box } from '@mui/material';
 import { studentData } from '../../assets/data/SampleStudentData.jsx';
 import StudentCardInfo from '../../components/student/StudentCard.js';
 import ToDoList from '../../components/student/StudentToDoListCard.js';
