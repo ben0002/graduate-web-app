@@ -22,11 +22,6 @@ from database import SessionLocal, engine
 
 import csv
 
-import logging
-
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-
 #models.Base.metadata.drop_all(engine)
 models.Base.metadata.create_all(engine)
 
@@ -57,7 +52,7 @@ def read_root():
     return {"message": "Hello, World!"}
 
 
-SERVICE_URL = "https://bktp-gradpro-api.discovery.cs.vt.edu/"
+SERVICE_URL = "https://bktp-gradpro-api2.discovery.cs.vt.edu/"
 SECRET_KEY = "03588c9b6f5508ff6ab7175ba9b38a4d1366581fdc6468e8323015db7d68dac0" # key used to sign JWT token
 ALGORITHM = "HS256" # algorithm used to sign JWT Token
 ACCESS_TOKEN_EXPIRE_MINUTES = 120
@@ -75,18 +70,22 @@ cas_client = CASClient(
 @app.get("/api/login")
 def login(request: Request, response: Response, db: Session = Depends(get_db)):
 
+    delete_token = False
     jwt = request.cookies.get("access_token")
     if jwt: # return user info
         response = getUserData(jwt, db)
         if(response):
             return response
         else:
-            response.delete_cookie("access_token")
+            delete_token = True
 
     cas_ticket = request.query_params.get("ticket")
     if not cas_ticket:
         cas_login_url = cas_client.get_login_url()
-        return JSONResponse(content={"redirect_url": cas_login_url}, media_type="application/json")
+        response = JSONResponse(content={"redirect_url": cas_login_url}, media_type="application/json")
+        if(delete_token):
+            response.delete_cookie("access_token")
+        return response
 
     (user, _, _) = cas_client.verify_ticket(cas_ticket)
     if not user:
@@ -96,7 +95,7 @@ def login(request: Request, response: Response, db: Session = Depends(get_db)):
     if not access_token:
         raise HTTPException(status_code=404, detail="Student or Faculty does not exist in the system.")
     
-    web_app_url = "https://bktp-gradpro.discovery.cs.vt.edu/"
+    web_app_url = "https://bktp-gradpro2.discovery.cs.vt.edu/"
     response = RedirectResponse(web_app_url)
     response.set_cookie(key="access_token", value=access_token, httponly=True, domain=".discovery.cs.vt.edu",
                         samesite="None", secure=True)
@@ -187,18 +186,59 @@ def getUserData(jwt: str, db: Session):
 
     userData.update({'advisors': []})
     advisors = crud.get_studentAdvisor(db=db, filters={"student_id": student_id})
-    if(len(advisors) == 0):
-        raise HTTPException(status_code=404, detail=f"advisors with valid access token does not exist.")
     for advisor in advisors:
         advisor_dict = advisor.as_dict()
         advisor_id = advisor_dict.get("advisor_id")
         advisor_info = crud.get_faculty(db=db, filters={"id": advisor_id})
         if(len(advisors) == 0):
-            "temp"
-            #raise HTTPException(status_code=404, detail=f"Student with valid access token does not exist.")
+            raise HTTPException(status_code=404, detail=f"faculty with valid access token does not exist.")
         else:
             advisor_info_dict = advisor_info[0].as_dict()
             userData.get('advisors').append({'name': advisor_info_dict.get('first_name') + ' ' + advisor_info_dict.get('last_name'), 'role': advisor_dict.get('advisor_role')})
+
+    userData.update({'programs': []})
+    programEnrollments = crud.get_programEnrollment(db=db, filters={"student_id": student_id})
+    for program in programEnrollments:
+        program_dict = program.as_dict()
+
+        major_id = program_dict.get("major_id")
+        majors = crud.get_majors(db=db, filters={"id": major_id})
+        if(len(majors) == 0):
+            raise HTTPException(status_code=404, detail=f"major with valid access token does not exist.")
+        major_info = majors[0].as_dict()
+
+        degree_id = program_dict.get("degree_id")
+        degrees = crud.get_degrees(db=db, filters={"id": degree_id})
+        if(len(degrees) == 0):
+            raise HTTPException(status_code=404, detail=f"degree with valid access token does not exist.")
+        degree_info = degrees[0].as_dict()
+
+        userData.get("programs").append({"enrollment_date": program_dict.get("enrollment_date"), "major": major_info.get("name"), "department": major_info.get("dept_code"), "degree": degree_info.get("name")})
+        
+    campus_id = userData.get("campus_id")
+    campuses = crud.get_campus(db=db, filters={"id": campus_id})
+    if(len(campuses) == 0):
+        raise HTTPException(status_code=404, detail=f"campus with valid access token does not exist.")
+    campus_info = campuses[0].as_dict()
+
+    userData.update({"campus_info": {"campus": campus_info.get("name"), "campus_addr": campus_info.get("address")}})
+
+    userData.update({"POS_info": {}})
+    #POS = crud.get_studentPOS(db=db, filters={"student_id": student_id})
+    #if(len(POS) == 0):
+    #    raise HTTPException(status_code=404, detail=f"POS with valid access token does not exist.")
+    #POS_info = POS[0].as_dict()
+
+    #userData.update({"POS_info": {"approved": POS_info.get("approved"), "approved_date": POS_info.get("approved_date"), "chair": POS_info.get("chair"), "co_chair": POS_info.get("co_chair"), "submitted": POS_info.get("submitted")}})
+
+    userData.update({"courses": []})
+    courses = crud.get_courseEnrollment(db=db, filters={"student_id": student_id})
+    for course in courses:
+        course_info = course.as_dict()
+        course_info.pop("id")
+        course_info.pop("student_id")
+        course_info.pop("pos_id")
+        userData.get("courses").append(course_info)
 
     return JSONResponse(content=userData, media_type='application/json')
 
