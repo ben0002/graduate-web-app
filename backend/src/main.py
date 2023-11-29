@@ -565,7 +565,7 @@ async def create_student_pos(student_id: int, pos: schemas.StudentPOSIn,access_t
         db.rollback()
         HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
 
-@app.post("/students/{student_id}/advisors/{advisor_id}", response_model=schemas.CreateStudentAdvisor)
+@app.post("/students/{student_id}/advisors/{advisor_id}", response_model=schemas.StudentAdvisor)
 async def create_student_advisor(student_id: int, advisor_id: int, role: schemas.StudentAdvisorIn, 
                                  access_token = Cookie(...), db:Session = Depends(get_db)):
     try:
@@ -577,7 +577,7 @@ async def create_student_advisor(student_id: int, advisor_id: int, role: schemas
         )
         db.add(db_advisor)
         db.commit()
-        return advisor
+        return db_advisor
     
     except crud.CustomValueError as value_error:
         raise HTTPException(status_code=422, detail={"error_message": str(value_error), "problematic_row": value_error.row_data}) 
