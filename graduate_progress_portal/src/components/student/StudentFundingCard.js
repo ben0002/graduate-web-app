@@ -12,7 +12,7 @@ import { apiRequest, isNumeric } from '../../assets/_commons';
 function FundingModal(funding, openModal, closeModal, newFunding){
   const [isNew, setIsNew] = useState(false);
   const [edit, setEdit] = useState(false);
-  const [localValues, setLocalValues] = useState({name: '', award_amount: '', start_date: '', end_date: '', guaranteed: false});
+  const [localValues, setLocalValues] = useState({name: '', award_amount: 0, start_date: '', end_date: '', guaranteed: false});
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [tab, setTab] = useState(0);
   const dispatch = useDispatch();
@@ -25,7 +25,7 @@ function FundingModal(funding, openModal, closeModal, newFunding){
 
   useEffect(_=>{
     if(funding) setLocalValues({name: funding.name, award_amount: funding.award_amount, start_date: funding.start_date, end_date: funding.end_date, guaranteed: funding.guaranteed})
-    else setLocalValues({name: '', award_amount: '', start_date: null, end_date: null, guaranteed: false})
+    else setLocalValues({name: '', award_amount: 0, start_date: '', end_date: '', guaranteed: false})
   }, [funding])
 
   const checkChanged = _ => {
@@ -98,8 +98,8 @@ function FundingModal(funding, openModal, closeModal, newFunding){
             <p style={{margin: '0', display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>Recurring:</b> {edit ? <TextField/> : 'No/Period'}</p>
           </div>
           <div style={{display: 'flex', flexDirection: 'column', alignItems: 'end', justifyContent: 'space-between', paddingRight: '.75rem'}}>
-            <Typography style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>Start Date:</b> {edit ? <DatePicker name="start_date" value={localValues.start_date} onChange={e => setLocalValues({...localValues, start_date: dayjs(e).format('YYYY-MM-DD')})}/> : funding.start_date}</Typography>
-            <Typography style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>End Date:</b> {edit ? <DatePicker name="end_date" value={localValues.end_date} onChange={e => setLocalValues({...localValues, end_date: dayjs(e).format('YYYY-MM-DD')})}/> : funding.end_date}</Typography>
+            <Typography style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>Start Date:</b> {edit ? <DatePicker name="start_date" value={localValues.start_date.length == 0 ? null : dayjs(localValues.start_date)} onChange={e => setLocalValues({...localValues, start_date: dayjs(e).format('YYYY-MM-DD')})}/> : funding.start_date}</Typography>
+            <Typography style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>End Date:</b> {edit ? <DatePicker name="end_date" value={localValues.end_date.length == 0 ? null : dayjs(localValues.end_date)} onChange={e => setLocalValues({...localValues, end_date: dayjs(e).format('YYYY-MM-DD')})}/> : funding.end_date}</Typography>
           </div>
           <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
             <Switch disabled={!edit}/>

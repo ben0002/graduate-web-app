@@ -77,6 +77,24 @@ const studentReducer = (state = initialState, action) => {
                 funding: state.student.funding.filter(fund => fund.id != action.payload.id)
             }
         }
+    case 'add_employment':
+        return {...state,
+            student: { ...state.student,
+                employment: [...state.student.employment, action.payload]
+            }
+        }
+    case 'update_employment':
+        return {...state,
+            student: { ...state.student,
+                employment: state.student.employment.map(empl => empl.id == action.payload.id ? action.payload.data : empl )
+            }
+        }
+    case 'delete_employment':
+        return {...state,
+            student: { ...state.student,
+                employment: state.student.employment.filter(empl => empl.id != action.payload.id)
+            }
+        }
     default:
       return state;
   }
