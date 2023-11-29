@@ -59,6 +59,24 @@ const studentReducer = (state = initialState, action) => {
           messages: action.payload.messages
         }
       }
+    case 'add_task':
+      return {...state,
+        student: { ...state.student,
+          tasks: [...state.student.tasks, action.payload]
+        }
+      }
+    case 'update_task':
+        return {...state,
+            student: { ...state.student,
+                tasks: state.student.tasks.map(task => task.id == action.payload.id ? action.payload.data : task )
+            }
+        }
+    case 'delete_task':
+        return {...state,
+            student: { ...state.student,
+                tasks: state.student.tasks.filter(task => task.id != action.payload.id)
+            }
+        }
     case 'add_funding':
         return {...state,
             student: { ...state.student,

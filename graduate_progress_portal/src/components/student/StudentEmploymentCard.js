@@ -74,12 +74,6 @@ function EmploymentModal(employment, openModal, closeModal, newEmployment){
   }
 
   if(employment == null && !isNew) {return(<></>)}
-  
-  //console.log((!checkChanged() || isNew) && !checkValid())
-  //console.log(!checkChanged())
-  //console.log(isNew)
-  //console.log(!checkValid())
-  console.log("skip")
 
     return(
       <Modal open={openModal || isNew} onClose={_ => {closeModal(); setEdit(false); setIsNew(false)}}>
