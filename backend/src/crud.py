@@ -164,7 +164,46 @@ def delete_data(db: Session, filter: dict, model):
     
 
 #--------------------------------------------------Insert Data Function For File-------------------------
+
+def insert_requirement(requirement: schemas.RequirementIn, db:Session):
     
+    db_requirement = models.Requirement(**requirement.dict())
+    db.add(db_requirement)
+    db.flush()
+    requirement_id = db_requirement.id
+    programEnrollments = db.query(models.ProgramEnrollment).filter(models.ProgramEnrollment.degree_id==requirement.degree_id, 
+                                                                models.ProgramEnrollment.major_id==requirement.major_id).all()
+    for programEnrollment in programEnrollments:
+        progress_data = schemas.ProgressIn(
+            student_id=programEnrollment.student_id,
+            requirement_id=requirement_id,              
+        )
+        progress = models.Progress(**progress_data.dict(), deadline="TBD")
+        db.add(progress)
+        db.flush()
+        
+    db.commit()
+    return requirement
+
+def insert_milestone(milestone: schemas.MilestoneIn, db:Session):
+    
+    db_milestone = models.Requirement(**milestone.dict())
+    db.add(db_milestone)
+    db.flush()
+    milestone_id = db_milestone.id
+    programEnrollments = db.query(models.ProgramEnrollment).filter(models.ProgramEnrollment.degree_id==milestone.degree_id, 
+                                                                models.ProgramEnrollment.major_id==milestone.major_id).all()
+    for programEnrollment in programEnrollments:
+        progress_data = schemas.ProgressIn(
+            student_id=programEnrollment.student_id,
+            milestone_id=milestone_id,              
+        )
+        progress = models.Progress(**progress_data.dict(), deadline="TBD")
+        db.add(progress)
+        db.flush()
+        
+    db.commit()
+    return milestone
 # Processing data from file to StudentPOS table
 def insert_student_pos_from_file(data : dict, db: Session, student_id: int):
     # checking if it is approved, none mean it has not been approved yet
