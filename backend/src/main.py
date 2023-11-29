@@ -55,7 +55,7 @@ def read_root():
 SERVICE_URL = "https://bktp-gradpro-api.discovery.cs.vt.edu/"
 SECRET_KEY = "03588c9b6f5508ff6ab7175ba9b38a4d1366581fdc6468e8323015db7d68dac0" # key used to sign JWT token
 ALGORITHM = "HS256" # algorithm used to sign JWT Token
-ACCESS_TOKEN_EXPIRE_MINUTES = 120
+ACCESS_TOKEN_EXPIRE_MINUTES = 45
 
 # Creating the CAS CLIENT
 cas_client = CASClient(
@@ -72,9 +72,12 @@ def login(request: Request, response: Response):
 
     jwt = request.cookies.get("access_token")
     if jwt: # return user info
-        verify_jwt(jwt)
-        return JSONResponse(content={"message": "Logged in!"}, media_type="application/json")
-
+        try:
+            verify_jwt(jwt)
+            return JSONResponse(content={"message": "Logged in!"}, media_type="application/json")
+        except HTTPException as e:
+            response.delete_cookie("access_token")
+    
     cas_ticket = request.query_params.get("ticket")
     if not cas_ticket:
         cas_login_url = cas_client.get_login_url()
