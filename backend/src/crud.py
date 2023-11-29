@@ -344,6 +344,17 @@ def find_department(department_name: str, db: Session, row_number: int):
         return department.dept_code
     else:
         raise CustomValueError(message="The department \"" + department_name + "\" is not found in the Database.", original_exception=None, row_data=row_number)
+
+# This will find student pos and return the id itself 
+def find_studentpos(student_id: int, db: Session, row_number: int):
+    # Not sure if it can be none
+    if not student_id:
+        raise CustomValueError(message="The student id is need.", original_exception=None)
+    studentpos = db.query(models.StudentPOS).filter(models.StudentPOS.student_id == student_id).one_or_none()
+    if studentpos:
+        return studentpos.id
+    else:
+        return None
 #--------------------------------------------------------------------------------------------------------------------------------
 
 #----------------------------------------------------------Validation Function--------------------------------------------

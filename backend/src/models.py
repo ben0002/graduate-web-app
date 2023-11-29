@@ -78,7 +78,7 @@ class Student(Base):
     va_residency: Mapped[Residencies] = mapped_column(Enum(Residencies), nullable=True)
     type: Mapped[StudentTypes] = mapped_column(Enum(StudentTypes), nullable=True)
     status: Mapped[StudentStatus] = mapped_column(Enum(StudentStatus), nullable=True)
-    campus_id: Mapped[Optional[int]] = mapped_column(Integer,ForeignKey("campus.id"), nullable=True)
+    campus_id: Mapped[Optional[int]] = mapped_column(Integer,ForeignKey("campus.id", ondelete="SET NULL"), nullable=True)
     email: Mapped[Optional[str]] = mapped_column(String(70))
     phone_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True) 
     pronouns: Mapped[Optional[str]] = mapped_column(String(15), nullable=True)
@@ -459,10 +459,10 @@ class Progress(Base):
     __tablename__ = 'progress'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     student_id: Mapped[int] = mapped_column(Integer, ForeignKey("student.id"))
-    ideal_completion_date: Mapped[str] = mapped_column(String(10))
+    ideal_completion_date: Mapped[str] = mapped_column(String(10), nullable=True)
     requirement_id: Mapped[int] = mapped_column(Integer, ForeignKey("requirement.id"), nullable=True)
     milestone_id: Mapped[int] = mapped_column(Integer, ForeignKey("milestone.id"), nullable=True)
-    deadline: Mapped[str] = mapped_column(String(10))
+    deadline: Mapped[str] = mapped_column(String(10), nullable=True)
     completion_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     approved: Mapped[bool] = mapped_column(Boolean)
     note: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
@@ -497,7 +497,7 @@ class CourseEnrollment(Base):
     course_type: Mapped[CourseType] = mapped_column(Enum(CourseType)) 
     credits: Mapped[int] = mapped_column(Integer)
     term: Mapped[int] = mapped_column(Integer)
-    pos_id: Mapped[int] = mapped_column(Integer, ForeignKey("student_pos.id"), nullable=True)
+    pos_id: Mapped[int] = mapped_column(Integer, ForeignKey("student_pos.id", ondelete="SET NULL"), nullable=True)
     year: Mapped[Optional[int]] = mapped_column(Integer, nullable=True) # Do We need the years for the CourseEnrollment? add it just in case we need
     
     student = relationship("Student", back_populates="courses")

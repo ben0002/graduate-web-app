@@ -287,8 +287,8 @@ class ProgressIn(BaseModel):
 
 class ProgressOut(BaseModel):
     id : int
-    ideal_completion_date: date
-    deadline: date
+    ideal_completion_date: date | None = None
+    deadline: date | None = None
     completion_date: date | None = None
     approved: bool | None = False
     exempt: bool | None = False
