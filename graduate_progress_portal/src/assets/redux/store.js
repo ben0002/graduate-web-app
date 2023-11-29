@@ -113,6 +113,18 @@ const studentReducer = (state = initialState, action) => {
                 employment: state.student.employment.filter(empl => empl.id != action.payload.id)
             }
         }
+    case 'add_course':
+        return {...state,
+            student: { ...state.student,
+                courses: [...state.student.courses, action.payload]
+        }
+    }
+    case 'delete_course':
+        return {...state,
+            student: { ...state.student,
+                courses: state.student.courses.filter(course => course.id != action.payload.id)
+            }
+        }
     default:
       return state;
   }

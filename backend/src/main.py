@@ -262,6 +262,9 @@ async def student_progress(request: Request, db: Session = Depends(get_db)):
     if student.employment:
         progressData['employment'] = [employment.as_dict() for employment in student.employment]
 
+    if student.courses:
+        progressData['courses'] = [course.as_dict() for course in student.courses]
+
     return JSONResponse(content=progressData, media_type='application/json')
 
 @app.get("/student/profile")
