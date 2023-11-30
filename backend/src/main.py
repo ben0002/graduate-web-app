@@ -215,10 +215,10 @@ def get_progress_page(student_id: int | None = None, db: Session=Depends(get_db)
     response = schemas.progressPage(
         milestones= [task for task in tasks if task.milestone],
         requirements= [task for task in tasks if task.requirement],
-        funding=student_funding(student_id=student_id, skip=0, limit=100, db=db),
-        employment=student_employments(student_id=student_id, skip=0, limit=100, db=db),
-        to_do_list=student_events(student_id=student_id, skip=0, limit=0, db=db),
-        courses=student_courses(student_id=student_id, skip=0, limit=100, db=db)
+        funding=student_funding(student_id=student_id, skip=0, limit=100, db=db, access_token=access_token),
+        employment=student_employments(student_id=student_id, skip=0, limit=100, db=db, access_token=access_token),
+        to_do_list=student_events(student_id=student_id, skip=0, limit=0, db=db, access_token=access_token),
+        courses=student_courses(student_id=student_id, skip=0, limit=100, db=db, access_token=access_token)
     )
     
     return response
@@ -711,6 +711,28 @@ async def delete_pos(student_id:int, pos_id: int, access_token = Cookie(...), db
     pos = crud.delete_data(db=db, filter=filter, model=models.StudentPOS)
     if not pos:
         raise HTTPException(status_code=404, detail=f"Stuent POS with the given student id: {student_id} does not exist.")
+
+@app.delete("/requirement/{requirement_id}")
+def delete_requirement(requirement_id: int, access_token= Cookie(...), db:Session = Depends(get_db)):
+    
+    verify_jwt(access_token)
+    try:
+        crud.delete_requirement(db=db, requirement_id=requirement_id)
+    except:
+        raise HTTPException(status_code=404, detail=f"Requirement ID with the given id: {requirement_id} does not exist.")
+    
+@app.delete("/milestone/{milestone_id}")
+def delete_milestone(milestone_id: int, access_token = Cookie(...), db:Session = Depends(get_db)):
+    
+    verify_jwt(access_token)
+    try:
+        crud.delete_milestone(db=db, milestone_id=milestone_id)
+    except:
+         raise HTTPException(status_code=404, detail=f"Milestone ID with the given id: {milestone_id} does not exist.")
+     
+     
+    
+
 
     
 #---------------------------------------- end of /students endpoints --------------------------------------------#

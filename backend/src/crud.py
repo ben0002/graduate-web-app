@@ -157,11 +157,34 @@ def delete_data(db: Session, filter: dict, model):
             db.commit()
             return True
         else:
-            raise False
+            return False
     except Exception as e:
         print(e)
     
-    
+def delete_requirement(db: Session, requirement_id: int):
+    query = db.query(models.Requirement).filter(models.Requirement.id == requirement_id).one_or_none()
+    if query:
+        db.delete(query)
+        db.flush()
+        
+        related_progress_entries = db.query(models.Progress).filter(models.Progress.requirement_id == requirement_id).all()
+        for progress_entry in related_progress_entries:
+            db.delete(progress_entry)
+            db.flush()
+    db.commit()
+
+def delete_milestone(db: Session, milestone_id: int):
+    query = db.query(models.Milestone).filter(models.Milestone.id == milestone_id).one_or_none()
+    if query:
+        db.delete(query)
+        db.flush()
+        
+        related_progress_entries = db.query(models.Progress).filter(models.Progress.milestone_id == milestone_id).all()
+        for progress_entry in related_progress_entries:
+            db.delete(progress_entry)
+            db.flush()
+    db.commit()
+        
 
 #--------------------------------------------------Insert Data Function For File-------------------------
 
