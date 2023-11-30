@@ -4,6 +4,8 @@ the schema """
 from typing import Optional
 from sqlalchemy import ForeignKey, UniqueConstraint, PrimaryKeyConstraint
 from sqlalchemy import Boolean, String, Integer, Text
+from sqlalchemy import ForeignKey, UniqueConstraint, PrimaryKeyConstraint
+from sqlalchemy import Boolean, String, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy import Enum
@@ -60,7 +62,7 @@ class Student(Base):
     phone_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True) 
     pronouns: Mapped[Optional[str]] = mapped_column(String(15), nullable=True)
     gender : Mapped[str] = mapped_column(String(40), nullable=True) 
-    advisory_committee : Mapped[Optional[str]] = mapped_column(String(200), nullable=True) 
+    advisory_committee : Mapped[Optional[str]] = mapped_column(Text, nullable=True) 
     prelim_exam_date : Mapped[Optional[str]] = mapped_column(String(10), nullable=True) # do we drop this column?
     plan_submit_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     prelim_exam_pass: Mapped[Optional[str]] = mapped_column(String(10), nullable=True) 
@@ -68,7 +70,8 @@ class Student(Base):
     progress_meeting: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     ETD_submitted: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     final_exam: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
-    first_term : Mapped[int] = mapped_column(Integer, nullable=True) 
+    enrollment_term : Mapped[AcademicTerm] = mapped_column(Enum(AcademicTerm), nullable=True)
+    enrollment_year: Mapped[int] = mapped_column(Integer, nullable=True) 
     profile_picture : Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     graduation_date : Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     
@@ -100,10 +103,8 @@ class Degree(Base):
     __tablename__ = "degree"
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(30))
-    description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    name: Mapped[str] = mapped_column(String(30))
-    description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    name: Mapped[str] = mapped_column(String(50))
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     
      # way to list multiple unique constraints that are constrained together
      # make sure that the degree name and degree level should be unique to each other.
@@ -128,13 +129,12 @@ class Major(Base):
     __tablename__ = "major"
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(30))
+    name: Mapped[str] = mapped_column(String(40))
     dept_code: Mapped[Integer] = mapped_column(Integer, ForeignKey("department.dept_code"))
-    description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     
     department = relationship("Department", back_populates="majors") 
     requirements = relationship("Requirement", back_populates="major") 
-    
     milestones = relationship("Milestone", back_populates="major") 
     
     def __repr__(self) -> str:
@@ -179,6 +179,7 @@ class ProgramEnrollment(Base):
     student_id: Mapped[int] = mapped_column(Integer, ForeignKey("student.id"))
     degree_id: Mapped[int] = mapped_column(Integer, ForeignKey("degree.id"))
     major_id: Mapped[int] = mapped_column(Integer, ForeignKey("major.id"))
+    concentration: Mapped[str] = mapped_column(String(20), nullable=True)
     enrollment_date: Mapped[str] = mapped_column(String(10))
     
     # way to list multiple unique constraints that are constrained together
@@ -204,8 +205,10 @@ class StudentLabs(Base):
     __tablename__ = 'student_labs'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     student_id: Mapped[int] = mapped_column(Integer, ForeignKey("student.id"))
-    name: Mapped[str] = mapped_column(String(40))
-    director: Mapped[str] = mapped_column(String(40))
+    name: Mapped[str] = mapped_column(String(50))
+    director: Mapped[str] = mapped_column(String(50), nullable=True)
+    start_date: Mapped[str] = mapped_column(String(10), nullable=True)
+    location: Mapped[str] = mapped_column(String(50), nullable=True)
     
     student = relationship("Student", back_populates="labs")
     
@@ -299,8 +302,11 @@ class Funding(Base):
     name: Mapped[str] = mapped_column(String(50))
     award_amount: Mapped[Optional[int]] = mapped_column(Integer, nullable=True) 
     start_date: Mapped[str] = mapped_column(String(10)) 
-    end_date: Mapped[str] = mapped_column(String(10))   
-    guaranteed: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)  
+    end_date: Mapped[str] = mapped_column(String(10), nullable=True)   
+    guaranteed: Mapped[Optional[bool]] = mapped_column(Boolean, default=False) 
+    recurring: Mapped[bool] = mapped_column(Boolean, default=False) 
+    description: Mapped[str] = mapped_column(Text, nullable=True)
+    notes: Mapped[str] = mapped_column(Text, nullable=True)
 
     student = relationship("Student", back_populates="funding")
 
@@ -323,7 +329,7 @@ class Event(Base):
     student_id: Mapped[int] = mapped_column(Integer, ForeignKey("student.id"))
     name: Mapped[str] = mapped_column(String(40))
     due_date: Mapped[str] = mapped_column(String(10))   #July dd,yyyy
-    description: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[EventStatus] = mapped_column(Enum(EventStatus)) #Complete, On-Going
     
     student = relationship("Student", back_populates="events")
@@ -372,7 +378,7 @@ class Requirement(Base):
     __tablename__ = 'requirement'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(50))
-    description: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     major_id: Mapped[int] = mapped_column(Integer, ForeignKey("major.id"))
     degree_id: Mapped[int] = mapped_column(Integer, ForeignKey("degree.id"))
     
@@ -396,7 +402,7 @@ class Milestone(Base):
     __tablename__ = 'milestone'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(50))
-    description: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     major_id: Mapped[int] = mapped_column(Integer, ForeignKey("major.id"))
     degree_id: Mapped[int] = mapped_column(Integer, ForeignKey("degree.id"))
     
@@ -458,6 +464,7 @@ class CourseEnrollment(Base):
     term: Mapped[int] = mapped_column(Integer)
     pos_id: Mapped[int] = mapped_column(Integer, ForeignKey("student_pos.id", ondelete="SET NULL"), nullable=True)
     year: Mapped[Optional[int]] = mapped_column(Integer, nullable=True) # Do We need the years for the CourseEnrollment? add it just in case we need
+    research: Mapped[bool] = mapped_column(Boolean, default=False)
     
     student = relationship("Student", back_populates="courses")
     student_pos = relationship("StudentPOS", back_populates="courses")
@@ -482,7 +489,7 @@ class StudentPOS(Base):
     __tablename__ = 'student_pos'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     student_id: Mapped[int] = mapped_column(Integer, ForeignKey("student.id"))
-    approved: Mapped[bool] = mapped_column(Boolean)
+    status: Mapped[POSStatus] = mapped_column(Enum(POSStatus), default=POSStatus.WAITING_APPROVAL)
     approved_date: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     chair: Mapped[str] = mapped_column(String(100), nullable=True)
     co_chair: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
