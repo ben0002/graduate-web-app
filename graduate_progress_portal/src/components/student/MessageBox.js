@@ -1,8 +1,33 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Box, Tab, Tabs, TextField, Button, Paper } from '@mui/material';
+import { useDispatch, useSelector } from 'react-redux';
 
 const MessageBox = () => {
-  const [value, setValue] = React.useState(0); // Tab value 
+  const [value, setValue] = React.useState(0); // Tab value
+  const dispatch = useDispatch()
+  const student_id = useSelector(state => state.student.info.id) 
+
+  useEffect(_ => {
+    async function getMessages(id) {
+      await fetch(`https://bktp-gradpro-api.discovery.cs.vt.edu/students/${id}/messages`, {
+        credentials: 'include', // To include cookies in the request
+        headers: { 'Accept': 'application/json', }
+      })
+      .then(res => {
+        if(res.ok) return res.json();
+        else console.log(res.status);
+      })
+      .then(data => {
+        if (data == undefined) console.error('Error: Non ok http response');
+        else{
+          console.log(data)
+          dispatch({type: 'pop_stu_messages', payload: data});
+        }
+      })
+      .catch((err) => console.error('Error:', err.message))    
+    }
+    getMessages(student_id);      
+  }, []);
 
   // Placeholder for future userRole check 
   const userRole = 'student'; // For testing purpose only. 'student' 'faculty' 'admin' 

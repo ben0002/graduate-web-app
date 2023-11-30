@@ -22,6 +22,7 @@ const initialState = {
 
 // Create a reducer
 const studentReducer = (state = initialState, action) => {
+  console.log(action)
   // Handle actions here - example
   switch (action.type) {
     // Add case for each action type
@@ -30,11 +31,11 @@ const studentReducer = (state = initialState, action) => {
         return {...state, 
           user: action.payload.type,
           student: {...state.student, 
-            info: action.payload.data.student, 
+            info: action.payload.data.info, 
             advisors: action.payload.data.advisors, 
             programs: action.payload.data.programs, 
             campus: action.payload.data.campus, 
-            pos: action.payload.data.POS_info
+            pos: action.payload.data.pos
           }
         }
       }
@@ -44,7 +45,7 @@ const studentReducer = (state = initialState, action) => {
     case 'pop_stu_prog':
       return {...state, 
         student: { ...state.student,
-          tasks: action.payload.events, 
+          tasks: action.payload.to_do_list, 
           milestones: action.payload.milestones, 
           requirements: action.payload.requirements, 
           funding: action.payload.funding, 
@@ -52,11 +53,16 @@ const studentReducer = (state = initialState, action) => {
           courses: action.payload.courses
         }
       }
-    case 'pop_stu_profile':
+    case 'pop_stu_labs':
       return {...state,
         student: { ...state.student, 
-          labs: action.payload.labs, 
-          messages: action.payload.messages
+          labs: action.payload, 
+        }
+      }
+    case 'pop_stu_messages':
+      return {...state,
+        student: { ...state.student,  
+          messages: action.payload
         }
       }
     case 'add_task':

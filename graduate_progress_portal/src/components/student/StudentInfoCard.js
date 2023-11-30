@@ -54,7 +54,7 @@ export default function StudentCardInfo() {
                     {/* Column 2: Major, Status, Year */}
                     <Grid item xs={12} sm={2}>
                         <Box sx={{ flexGrow: 1 }}>
-                            <Typography color="textSecondary"><strong>Major: </strong>{user.programs.length > 0 ? user.programs[0].major : 'Major'}</Typography> {/*user.programs.map( pro => pro.major).join(', ')*/}
+                            <Typography color="textSecondary"><strong>Major: </strong>{user.programs.length > 0 ? user.programs[0].major.name : 'Major'}</Typography> {/*user.programs.map( pro => pro.major).join(', ')*/}
                             <Typography color="textSecondary"><strong>Status: </strong>{user.info.status || 'New'}</Typography>
                             <Typography color="textSecondary"><strong>Year: </strong>{user.info.year || 2023}</Typography>
                         </Box>
@@ -64,7 +64,7 @@ export default function StudentCardInfo() {
                     <Grid item xs={12} sm={2}>
                         <Box sx={{ flexGrow: 1 }}>
                             <Typography color="textSecondary"><strong>Concentration: </strong>{user.info.concentration || 'Concentration'}</Typography>
-                            <Typography color="textSecondary"><strong>Degree Type: </strong>{user.programs.length > 0 ? user.programs[0].degree : 'Degree'}</Typography> {/*user.programs.map( pro => pro.degree).join(', ')*/}
+                            <Typography color="textSecondary"><strong>Degree Type: </strong>{user.programs.length > 0 ? user.programs[0].degree.name : 'Degree'}</Typography> {/*user.programs.map( pro => pro.degree).join(', ')*/}
                         </Box>
                     </Grid>
 

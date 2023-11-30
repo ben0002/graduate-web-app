@@ -94,7 +94,30 @@ const StudentLabInformationCard = () => {
     const [open, setOpen] = useState(false);
     const labs = useSelector(state => state.student.labs)
     const dispatch = useDispatch()
+    const student_id = useSelector(state => state.student.info.id)
     
+    useEffect(_ => {
+        async function getLabs(id) {
+          await fetch(`https://bktp-gradpro-api.discovery.cs.vt.edu/students/${id}/labs`, {
+            credentials: 'include', // To include cookies in the request
+            headers: { 'Accept': 'application/json', }
+          })
+          .then(res => {
+            if(res.ok) return res.json();
+            else console.log(res.status);
+          })
+          .then(data => {
+            if (data == undefined) console.error('Error: Non ok http response');
+            else{
+              console.log(data)
+              dispatch({type: 'pop_stu_labs', payload: data});
+            }
+          })
+          .catch((err) => console.error('Error:', err.message))    
+        }
+        getLabs(student_id);      
+      }, []);
+
     var makeLabRows = _ => {
         return labs.map( (lab, idx) => { return(
                 <TableRow style={{backgroundColor: `${idx % 2 === 0 ? '#f5f5f5' : 'white'}`}}  key={`lab-${lab.id}`}>

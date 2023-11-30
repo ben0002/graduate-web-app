@@ -53,7 +53,7 @@ def read_root():
     return {"message": "Hello, World!"}
 
 
-SERVICE_URL = "https://bktp-gradpro-api2.discovery.cs.vt.edu/"
+SERVICE_URL = "https://bktp-gradpro-api.discovery.cs.vt.edu/"
 SECRET_KEY = "03588c9b6f5508ff6ab7175ba9b38a4d1366581fdc6468e8323015db7d68dac0" # key used to sign JWT token
 ALGORITHM = "HS256" # algorithm used to sign JWT Token
 ACCESS_TOKEN_EXPIRE_MINUTES = 45
@@ -61,7 +61,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 45
 # Creating the CAS CLIENT
 cas_client = CASClient(
     version=2,
-    service_url=f"{SERVICE_URL}/login?",
     service_url=f"{SERVICE_URL}/login?",
     server_url="https://login.vt.edu/profile/cas/",
     # CHANGE: If you want VT CS CAS, to be used instead of VT CAS
@@ -97,7 +96,7 @@ def login(request: Request, response: Response, db:Session = Depends(get_db)):
     if not access_token:
         raise HTTPException(status_code=404, detail="Student or Faculty does not exist in the system.")
     
-    web_app_url = "https://bktp-gradpro2.discovery.cs.vt.edu/"
+    web_app_url = "https://bktp-gradpro.discovery.cs.vt.edu/"
     response = RedirectResponse(web_app_url)
     response.set_cookie(key="access_token", value=access_token, httponly=True, domain=".discovery.cs.vt.edu",
                         samesite="None", secure=True)
@@ -804,14 +803,14 @@ def get_progress_page(student_id: int | None = None, db: Session=Depends(get_db)
     if student_id is None:
         student_id = payload.get("id")
     
-    tasks = student_progress(student_id=student_id, skip=0, limit=100, db=db)
+    tasks = student_progress(student_id=student_id, skip=0, limit=100, db=db, access_token=access_token)
     response = schemas.progressPage(
         milestones= [task for task in tasks if task.milestone],
         requirements= [task for task in tasks if task.requirement],
-        funding=student_funding(student_id=student_id, skip=0, limit=100, db=db),
-        employment=student_employments(student_id=student_id, skip=0, limit=100, db=db),
-        to_do_list=student_events(student_id=student_id, skip=0, limit=0, db=db),
-        courses=student_courses(student_id=student_id, skip=0, limit=100, db=db)
+        funding=student_funding(student_id=student_id, skip=0, limit=100, db=db, access_token=access_token),
+        employment=student_employments(student_id=student_id, skip=0, limit=100, db=db, access_token=access_token),
+        to_do_list=student_events(student_id=student_id, skip=0, limit=0, db=db, access_token=access_token),
+        courses=student_courses(student_id=student_id, skip=0, limit=100, db=db, access_token=access_token)
     )
     
     return response
@@ -898,8 +897,7 @@ def student_advisors(student_id: int, skip: int | None = 0, limit: int | None = 
                 last_name=student_advisor.advisor.last_name,
                 dept_code=student_advisor.advisor.dept_code,
                 privilege_level=student_advisor.advisor.privilege_level,
-                advisor_role=student_advisor.advisor_role,
-                email=student_advisor.advisor.email   
+                advisor_role=student_advisor.advisor_role   
             )
         )
         

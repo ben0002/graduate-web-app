@@ -17,7 +17,7 @@ const StudentProgress = () => {
 
   useEffect(_ => {
     async function progress() {
-      await fetch("https://bktp-gradpro-api.discovery.cs.vt.edu/student/progress", {
+      await fetch("https://bktp-gradpro-api.discovery.cs.vt.edu/students/progress_page_info", {
         credentials: 'include', // To include cookies in the request
         headers: { 'Accept': 'application/json', }
       })
