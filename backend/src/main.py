@@ -152,7 +152,7 @@ def verify_jwt(token: Annotated[str | None, Cookie()] = None):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except JWTError as e:
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
@@ -529,8 +529,8 @@ async def create_student_funding(student_id: int, funding: schemas.FundingIn, ac
 async def create_student_lab(student_id: int, lab: schemas.StudentLabsIn, access_token = Cookie(...), db:Session = Depends(get_db)):
     try:
         verify_jwt(access_token)
-        lab.student_id = student_id
-        db_lab = models.StudentLabs(**lab.dict())
+       # lab.student_id = student_id
+        db_lab = models.StudentLabs(**lab.dict(), student_id=student_id)
         db.add(db_lab)
         db.commit()
         return db_lab
@@ -546,8 +546,7 @@ async def create_student_course(student_id: int, course: schemas.CourseEnrollmen
     try:
         verify_jwt(access_token)
         course.pos_id = crud.find_studentpos(student_id, db)
-        course.student_id = student_id
-        db_course = models.CourseEnrollment(**course.dict())
+        db_course = models.CourseEnrollment(**course.dict(), student_id=student_id)
         db.add(db_course)
         db.commit()
         return db_course
@@ -689,6 +688,7 @@ async def delete_lab(student_id: int, lab_id: int, access_token = Cookie(...), d
     student = crud.delete_data(db=db, filter=filter, model=models.StudentLabs)
     if not student:
         raise HTTPException(status_code=404, detail=f"Student Lab with the given student id: {student_id} does not exist.")
+    return {"Message": "Deletion Successful!"}
     
 @app.delete("/students/{student_id}/progress/{progress_id}", status_code=200)
 async def delete_progress(student_id:int, progress_id: int, access_token = Cookie(...),db:Session = Depends(get_db)):

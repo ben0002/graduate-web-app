@@ -217,13 +217,14 @@ class ResponseUpdateProgramEnrollment(ProgramEnrollmentIn):
     
 
 class StudentLabsIn(BaseModel):
-    student_id: int
+    #student_id: int
     name: str = Field(..., max_length=40)
     director: str = Field(..., max_length=40)
     start_date: date | None = None
     location: str = Field(None, max_length=50)
     class Config:
         from_attributes = True
+
         
 class StudentLabsOut(StudentLabsIn):
     id : int
@@ -407,7 +408,7 @@ class ResponsedUpdateProgress(UpdateProgress):
     milestone_id: int | None = None
 
 class CourseEnrollmentIn(BaseModel):
-    student_id: int
+    #student_id: int
     course_title: str = Field(..., max_length=50)   
     transfer: bool = False
     credits: int
