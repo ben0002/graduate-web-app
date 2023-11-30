@@ -464,7 +464,6 @@ def validation_student_data_from_file(data: dict, db: Session, row_number: int):
         campus_id = find_campus(data.get("Campus") or None, db, row_number),
         va_residency = enums.Residencies(data.get("Virginia Residency")) or None,
         status = enums.StudentStatus(data.get("Student Status")) or None,
-        first_term = data.get("First Term") or None,
         email = data.get("E-mail") or None,
         phone_number = data.get("Phone") or None,
         citizenship = data.get("Country of Citizenship") or None,
@@ -474,6 +473,8 @@ def validation_student_data_from_file(data: dict, db: Session, row_number: int):
         proposal_meeting = data.get("Proposal Meeting") or None,
         progress_meeting = data.get("Progress Meeting") or None,
         final_exam = data.get("Final Exam") or None,
+        enrollment_term=enums.AcademicTerm(data.get("Enrollment Term")) if data.get("Enrollment Term") is not None else None,
+        enrollment_year=data.get("Enrollment Year", None),
         ETD_submitted = data.get("ETD Submitted") or None
     )
     return validation_data, degree_id, major_id, advisor_id, co_advisor_id

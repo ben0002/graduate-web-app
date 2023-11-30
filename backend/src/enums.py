@@ -29,3 +29,14 @@ class StudentStatus(str, enum.Enum): # ask question about this in relation to st
     NEW = "New"
     CONT = "Cont"
     NEW_PROGRAM = "New Prog"
+    
+class AcademicTerm(str, enum.Enum):
+    FALL = "Fall"
+    SPRING = "Spring"
+    WINTER = "Winter"
+    SUMMER = "Summer"
+
+class POSStatus(str, enum.Enum):
+    WAITING_APPROVAL = "Waiting Approval"
+    WAITING_SUBMISSION = "Waiting Submission"
+    APPROVED = "Approved"

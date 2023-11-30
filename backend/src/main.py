@@ -23,7 +23,7 @@ from database import SessionLocal, engine
 import csv
 
 #models.Base.metadata.drop_all(engine)
-models.Base.metadata.create_all(engine)
+#models.Base.metadata.create_all(engine)
 
 # Dependency
 def get_db():
@@ -444,8 +444,9 @@ def create_students(students: list[schemas.CreateStudent], db:Session = Depends(
                 "progress_meeting":student.progress_meeting,
                 "ETD_submitted":student.ETD_submitted,
                 "final_exam":student.final_exam,
-                "first_term":student.first_term,
-                "graduation_date":student.graduation_date
+                "graduation_date":student.graduation_date,
+                "enrollment_term":student.enrollment_term,
+                "enrollment_year":student.enrollment_year
             }
             
             student_id = crud.insert_student(data=student_data, db=db)
