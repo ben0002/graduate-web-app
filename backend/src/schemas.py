@@ -281,7 +281,6 @@ class UpdateEmployment(EmploymentIn):
     type : Optional[str]= Field(None, max_length=30)
 
 class FundingIn(BaseModel):
-    student_id : int
     name : str = Field(..., max_length=50)
     award_amount : int | None = None
     start_date: date 
@@ -299,11 +298,10 @@ class FundingOut(FundingIn):
         from_attributes = True
 
 class UpdateFunding(FundingIn):
-    student_id : int | None = None
+    start_date: date | None = None
     name : Optional[str] = Field(None, max_length=50)
 
 class EventIn(BaseModel):
-    student_id : int
     name : str = Field(..., max_length=40)
     due_date: date | None = None
     description : Optional[str] = None

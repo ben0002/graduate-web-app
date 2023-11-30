@@ -218,7 +218,7 @@ def get_progress_page(student_id: int | None = None, db: Session=Depends(get_db)
         requirements= [task for task in tasks if task.requirement],
         funding=student_funding(student_id=student_id, skip=0, limit=100, db=db, access_token=access_token),
         employment=student_employments(student_id=student_id, skip=0, limit=100, db=db, access_token=access_token),
-        to_do_list=student_events(student_id=student_id, skip=0, limit=0, db=db, access_token=access_token),
+        to_do_list=student_events(student_id=student_id, skip=0, limit=100, db=db, access_token=access_token),
         courses=student_courses(student_id=student_id, skip=0, limit=100, db=db, access_token=access_token)
     )
     
@@ -479,13 +479,13 @@ def create_students(students: list[schemas.CreateStudent], db:Session = Depends(
         raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
     
     
-@app.post("/students/{student_id}/events", response_model=schemas.EventIn)
+@app.post("/students/{student_id}/events", response_model=schemas.EventOut)
 async def create_student_event(student_id: int, event: schemas.EventIn, access_token = Cookie(...), db:Session = Depends(get_db)):
     try:
         verify_jwt(access_token)
         #student_id = payload.get("id")
-        event.student_id = student_id
-        db_event = models.Event(**event.dict())
+        #event.student_id = student_id
+        db_event = models.Event(**event.dict(), student_id=student_id)
         db.add(db_event)
         db.commit()
         return db_event
@@ -509,13 +509,13 @@ async def create_student_employment(student_id: int, employment: schemas.Employm
         HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
    
     
-@app.post("/students/{student_id}/funding", response_model=schemas.FundingIn)
+@app.post("/students/{student_id}/funding", response_model=schemas.FundingOut)
 async def create_student_funding(student_id: int, funding: schemas.FundingIn, access_token = Cookie(...), db:Session = Depends(get_db)):
     try:
         verify_jwt(access_token)
         #student_id = payload.get("id")
-        funding.student_id = student_id
-        db_funding = models.Funding(**funding.dict())
+        #funding.student_id = student_id
+        db_funding = models.Funding(**funding.dict(), student_id=student_id)
         db.add(db_funding)
         db.commit()
         return db_funding
@@ -590,7 +590,7 @@ async def create_student_advisor(student_id: int, advisor_id: int, role: schemas
         db.rollback()
         HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
 
-@app.post("/requirement", response_model=schemas.RequirementIn)
+@app.post("/requirement", response_model=schemas.RequirementOut)
 async def create_requirement(progress_requirement: schemas.RequirementIn, access_token = Cookie(...), db:Session = Depends(get_db)):
     try:
         ##payload = verify_jwt(access_token) this may need for privilege level
@@ -655,7 +655,7 @@ async def delete_funding(student_id:int, funding_id : int, access_token = Cookie
     student = crud.delete_data(db=db, filter=filter, model=models.Funding)
     if not student:
         raise HTTPException(status_code=404, detail=f"Funding with the given student id: {student_id} does not exist.")
-
+    return {"Message": "Deletion Successful"}
 
 @app.delete("/students/{student_id}/advisors/{advisor_id}", status_code=200)
 async def delete_advisor(student_id : int, advisor_id : int, db:Session = Depends(get_db)):
@@ -679,6 +679,7 @@ async def delete_event(student_id:int, event_id: int, access_token = Cookie(...)
     student = crud.delete_data(db=db, filter=filter, model=models.Event)
     if not student:
         raise HTTPException(status_code=404, detail=f"Event with the given student id: {student_id} does not exist.")
+    return {"Message": "Deleted Successfully!"}
 
 @app.delete("/{student_id}/labs/{lab_id}", status_code=200)
 async def delete_lab(student_id: int, lab_id: int, access_token = Cookie(...), db:Session = Depends(get_db)):
@@ -762,7 +763,7 @@ def update_requirement(update_fields: schemas.RequirementPatch, requirement_id: 
         raise HTTPException(status_code=404, detail=f"Requirement ID with the given id: {requirement_id} does not exist. Error: {e}")
     
 @app.patch("/milestone/{milestone_id}", response_model=schemas.MilestoneOut)
-def update_requirement(update_fields: schemas.MilestonePatch, milestone_id: int, access_token = Cookie(...), 
+def update_milestone(update_fields: schemas.MilestonePatch, milestone_id: int, access_token = Cookie(...), 
                        db:Session = Depends(get_db)):
     verify_jwt(access_token)
     try:
@@ -816,7 +817,7 @@ async def update_student_employment(student_id: int, employment_id: int, employm
     except IntegrityError as constraint_violation:
         raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
 
-@app.patch("/student/{student_id}/fundings/{funding_id}", response_model=schemas.FundingOut)
+@app.patch("/student/{student_id}/funding/{funding_id}", response_model=schemas.FundingOut)
 async def update_student_funding(student_id: int, funding_id: int, funding_data:schemas.UpdateFunding, access_token = Cookie(...),db:Session = Depends(get_db)):
     verify_jwt(access_token)
     filter = {
@@ -834,7 +835,7 @@ async def update_student_funding(student_id: int, funding_id: int, funding_data:
         raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
     
 @app.patch("/student/{student_id}/events/{event_id}", response_model=schemas.EventOut)
-async def update_student_funding(student_id: int, event_id: int, event_data:schemas.UpdateEvent, access_token = Cookie(...),db:Session = Depends(get_db)):
+async def update_student_event(student_id: int, event_id: int, event_data:schemas.UpdateEvent, access_token = Cookie(...),db:Session = Depends(get_db)):
     verify_jwt(access_token)
     filter = {
         "id" : event_id,

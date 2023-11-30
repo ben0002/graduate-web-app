@@ -280,7 +280,9 @@ class Employment(Base):
     start_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True) 
     end_date : Mapped[Optional[str]] = mapped_column(String(10), nullable=True)    
     type: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
-
+    description: Mapped[str] = mapped_column(Text, nullable=True)
+    notes: Mapped[str] = mapped_column(Text, nullable=True)
+    
     student = relationship("Student", back_populates = "employment")
 
     def __repr__(self) -> str:
