@@ -1,4 +1,4 @@
-from pydantic import BaseModel, validator, conint, Field
+from pydantic import BaseModel, validator, Field
 from pydantic.types import constr
 from pydantic import EmailStr
 from typing import Optional
@@ -6,14 +6,16 @@ from datetime import date
 from validators import *
 from enums import *
 
+# clean up dates and just require one date format
+
+#---------------------- student schemas -----------------------------#
 
 class StudentIn(BaseModel):
     first_name: str = Field(..., max_length=40)
     middle_name: Optional[str] = Field(None, max_length=40)
     last_name: str = Field(..., max_length=40)
-    citizenship: str = Field(..., max_length=60)
+    citizenship: str | None = Field(default="United States of America", max_length=60)
     va_residency: Residencies | None = None
-    type: StudentTypes | None = None
     status: StudentStatus | None = None
     campus_id: int | None = None
     email: EmailStr 
@@ -23,6 +25,7 @@ class StudentIn(BaseModel):
         strip_whitespace=True  # Remove leading/trailing whitespace (default is True)
     ) | None = None
     pronouns: Optional[str] = Field(None, max_length=15)
+    gender: Optional[str] = Field(None, max_length=10)
     advisory_committee: Optional[str] = Field(None, max_length=200)
     plan_submit_date: date | None = None
     prelim_exam_date: date | None = None
@@ -32,7 +35,8 @@ class StudentIn(BaseModel):
     graduation_date: date | None = None
     ETD_submitted: bool | None = False
     final_exam: date | None = None
-    first_term: int | None = None
+    enrollment_term: AcademicTerm | None = None
+    enrollment_year: int | None = None
     profile_picture: str | None = None
     class Config:
         from_attributes = True
@@ -42,6 +46,25 @@ class StudentOut(StudentIn):
     
     class Config:
         from_attributes = True
+
+class CreateProgramEnrollment(BaseModel):
+    major_id: int
+    degree_id: int
+    concentration: str | None = None  
+    enrollment_date: date
+
+class StudentAdvisor(BaseModel):
+    first_name: str = Field(..., max_length=40)
+    last_name : str = Field(..., max_length=40)
+    
+class CreateStudent(StudentIn):
+    program_enrollments: list[CreateProgramEnrollment]
+    main_advisor_id: int 
+    co_advisors_ids: list[int] | None = None
+    campus_id: int 
+    
+    class Config:
+        exclude = ['campus_id', 'profile_picture']
 
 class StudentFileUpload(StudentIn):
     #---------------------------Validator----------------------------------
@@ -72,10 +95,10 @@ class StudentFileUpload(StudentIn):
 
 class FacultyIn(BaseModel):
     first_name: str = Field(..., max_length=40)
-    middle_name: str | None = None
     last_name: str = Field(..., max_length=30)
     email: str = Field(..., max_length=70)
     dept_code: int # could be int or str; testing purposes = it is int rn
+    email: EmailStr
     faculty_type: Optional[str] = Field(None, max_length=20)
     privilege_level: int | None = 1
     
@@ -90,7 +113,7 @@ class FacultyOut(FacultyIn):
 
 class DegreeIn(BaseModel):
     name: str = Field(..., max_length=30)
-    description: Optional[str] = Field(None, max_length=500)
+    description: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -104,7 +127,7 @@ class DegreeOut(DegreeIn):
 class MajorIn(BaseModel):
     name: str = Field(..., max_length=30)
     dept_code: int
-    description: str = Field(..., max_length=500)
+    description: str = None
     
     class Config:
         from_attributes = True
@@ -143,17 +166,23 @@ class ProgramEnrollmentIn(BaseModel):
     student_id: int
     degree_id: int
     major_id: int
+    concentration: str | None = None
     enrollment_date: date
+    
+    class Config:
+        from_attributes = True
+
+class ProgramEnrollmentFileIn(ProgramEnrollmentIn):
     @validator("enrollment_date", pre=True, always=True)
     def validate_enrollment_date(cls, value):
         return validate_date(value)
-    class Config:
-        from_attributes = True
+    
 
 class ProgramEnrollmentOut(BaseModel):
     id: int
     major: MajorOut
     degree: DegreeOut
+    concentration: str | None = None
     enrollment_date: date
     
 
@@ -161,6 +190,8 @@ class StudentLabsIn(BaseModel):
     student_id: int
     name: str = Field(..., max_length=40)
     director: str = Field(..., max_length=40)
+    start_date: date | None = None
+    location: str = Field(None, max_length=50)
     class Config:
         from_attributes = True
         
@@ -198,9 +229,12 @@ class FundingIn(BaseModel):
     student_id : int
     name : str = Field(..., max_length=50)
     award_amount : int | None = None
-    start_date: date | None = None
+    start_date: date 
     end_date : date | None = None
-    guaranteed : bool | None = False    
+    guaranteed : bool | None = False
+    recurring: bool | None = False
+    description: str | None = None
+    notes: str | None = None    
     class Config:
         from_attributes = True
         
@@ -213,7 +247,7 @@ class EventIn(BaseModel):
     student_id : int
     name : str = Field(..., max_length=40)
     due_date: date | None = None
-    description : Optional[str] = Field(None, max_length=100)
+    description : Optional[str] = None
     status: EventStatus
     class Config:
         from_attributes = True
@@ -225,7 +259,7 @@ class EventOut(EventIn):
 
 class RequirementIn(BaseModel):
     name : str = Field(..., max_length=50)
-    description : Optional[str] = Field(None, max_length=100)
+    description : Optional[str] = None
     major_id: int
     degree_id: int
     class Config:
@@ -238,7 +272,9 @@ class RequirementOut(RequirementIn):
 
 class MilestoneIn(BaseModel):
     name : str = Field(..., max_length=50)
-    description : Optional[str] = Field(None, max_length=100)
+    description : Optional[str] = None
+    major_id: int
+    degree_id: int
     class Config:
         from_attributes = True
         
@@ -247,15 +283,18 @@ class MilestoneOut(MilestoneIn):
     class Config:
         from_attributes = True
 
+
 class ProgressIn(BaseModel):
     student_id : int
-    ideal_completion_date: date
+    ideal_completion_date: date | None = None
     requirement_id: int | None = None
     milestone_id: int | None = None
-    deadline: date
+    custom_milestone_name: str | None = None
+    custom_milestone_description: str | None = None
+    deadline: date | None = None
     completion_date: date | None = None
     approved: bool | None = False
-    note : Optional[str] = Field(None, max_length=200)
+    note : Optional[str] | None = None
     exempt: bool | None = False
     
     class Config:
@@ -263,14 +302,16 @@ class ProgressIn(BaseModel):
 
 class ProgressOut(BaseModel):
     id : int
-    ideal_completion_date: date
-    deadline: date
+    ideal_completion_date: date | None = None
+    deadline: date | None = None
     completion_date: date | None = None
     approved: bool | None = False
     exempt: bool | None = False
-    note: Optional[str] = Field(None, max_length=200)
+    note: Optional[str] | None = False
     requirement: RequirementOut | None = None
     milestone: MilestoneOut | None = None
+    custom_milestone_name: str | None = None
+    custom_milestone_description: str | None = None
     
     class Config:
         from_attributes = True
@@ -279,11 +320,12 @@ class ProgressOut(BaseModel):
 class CourseEnrollmentIn(BaseModel):
     student_id: int
     course_title: str = Field(..., max_length=50)   
-    course_type: CourseType
+    transfer: bool = False
     credits: int
     term: int
-    pos_id: int
+    pos_id: int | None = None
     year: int | None = None
+    research: bool | None = False
     class Config:
         from_attributes = True
 
@@ -292,18 +334,6 @@ class CourseEnrollmentOut(CourseEnrollmentIn):
     class Config:
         from_attributes = True
         
-class StageIn(BaseModel):
-    name: str = Field(..., max_length=40)
-    description: Optional[str] = Field(None, max_length=150)
-    major_id: int
-    degree_id: int
-    class Config:
-        from_attributes = True
-        
-class StageOut(StageIn):
-    id : int
-    class Config:
-        from_attributes = True
         
 class StudentPOSIn(BaseModel):
     student_id: int
@@ -311,6 +341,7 @@ class StudentPOSIn(BaseModel):
     approved_date: Optional[str] = Field(None, max_length=50)
     chair: Optional[str] = Field(None, max_length=100)
     co_chair: Optional[str] = Field(None, max_length=100)
+    status: POSStatus | None = POSStatus.WAITING_APPROVAL
     class Config:
         from_attributes = True
 
@@ -319,3 +350,42 @@ class StudentPOSOut(StudentPOSIn):
     class Config:
         from_attributes = True
 
+
+# ----------------------- lump schemas ------------------------- #
+class studentCard(BaseModel):
+    info: StudentOut
+    campus: CampusOut
+    advisors: list[StudentAdvisorOut]
+    programs: list[ProgramEnrollmentOut]
+    pos: list[StudentPOSOut]
+    
+class progressPage(BaseModel):
+    #   To do box --> events
+    #Milestones --> milestones progress
+    #Requirements --> requirement progress
+    #Funding --> funding 
+    #Employment --> employment
+    milestones: list[ProgressOut]
+    requirements: list[ProgressOut]
+    funding: list[FundingOut]
+    employment: list[EmploymentOut]
+    to_do_list: list[EventOut]
+    courses: list[CourseEnrollmentOut]
+    
+class ProfilePage(BaseModel):
+    # add messages once table is in
+    advisors: list[StudentAdvisorOut]
+    advisory_committee: str | None = ""
+    labs: list[StudentLabsIn]
+    courses: list[CourseEnrollmentOut] 
+    
+
+class MessageOut(BaseModel):
+    id: int 
+    student_id: int
+    advisor_id: int | None = None
+    text: str
+    private: bool | None = False
+    
+
+    

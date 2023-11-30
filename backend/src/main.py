@@ -23,7 +23,7 @@ from database import SessionLocal, engine
 import csv
 
 #models.Base.metadata.drop_all(engine)
-models.Base.metadata.create_all(engine)
+#models.Base.metadata.create_all(engine)
 
 # Dependency
 def get_db():
@@ -34,6 +34,7 @@ def get_db():
         db.close()
 
 app = FastAPI()
+
 
 origins = [
     "*",  # Example frontend development server
@@ -47,19 +48,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/api/")
+@app.get("/")
 def read_root():
     return {"message": "Hello, World!"}
 
 
-SERVICE_URL = "https://bktp-gradpro-api.discovery.cs.vt.edu/"
+SERVICE_URL = "https://bktp-gradpro-api2.discovery.cs.vt.edu/"
 SECRET_KEY = "03588c9b6f5508ff6ab7175ba9b38a4d1366581fdc6468e8323015db7d68dac0" # key used to sign JWT token
 ALGORITHM = "HS256" # algorithm used to sign JWT Token
-ACCESS_TOKEN_EXPIRE_MINUTES = 120
+ACCESS_TOKEN_EXPIRE_MINUTES = 45
 
 # Creating the CAS CLIENT
 cas_client = CASClient(
     version=2,
+    service_url=f"{SERVICE_URL}/login?",
     service_url=f"{SERVICE_URL}/login?",
     server_url="https://login.vt.edu/profile/cas/",
     # CHANGE: If you want VT CS CAS, to be used instead of VT CAS
@@ -68,17 +70,17 @@ cas_client = CASClient(
 
 # Routes related to CAS
 @app.get("/login")
-def login(request: Request, response: Response, db: Session = Depends(get_db)):
+def login(request: Request, response: Response, db:Session = Depends(get_db)):
 
     delete_token = False
     jwt = request.cookies.get("access_token")
     if jwt: # return user info
-        response = getUserData(jwt, db)
-        if(response):
-            return response
-        else:
-            delete_token = True
-
+        try:
+            verify_jwt(jwt)
+            return JSONResponse(content={"message": "Logged in!"}, media_type="application/json")
+        except HTTPException as e:
+            response.delete_cookie("access_token")
+    
     cas_ticket = request.query_params.get("ticket")
     if not cas_ticket:
         cas_login_url = cas_client.get_login_url()
@@ -95,7 +97,7 @@ def login(request: Request, response: Response, db: Session = Depends(get_db)):
     if not access_token:
         raise HTTPException(status_code=404, detail="Student or Faculty does not exist in the system.")
     
-    web_app_url = "https://bktp-gradpro.discovery.cs.vt.edu/"
+    web_app_url = "https://bktp-gradpro2.discovery.cs.vt.edu/"
     response = RedirectResponse(web_app_url)
     response.set_cookie(key="access_token", value=access_token, httponly=True, domain=".discovery.cs.vt.edu",
                         samesite="None", secure=True)
@@ -156,9 +158,12 @@ def verify_jwt(token: Annotated[str | None, Cookie()] = None):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
     except JWTError as e:
-        return None
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+            headers={"access_token": "jwt"},
+        )
     
-
 #------------------- helper functions -----------#
 def pagination(skip: int, limit: int, response: list):
     total_responses = len(response)
@@ -761,18 +766,70 @@ async def delete_lab(request: Request, pos_id: int, db: Session = Depends(get_db
 #TODO: messages
 
 #-------------------------------------- start of /students endpoints -------------------------------#
+
+# ----------- lump info student page endpoints --------------------#
+# 'student': {}, 'advisors': [], 'programs': [], 'campus': {}, 'POS_info': []}
+@app.get("/students/login_info", response_model=schemas.studentCard)
+def get_login_page_info(student_id: int | None = None, access_token:str = Cookie(...), db: Session=Depends(get_db)):
+    
+    payload = verify_jwt(access_token)
+    if student_id is None:
+        student_id = payload.get("id")
+    student = crud.get_students(db=db, filters={"id": student_id}, skip=0, limit=1)[0]
+    #student = crud.get_students(db=db, filters={"id": student_id}, skip=0, limit=1)[0]
+    
+    response = schemas.studentCard(
+        info=student,
+        campus=student.campus,
+        advisors=[schemas.StudentAdvisorOut(
+                    id=student_advisor.advisor.id,
+                    first_name=student_advisor.advisor.first_name,
+                    email=student_advisor.advisor.email,
+                    last_name=student_advisor.advisor.last_name,
+                    dept_code=student_advisor.advisor.dept_code,
+                    privilege_level=student_advisor.advisor.privilege_level,
+                    advisor_role=student_advisor.advisor_role   
+                ) for student_advisor in student.advisors],
+        programs=[schemas.ProgramEnrollmentOut(id=program.id, major=program.major, degree=program.degree, concentration=program.concentration,
+                                               enrollment_date=program.enrollment_date) for program in student.programs],
+        pos=student.pos
+    )
+    
+    return response
+
+@app.get("/students/progress_page_info", response_model=schemas.progressPage)
+def get_progress_page(student_id: int | None = None, db: Session=Depends(get_db), access_token:str = Cookie(...)):
+    
+    payload = verify_jwt(access_token)
+    if student_id is None:
+        student_id = payload.get("id")
+    
+    tasks = student_progress(student_id=student_id, skip=0, limit=100, db=db)
+    response = schemas.progressPage(
+        milestones= [task for task in tasks if task.milestone],
+        requirements= [task for task in tasks if task.requirement],
+        funding=student_funding(student_id=student_id, skip=0, limit=100, db=db),
+        employment=student_employments(student_id=student_id, skip=0, limit=100, db=db),
+        to_do_list=student_events(student_id=student_id, skip=0, limit=0, db=db),
+        courses=student_courses(student_id=student_id, skip=0, limit=100, db=db)
+    )
+    
+    return response
+    
+    
+    
+    
 @app.get("/students", response_model=list[schemas.StudentOut])
 def students(
-    skip: int = 0, limit: int = 100, db: Session = Depends(get_db), 
-    admit_type: AdmitType | None = None, residency: Residencies | None = None, 
-    student_type: StudentTypes | None = None, prelim_exam_date: date | None = None, 
+    skip: int = 0, limit: int = 100, db: Session = Depends(get_db), residency: Residencies | None = None, 
+    student_status: StudentStatus | None = None, prelim_exam_date: date | None = None, 
     prelim_exam_passed: bool | None = None, first_term: int | None = None, 
-    status: StudentStatus | None = None, campus_id: int | None = None 
+    status: StudentStatus | None = None, campus_id: int | None = None, access_token:str = Cookie(...)
 ):
+    verify_jwt(access_token)
     filters = {
-        "admit_type": admit_type,
         "va_residency": residency,
-        "student_type": student_type,
+        "student_status": student_status,
         "prelim_exam_date": prelim_exam_date,
         "prelim_exam_passed": prelim_exam_passed,
         "first_term": first_term,
@@ -785,7 +842,9 @@ def students(
 
 # add filters once all basic func. is done
 @app.get("/students/{student_id}", response_model=schemas.StudentOut)
-async def students_id(student_id: int, db: Session = Depends(get_db)):
+def students_id(student_id: int, db: Session = Depends(get_db), access_token:str = Cookie(...)) -> schemas.StudentOut:
+    
+    verify_jwt(access_token)
     filter = {
         "id": student_id
     }
@@ -797,8 +856,9 @@ async def students_id(student_id: int, db: Session = Depends(get_db)):
 
 @app.get("/students/{student_id}/employments", response_model=list[schemas.EmploymentOut])
 def student_employments(student_id: int, skip: int | None = 0, limit: int | None = 100, 
-                        db: Session = Depends(get_db)):
+                        db: Session = Depends(get_db), access_token:str = Cookie(...)):
     
+    verify_jwt(access_token)
     filter = {"id": student_id}
     student = crud.get_students(db=db, filters=filter)
     if(len(student) == 0):
@@ -807,9 +867,10 @@ def student_employments(student_id: int, skip: int | None = 0, limit: int | None
     return pagination(skip=skip, limit=limit, response=student[0].employment)
 
 @app.get("/students/{student_id}/funding", response_model=list[schemas.FundingOut])
-def student_funding(student_id: int, skip: int | None = 0, limit: int | None = 100, 
-                        db: Session = Depends(get_db)):
+def student_funding(student_id: int, skip: int | None = 0, limit: int | None = 100,  db: Session = Depends(get_db),
+                    access_token: str = Cookie(...)):
     
+    verify_jwt(access_token)
     filter = {"id": student_id}
     student = crud.get_students(db=db, filters=filter)
     if(len(student) == 0):
@@ -819,8 +880,9 @@ def student_funding(student_id: int, skip: int | None = 0, limit: int | None = 1
 
 @app.get("/students/{student_id}/advisors", response_model=list[schemas.StudentAdvisorOut])
 def student_advisors(student_id: int, skip: int | None = 0, limit: int | None = 100, 
-                        db: Session = Depends(get_db)):
+                        db: Session = Depends(get_db), access_token: str = Cookie(...)):
     
+    verify_jwt(access_token)
     filter = {"id": student_id}
     student = crud.get_students(db=db, filters=filter)
     if(len(student) == 0):
@@ -832,7 +894,7 @@ def student_advisors(student_id: int, skip: int | None = 0, limit: int | None = 
             schemas.StudentAdvisorOut(
                 id=student_advisor.advisor.id,
                 first_name=student_advisor.advisor.first_name,
-                middle_name=student_advisor.advisor.middle_name,
+                email=student_advisor.advisor.email,
                 last_name=student_advisor.advisor.last_name,
                 dept_code=student_advisor.advisor.dept_code,
                 privilege_level=student_advisor.advisor.privilege_level,
@@ -845,8 +907,9 @@ def student_advisors(student_id: int, skip: int | None = 0, limit: int | None = 
   
 @app.get("/students/{student_id}/events", response_model=list[schemas.EventOut])
 def student_events(student_id: int, skip: int | None = 0, limit: int | None = 100, 
-                        db: Session = Depends(get_db)):
+                        db: Session = Depends(get_db), access_token:str = Cookie(...)):
     
+    verify_jwt(access_token)
     filter = {"id": student_id}
     student = crud.get_students(db=db, filters=filter)
     if(len(student) == 0):
@@ -856,8 +919,9 @@ def student_events(student_id: int, skip: int | None = 0, limit: int | None = 10
 
 @app.get("/students/{student_id}/labs", response_model=list[schemas.StudentLabsOut])
 def student_labs(student_id: int, skip: int | None = 0, limit: int | None = 100, 
-                        db: Session = Depends(get_db)):
+                        db: Session = Depends(get_db), access_token:str = Cookie(...)):
     
+    verify_jwt(access_token)
     filter = {"id": student_id}
     student = crud.get_students(db=db, filters=filter)
     if(len(student) == 0):
@@ -867,8 +931,9 @@ def student_labs(student_id: int, skip: int | None = 0, limit: int | None = 100,
 
 @app.get("/students/{student_id}/programs", response_model=list[schemas.ProgramEnrollmentOut])
 def student_programs(student_id: int, skip: int | None = 0, limit: int | None = 100, 
-                        db: Session = Depends(get_db)):
+                        db: Session = Depends(get_db), access_token:str = Cookie(...)):
     
+    verify_jwt(access_token)
     filter = {"id": student_id}
     student = crud.get_students(db=db, filters=filter)
     if(len(student) == 0):
@@ -888,8 +953,9 @@ def student_programs(student_id: int, skip: int | None = 0, limit: int | None = 
 
 @app.get("/students/{student_id}/progress-tasks", response_model=list[schemas.ProgressOut])
 def student_progress(student_id: int, skip: int | None = 0, limit: int | None = 100, 
-                        db: Session = Depends(get_db)):
+                        db: Session = Depends(get_db), access_token:str = Cookie(...)):
     
+    verify_jwt(access_token)
     filter = {"id": student_id}
     student = crud.get_students(db=db, filters=filter)
     if(len(student) == 0):
@@ -914,8 +980,9 @@ def student_progress(student_id: int, skip: int | None = 0, limit: int | None = 
 
 @app.get("/students/{student_id}/courses", response_model=list[schemas.CourseEnrollmentOut])
 def student_courses(student_id: int, skip: int | None = 0, limit: int | None = 100, 
-                        db: Session = Depends(get_db)):
+                        db: Session = Depends(get_db), access_token:str = Cookie(...)):
     
+    verify_jwt(access_token)
     filter = {"id": student_id}
     student = crud.get_students(db=db, filters=filter)
     if(len(student) == 0):
@@ -924,15 +991,333 @@ def student_courses(student_id: int, skip: int | None = 0, limit: int | None = 1
 
 @app.get("/students/{student_id}/pos", response_model=list[schemas.StudentPOSOut])
 def student_pos(student_id: int, skip: int | None = 0, limit: int | None = 100, 
-                        db: Session = Depends(get_db)):
+                        db: Session = Depends(get_db), access_token: str = Cookie(...)):
     
+    verify_jwt(access_token)
     filter = {"id": student_id}
     student = crud.get_students(db=db, filters=filter)
     if(len(student) == 0):
         raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
     return pagination(skip=skip, limit=limit, response=student[0].pos)
 
+@app.get("/students/{student_id}/messages", response_model=list[schemas.MessageOut])
+def student_messages(student_id: int, db: Session = Depends(get_db), skip: int | None = 0, limit: int | None = 100, access_token: str = Cookie(...)):
+    
+    payload = verify_jwt(access_token)
+    
+    filter = {"id": student_id}
+    if(payload.get('faculty') == True):
+        filter.update({"private", False})
+        
+    messages=crud.get_messages(db=db, filters=filter,skip=skip, limit=limit)
+    return messages
+    
+    
+@app.post("/students", status_code=201)
+def create_students(students: list[schemas.CreateStudent], db:Session = Depends(get_db)):
+    try:
+        for student in students:
+            
+            student_data = {
+                "first_name" :student.first_name,
+                "middle_name": student.middle_name,
+                "last_name":student.last_name,
+                "citizenship":student.citizenship,
+                "va_residency":student.va_residency,
+                "status":student.status,
+                "email":student.email,
+                "phone_number": student.phone_number,
+                "pronouns": student.pronouns,
+                "gender":student.gender,
+                "advisory_committee":student.advisory_committee,
+                "prelim_exam_date":student.prelim_exam_date, # do we drop this column?
+                "plan_submit_date":student.plan_submit_date,
+                "prelim_exam_pass":student.prelim_exam_pass,
+                "proposal_meeting":student.proposal_meeting,
+                "progress_meeting":student.progress_meeting,
+                "ETD_submitted":student.ETD_submitted,
+                "final_exam":student.final_exam,
+                "graduation_date":student.graduation_date,
+                "enrollment_term":student.enrollment_term,
+                "enrollment_year":student.enrollment_year
+            }
+            
+            student_id = crud.insert_student(data=student_data, db=db)
+            for program in student.program_enrollments:
+                
+                #major_id = crud.find_major(major_name=program.major, db=db, row_number=0)
+                #degree_id = crud.find_degree(degree_name=program.degree, db=db, row_number=0)
+                program_data = schemas.ProgramEnrollmentIn(
+                    student_id=student_id,
+                    degree_id=program.degree_id,
+                    major_id=program.major_id,
+                    enrollment_date=program.enrollment_date
+                )
+                crud.insert_program_enrollment(program=program_data, db=db)
+            
+            #advisor_name = f"{student.main_advisor.last_name},{student.main_advisor.first_name}"
+            #advisor_id = crud.find_advisor(advisor_name=advisor_name, db=db, row_number=0)
+
+            crud.insert_student_advisor_from_file(advisor_id=student.main_advisor_id, student_id=student_id, role=AdvisorRole.MAIN_ADVISOR, db=db)
+            
+            for co_advisor_id in student.co_advisors_ids:
+                #advisor_name = f"{co_advisor.last_name},{co_advisor.first_name}"
+                #advisor_id = crud.find_advisor(advisor_name=advisor_name, db=db, row_number=0)
+                crud.insert_student_advisor_from_file(advisor_id=co_advisor_id, student_id=student_id, role=AdvisorRole.CO_ADVISOR, db=db)
+            
+        db.commit()    
+    except IntegrityError as constraint_violation:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+    
+    
+@app.post("/students/{student_id}/events", response_model=schemas.EventIn)
+async def create_student_event(student_id: int, event: schemas.EventIn, access_token = Cookie(...), db:Session = Depends(get_db)):
+    try:
+        verify_jwt(access_token)
+        #student_id = payload.get("id")
+        event.student_id = student_id
+        db_event = models.Event(**event.dict())
+        db.add(db_event)
+        db.commit()
+        return db_event
+    except IntegrityError as constraint_violation:
+        db.rollback()
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+
+@app.post("/students/{student_id}/employments", response_model=schemas.EmploymentIn)
+async def create_student_employment(student_id: int, employment: schemas.EmploymentIn, access_token = Cookie(...), db:Session = Depends(get_db)):
+    try:
+        verify_jwt(access_token)
+        #student_id = payload.get("id")
+        employment.student_id = student_id
+        db_employment = models.Employment(**employment.dict())
+        db.add(db_employment)
+        db.commit()
+        return db_employment
+        
+    except IntegrityError as constraint_violation:
+        db.rollback()
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+   
+    
+@app.post("/students/{student_id}/funding", response_model=schemas.FundingIn)
+async def create_student_funding(student_id: int, funding: schemas.FundingIn, access_token = Cookie(...), db:Session = Depends(get_db)):
+    try:
+        verify_jwt(access_token)
+        #student_id = payload.get("id")
+        funding.student_id = student_id
+        db_funding = models.Funding(**funding.dict())
+        db.add(db_funding)
+        db.commit()
+        return db_funding
+       
+    except IntegrityError as constraint_violation:
+        db.rollback()
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+    
+    
+    
+@app.post("/students/{student_id}/labs", response_model=schemas.StudentLabsIn)
+async def create_student_lab(student_id: int, lab: schemas.StudentLabsIn, access_token = Cookie(...), db:Session = Depends(get_db)):
+    try:
+        verify_jwt(access_token)
+        lab.student_id = student_id
+        db_lab = models.StudentLabs(**lab.dict())
+        db.add(db_lab)
+        db.commit()
+        return db_lab
+    
+    except IntegrityError as constraint_violation:
+        
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+   
+    
+
+@app.post("/students/{student_id}/courses", response_model=schemas.CourseEnrollmentIn)
+async def create_student_course(student_id: int, course: schemas.CourseEnrollmentIn, access_token = Cookie(...), db:Session = Depends(get_db)):
+    try:
+        verify_jwt(access_token)
+        course.pos_id = crud.find_studentpos(student_id, db, 1)
+        course.student_id = student_id
+        db_course = models.CourseEnrollment(**course.dict())
+        db.add(db_course)
+        db.commit()
+        return db_course
+    
+    except IntegrityError as constraint_violation:
+        db.rollback()
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+
+@app.post("/students/{student_id}/pos", response_model=schemas.StudentPOSIn)
+async def create_student_pos(student_id: int, pos: schemas.StudentPOSIn,access_token = Cookie(...), db:Session = Depends(get_db)):
+    try:
+        verify_jwt(access_token)
+        pos.student_id = student_id
+        db_pos = models.StudentPOS(**pos.dict())
+        db.add(db_pos)
+        db.commit()
+        return db_pos
+    
+    except IntegrityError as constraint_violation:
+        db.rollback()
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+
+@app.post("/students/{student_id}/advisors/{advisor_id}", response_model=schemas.StudentAdvisor)
+async def create_student_advisor(student_id: int, advisor_id: int, role: schemas.StudentAdvisorIn, 
+                                 access_token = Cookie(...), db:Session = Depends(get_db)):
+    try:
+        #payload = verify_jwt(access_token) this may need for privilege level
+        db_advisor = models.StudentAdvisor(
+            advisor_id = advisor_id,
+            student_id = student_id,
+            advisor_role = role.advisor_role
+        )
+        db.add(db_advisor)
+        db.commit()
+        return db_advisor
+    
+    except crud.CustomValueError as value_error:
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), "problematic_row": value_error.row_data}) 
+    except IntegrityError as constraint_violation:
+        db.rollback()
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+
+@app.post("/requirement", response_model=schemas.RequirementIn)
+async def create_requirement(progress_requirement: schemas.RequirementIn, access_token = Cookie(...), db:Session = Depends(get_db)):
+    try:
+        ##payload = verify_jwt(access_token) this may need for privilege level
+        return crud.insert_requirement(progress_requirement, db=db)
+    
+    except IntegrityError as constraint_violation:
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+        
+@app.post("/milestone", response_model= schemas.MilestoneIn)
+async def create_milestone(progress_milestone: schemas.MilestoneIn, access_token = Cookie(...), db:Session = Depends(get_db)):
+    try:
+        #payload = verify_jwt(access_token) this may need for privilege level
+       
+        return crud.insert_milestone(milestone=progress_milestone, db=db)
+    
+    except IntegrityError as constraint_violation:
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+#------------------------------Student Delete Endpoint--------------------------    
+@app.delete("/students/{student_id}", status_code=200)
+async def delete_student(student_id : int, access_token = Cookie(...), db:Session = Depends(get_db)):
+    #payload = verify_jwt(access_token) this may need for privilege level
+    filter = {"id" : student_id}
+    student = crud.delete_data(db=db, filter=filter, model=models.Student)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Student with the given id: {student_id} does not exist.")
+    
+@app.delete("/students/{student_id}/employments/{employment_id}", status_code=200)
+async def delete_employment(student_id:int, employment_id: int, access_token = Cookie(...), db:Session = Depends(get_db)):
+    verify_jwt(access_token)
+    filter = {
+        "id" : employment_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.Employment)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Employment with the given student id: {student_id} does not exist.")
+
+    
+@app.delete("/students/{student_id}/funding/{funding_id}", status_code=200)
+async def delete_funding(student_id:int, funding_id : int, access_token = Cookie(...), db:Session = Depends(get_db)):
+    verify_jwt(access_token)
+    filter = {
+        "id" : funding_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.Funding)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Funding with the given student id: {student_id} does not exist.")
+
+
+@app.delete("/students/{student_id}/advisors/{advisor_id}", status_code=200)
+async def delete_advisor(student_id : int, advisor_id : int, db:Session = Depends(get_db)):
+    #payload = verify_jwt(access_token) this may need for privilege level
+    
+    filter = {
+        "advisor_id" : advisor_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.StudentAdvisor)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Student Advisor with the given student id: {student_id} does not exist.")
+    
+@app.delete("/students/{student_id}/events/{event_id}", status_code=200)
+async def delete_event(student_id:int, event_id: int, access_token = Cookie(...), db:Session = Depends(get_db)):
+    verify_jwt(access_token)
+    filter = {
+        "id" : event_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.Event)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Event with the given student id: {student_id} does not exist.")
+
+@app.delete("/{student_id}/labs/{lab_id}", status_code=200)
+async def delete_lab(student_id: int, lab_id: int, access_token = Cookie(...), db:Session = Depends(get_db)):
+    verify_jwt(access_token)
+    filter = {
+        "id" : lab_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.StudentLabs)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Student Lab with the given student id: {student_id} does not exist.")
+    
+@app.delete("/students/{student_id}/progress/{progress_id}", status_code=200)
+async def delete_progress(student_id:int, progress_id: int, access_token = Cookie(...),db:Session = Depends(get_db)):
+    
+    verify_jwt(access_token)
+    filter = {
+        "id" : progress_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.Progress)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Progress with the given student id: {student_id} does not exist.")
+    
+@app.delete("/students/{student_id}/courses/{course_id}", status_code=200)
+async def delete_course(student_id: int, course_id: int, access_token = Cookie(...), db:Session = Depends(get_db)):
+    
+    verify_jwt(access_token)
+    filter = {
+        "id" : course_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.CourseEnrollment)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Course with the given student id: {student_id} does not exist.")
+
+@app.delete("/students/{student_id}/pos/{pos_id}", status_code=200)
+async def delete_pos(student_id:int, pos_id: int, access_token = Cookie(...), db:Session = Depends(get_db)):
+    
+    verify_jwt(access_token)
+    filter = {
+        "id" : pos_id,
+        "student_id" : student_id
+        }
+    
+    pos = crud.delete_data(db=db, filter=filter, model=models.StudentPOS)
+    if not pos:
+        raise HTTPException(status_code=404, detail=f"Stuent POS with the given student id: {student_id} does not exist.")
+
+    
 #---------------------------------------- end of /students endpoints --------------------------------------------#
+"""Program Enrollment
+@app.delete("/students/{student_id}/{program_id}", status_code=200)
+async def delete_programEnrollment(student_id : int, program_id: int, db:Session = Depends(get_db)):
+    filter = {
+        "id" : program_id,
+        "student_id" : student_id
+        }
+    student = crud.delete_data(db=db, filter=filter, model=models.ProgramEnrollment)
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Program with the given student id: {student_id} does not exist.")
+"""
     
 @app.get("/faculty", response_model=list[schemas.FacultyOut])
 async def faculty(
@@ -1162,25 +1547,7 @@ async def courseEnrollment(courseEnrollment_id: int, db: Session = Depends(get_d
         raise HTTPException(status_code=404, detail=f"CourseEnrollment with the given id: {courseEnrollment_id} does not exist.")
     return courseEnrollment[0]
 
-@app.get("/stages", response_model=list[schemas.StageOut])
-async def stages(skip: int | None = 0, limit: int | None = 100, db: Session = Depends(get_db), stage_name: str | None = None, major_id: int | None = None, degree_id : int | None = None):
-    filter = {
-        "name" : stage_name,
-        "major_id" : major_id,
-        "degree_id" : degree_id
-    }
-    stages = crud.get_stage(db, None, skip, limit)
-    return stages
-
-@app.get("/stages/{stage_id}", response_model=schemas.StageOut)
-async def stage(stage_id: int, db: Session = Depends(get_db)):
-    filter = { "id": stage_id}
-    stage = crud.get_stage(db, filter, 0, 1)
-    if(len(stage) == 0):
-        raise HTTPException(status_code=404, detail=f"Stage with the given id: {stage_id} does not exist.")
-    return stage[0]
-
-@app.get("/studentPOS", response_model=list[schemas.StudentPOSOut])
+@app.get("/pos", response_model=list[schemas.StudentPOSOut])
 async def studentPOSs(skip: int | None = 0, limit: int | None = 100, db: Session = Depends(get_db)):
     studentPOS = crud.get_studentPOS(db, None, skip, limit)
     return studentPOS
@@ -1192,13 +1559,6 @@ async def studentPOS(studentPOS_id: int, db: Session = Depends(get_db)):
     if(len(studentPOS) == 0):
         raise HTTPException(status_code=404, detail=f"StudentPOS with the given id: {studentPOS_id} does not exist.")
     return studentPOS[0]
-
-@app.post("/students", status_code=201)
-async def create_students(students: list[schemas.StudentIn], db:Session = Depends(get_db)):
-    for student in students:
-        db_student = models.Student(**student.dict())
-        db.add(db_student)
-    db.commit()
 
 #---------------------------------File Upload EndPoints----------------------------------------
 @app.post("/uploadstudentfile", response_model=list[schemas.StudentFileUpload])

@@ -1,12 +1,6 @@
 """ Class to store any enumerations used in models and main.py 
 for data validation for certain data"""
 import enum 
-
-class CourseType(str, enum.Enum):
-    """Valid values for if the course is transfer or not From Course Enrollment.
-    """
-    TRANSFER = "Transfer"
-    NOT_TRANSFER = "Non-Transfer"
        
     
 class EventStatus(str, enum.Enum):
@@ -28,23 +22,21 @@ class Residencies(str, enum.Enum): # should we make va_residency true and false 
     IN_STATE = "In-State"
     OUT_OF_STATE = "Out-of-State"
     
-class StudentStatus(str, enum.Enum): # need to ask the difference b/n status and type bc can student set status in their pfp?
-    """Values that are valid for student status'.
-    """
-    STATUS_1 = 1
-    STATUS_2 = 2
-    STATUS_3 = 3
 
-class AdmitType(str, enum.Enum): # do we get rid of admit type?
-    """Values that are valid for admission types of students.
-    """
-    ADMIT_1 = 1
-    ADMIT_2 = 2
-    ADMIT_3 = 3
-
-class StudentTypes(str, enum.Enum): # ask question about this in relation to student status 
+class StudentStatus(str, enum.Enum): # ask question about this in relation to student status 
     """Values that are valid for the different student types.
     """
     NEW = "New"
     CONT = "Cont"
     NEW_PROGRAM = "New Prog"
+    
+class AcademicTerm(str, enum.Enum):
+    FALL = "Fall"
+    SPRING = "Spring"
+    WINTER = "Winter"
+    SUMMER = "Summer"
+
+class POSStatus(str, enum.Enum):
+    WAITING_APPROVAL = "Waiting Approval"
+    WAITING_SUBMISSION = "Waiting Submission"
+    APPROVED = "Approved"

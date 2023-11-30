@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session, InstrumentedAttribute, joinedload
+from sqlalchemy.orm import Session
 import models
 from io import TextIOWrapper
 from fastapi import UploadFile
@@ -53,6 +53,12 @@ def get_degrees(db: Session, filters: dict, skip: int = 0, limit: int = 100):
 
 def get_majors(db: Session, filters, skip: int = 0, limit: int = 100):
     query = db.query(models.Major)
+    query = apply_filters(query, models.Major, filters)
+    
+    return query.offset(skip).limit(limit).all()
+
+def get_messages(db: Session, filters, skip: int = 0, limit: int = 100):
+    query = db.query(models.Message)
     query = apply_filters(query, models.Major, filters)
     
     return query.offset(skip).limit(limit).all()
@@ -142,8 +148,62 @@ def get_studentPOS(db: Session, filters: dict, skip: int = 0, limit: int = 100):
     
     return query.offset(skip).limit(limit).all()
 
-#--------------------------------------------------Insert Data Function For File-------------------------
+def delete_data(db: Session, filter: dict, model):
+    try:
+        query = db.query(model)
+        query = apply_filters(query, model, filter).first()
+        if query:
+            db.delete(query)
+            db.commit()
+            return True
+        else:
+            raise False
+    except Exception as e:
+        print(e)
     
+    
+
+#--------------------------------------------------Insert Data Function For File-------------------------
+
+def insert_requirement(requirement: schemas.RequirementIn, db:Session):
+    
+    db_requirement = models.Requirement(**requirement.dict())
+    db.add(db_requirement)
+    db.flush()
+    requirement_id = db_requirement.id
+    programEnrollments = db.query(models.ProgramEnrollment).filter(models.ProgramEnrollment.degree_id==requirement.degree_id, 
+                                                                models.ProgramEnrollment.major_id==requirement.major_id).all()
+    for programEnrollment in programEnrollments:
+        progress_data = schemas.ProgressIn(
+            student_id=programEnrollment.student_id,
+            requirement_id=requirement_id,              
+        )
+        progress = models.Progress(**progress_data.dict(), deadline="TBD")
+        db.add(progress)
+        db.flush()
+        
+    db.commit()
+    return requirement
+
+def insert_milestone(milestone: schemas.MilestoneIn, db:Session):
+    
+    db_milestone = models.Requirement(**milestone.dict())
+    db.add(db_milestone)
+    db.flush()
+    milestone_id = db_milestone.id
+    programEnrollments = db.query(models.ProgramEnrollment).filter(models.ProgramEnrollment.degree_id==milestone.degree_id, 
+                                                                models.ProgramEnrollment.major_id==milestone.major_id).all()
+    for programEnrollment in programEnrollments:
+        progress_data = schemas.ProgressIn(
+            student_id=programEnrollment.student_id,
+            milestone_id=milestone_id,              
+        )
+        progress = models.Progress(**progress_data.dict(), deadline="TBD")
+        db.add(progress)
+        db.flush()
+        
+    db.commit()
+    return milestone
 # Processing data from file to StudentPOS table
 def insert_student_pos_from_file(data : dict, db: Session, student_id: int):
     # checking if it is approved, none mean it has not been approved yet
@@ -163,23 +223,61 @@ def insert_student_pos_from_file(data : dict, db: Session, student_id: int):
     # Feel free to reutrn id if it needs
     
 # Processing data from file to Student table
-def insert_student_from_file(data : dict, db: Session):
+
+# it is on the calling function to do db.commit()
+def insert_student(data : dict, db: Session):
     student = models.Student(**data)
     db.add(student)
-    db.commit()
-    table = db.query(models.Student).filter(models.Student.email == student.email).first()
-    # Since the primary key will be generate after commit(), I need to search the database agian in order to get the primary id    
+    db.flush()
     # This will return the primary id for ForeignKey that other table may need
-    return table.id
+    return student.id
 
-def insert_student_advisor_from_file(data : dict, advisor_id: int, student_id: int, role: enums.AdvisorRole, db: Session,):
+def insert_student_advisor_from_file(advisor_id: int, student_id: int, role: enums.AdvisorRole, db: Session,):
     student_advisor = models.StudentAdvisor(
         advisor_id = advisor_id,
         student_id = student_id,
         advisor_role = role
     )
     db.add(student_advisor)
-    db.commit()
+    db.flush()
+
+def insert_program_enrollment(program: schemas.ProgramEnrollmentIn, db: Session):
+    
+    programEnrollment = models.ProgramEnrollment(
+            student_id = program.student_id,
+            degree_id = program.degree_id,
+            major_id = program.major_id,
+            enrollment_date = program.enrollment_date
+    )
+    
+    db.add(programEnrollment)
+    
+    requirements = get_requirement(db=db, filters={"major_id": program.major_id, "degree_id": program.degree_id})
+    
+    for requirement in requirements:
+        progress = models.Progress(
+            student_id=program.student_id,
+            requirement_id=requirement.id,
+            deadline="TBD",
+            approved=False,
+            exempt=False   
+        )
+        db.add(progress)
+    
+    milestones = get_milestone(db=db, filters={"major_id": program.major_id, "degree_id": program.degree_id})
+    
+    for milestone in milestones:
+        progress = models.Progress(
+            student_id=program.student_id,
+            milestone_id=milestone.id,
+            deadline="TBD",
+            approved=False,
+            exempt=False   
+        )
+        db.add(progress)
+        
+    db.flush()
+    
     
 # Processing data from file to ProgramEnrollment table
 def insert_program_enrollment_from_file(data : dict, db: Session, student_id: int, degree_id: int, major_id: int):
@@ -187,7 +285,7 @@ def insert_program_enrollment_from_file(data : dict, db: Session, student_id: in
     programEnrollment = db.query(models.ProgramEnrollment).filter(models.ProgramEnrollment.degree_id == degree_id, models.ProgramEnrollment.student_id == student_id, models.ProgramEnrollment.major_id == major_id).one_or_none()
     if not programEnrollment:
         
-        validation = schemas.ProgramEnrollmentIn(
+        validation = schemas.ProgramEnrollmentFileIn(
             student_id=student_id,
             degree_id=degree_id,
             major_id=major_id,
@@ -201,7 +299,7 @@ def insert_program_enrollment_from_file(data : dict, db: Session, student_id: in
             enrollment_date = validation.enrollment_date
         )
         db.add(programEnrollment)
-        db.commit()
+        db.flush()
         
 # Processing data from file to Campus table
 def insert_campus_from_file(data: dict, db: Session):
@@ -212,7 +310,7 @@ def insert_campus_from_file(data: dict, db: Session):
     if not campus:
         campus = models.Campus(**data)
         db.add(campus)
-        db.commit()
+        db.flush()
 
 # Processing data from file to Department table.
 # These inserted value below is non-real data, and it is for testing.
@@ -223,7 +321,7 @@ def insert_department_from_file(data : dict, db: Session):
     if not department:
         department = models.Department(**data)
         db.add(department)
-        db.commit()
+        db.flush()
 
 # Processing data from file to Major table
 def insert_major_from_file(data : dict, db: Session):
@@ -234,7 +332,7 @@ def insert_major_from_file(data : dict, db: Session):
     if not major:
         major = models.Major(**data)
         db.add(major)
-        db.commit()
+        db.flush()
         
 # Processing data from file to Degree table
 def insert_degree_from_file(data : dict, db: Session):
@@ -244,14 +342,14 @@ def insert_degree_from_file(data : dict, db: Session):
         # Modeling the field with the data from file
         degree = models.Degree(**data)  
         db.add(degree)
-        db.commit()
+        db.flush()
         
 # Processing data from file to Degree table
 def insert_faculty_from_file(data : dict, db: Session):
     # Modeling the field with the data from file
     faculty = models.Faculty(**data)  
     db.add(faculty)
-    db.commit()
+    db.flush()
 #------------------------------------------------------------------------------------------------------------
 
 #----------------------------------------------------------Helper function for validation--------------------------------------------
@@ -300,14 +398,34 @@ def find_degree(degree_name: str, db: Session, row_number: int):
     else:
         raise CustomValueError(message="The degree \"" + degree_name + "\" is not found in the Database.", original_exception=None, row_data=row_number)
 # This will find major and return the id itself 
-def find_major(major_description: str, db: Session, row_number: int):
-    if not major_description:
+def find_major(db: Session, row_number: int, major_description: str = None, major_name: str = None, ):
+    
+    major = None
+    if major_description:
+        major = db.query(models.Major).filter(models.Major.description == major_description).one_or_none()
+    elif major_name: 
+        major = db.query(models.Major).filter(models.Major.name == major_name).one_or_none()
+        
+    if not major_description and not major_name:
         raise CustomValueError(message="The major is need.", original_exception=None)
-    major = db.query(models.Major).filter(models.Major.description == major_description).one_or_none()
+   
+    if major:
+        return major.id
+    elif major_description:
+        raise CustomValueError(message="The major \"" + major_description + "\" is not found in the Database.", original_exception=None, row_data=row_number)
+    else:
+        raise CustomValueError(message="The major \"" + major_name + "\" is not found in the Database.", original_exception=None, row_data=row_number)
+        
+
+# This will find major with its name and return the id itself 
+def find_major_name(major_name: str, db: Session, row_number: int):
+    if not major_name:
+        raise CustomValueError(message="The major is need.", original_exception=None)
+    major = db.query(models.Major).filter(models.Major.name == major_name).one_or_none()
     if major:
         return major.id
     else:
-        raise CustomValueError(message="The major \"" + major_description + "\" is not found in the Database.", original_exception=None, row_data=row_number)
+        raise CustomValueError(message="The major \"" + major_name + "\" is not found in the Database.", original_exception=None, row_data=row_number)
 
 # This will find department and return the id itself 
 def find_department(department_name: str, db: Session, row_number: int):
@@ -319,13 +437,24 @@ def find_department(department_name: str, db: Session, row_number: int):
         return department.dept_code
     else:
         raise CustomValueError(message="The department \"" + department_name + "\" is not found in the Database.", original_exception=None, row_data=row_number)
+
+# This will find student pos and return the id itself 
+def find_studentpos(student_id: int, db: Session, row_number: int):
+    # Not sure if it can be none
+    if not student_id:
+        raise CustomValueError(message="The student id is need.", original_exception=None)
+    studentpos = db.query(models.StudentPOS).filter(models.StudentPOS.student_id == student_id).one_or_none()
+    if studentpos:
+        return studentpos.id
+    else:
+        return None
 #--------------------------------------------------------------------------------------------------------------------------------
 
 #----------------------------------------------------------Validation Function--------------------------------------------
 # This will help to validate the data from csv file when insert the data for student
 def validation_student_data_from_file(data: dict, db: Session, row_number: int):
     degree_id = find_degree(data.get("Degree") or None, db, row_number)
-    major_id = find_major(data.get("Major") or None, db, row_number)
+    major_id = find_major(major_description=data.get("Major") or None, db=db, row_number=row_number)
     advisor_id = find_advisor(data.get("Advisor") or None, db, row_number)
     co_advisor_id = find_co_advisor(data.get("Co-Advisor") or None, db, row_number)
     validation_data = schemas.StudentFileUpload(
@@ -334,17 +463,18 @@ def validation_student_data_from_file(data: dict, db: Session, row_number: int):
         last_name = data.get("Last Name") or None,
         campus_id = find_campus(data.get("Campus") or None, db, row_number),
         va_residency = enums.Residencies(data.get("Virginia Residency")) or None,
-        type = enums.StudentTypes(data.get("Student Status")) or None,
-        first_term = data.get("First Term") or None,
+        status = enums.StudentStatus(data.get("Student Status")) or None,
         email = data.get("E-mail") or None,
         phone_number = data.get("Phone") or None,
         citizenship = data.get("Country of Citizenship") or None,
-        advisory_committee = data.get("Adviser Name") or None,
+        advisory_committee = data.get("Advisory Committee") or None,
         plan_submit_date = data.get("Plan Submitted") or None,
         prelim_exam_pass = data.get("Prelim Exam Passed") or None,
         proposal_meeting = data.get("Proposal Meeting") or None,
         progress_meeting = data.get("Progress Meeting") or None,
         final_exam = data.get("Final Exam") or None,
+        enrollment_term=enums.AcademicTerm(data.get("Enrollment Term")) if data.get("Enrollment Term") is not None else None,
+        enrollment_year=data.get("Enrollment Year", None),
         ETD_submitted = data.get("ETD Submitted") or None
     )
     return validation_data, degree_id, major_id, advisor_id, co_advisor_id
@@ -388,13 +518,12 @@ def validation_faculty_data_from_file(data: dict, db:Session, row_number: int):
         last_name = last_name or None,
         first_name = first_name or None,
         faculty_type = data.get("faculty type") or None,
-        privilege_level = data.get("privilege level") or None,
-        email = data.get("E-mail") or None
+        privilege_level = data.get("privilege level") or None
     )
     return validation_data
 #----------------------------------------------------------------------------------------------------------------------
 
-#----------------------------------------------------------End Point Helper Function--------------------------------------------
+#--------------------------------------------File Upload EndPoint Helper Function--------------------------------------------
 # This will process student data from csv file, and add them to the corresponding database.
 def process_student_data_from_file(file: UploadFile, db: Session):
     with TextIOWrapper(file.file, 'utf-8') as text_file:
@@ -407,16 +536,17 @@ def process_student_data_from_file(file: UploadFile, db: Session):
             inserted_student_data.append(validation_data)
             #-----------------------------------------------------------------
             #----------------Insert To Database ------------------------------
-            student_id = insert_student_from_file(dict(validation_data), db)
+            student_id = insert_student(dict(validation_data), db)
             insert_program_enrollment_from_file(row, db, student_id, degree_id, major_id)
             # make sure the advisor_id is not null
             if advisor_id:
-                insert_student_advisor_from_file(row, advisor_id, student_id, enums.AdvisorRole.MAIN_ADVISOR, db)
+                insert_student_advisor_from_file(advisor_id=advisor_id, student_id=student_id, role=enums.AdvisorRole.MAIN_ADVISOR, db=db)
             if co_advisor_id:
                 for id in co_advisor_id:
-                    insert_student_advisor_from_file(row, id, student_id, enums.AdvisorRole.CO_ADVISOR, db)
+                    insert_student_advisor_from_file(advisor_id=id, student_id=student_id, role=enums.AdvisorRole.CO_ADVISOR, db=db)
             #-----------------------------------------------------------------
             number_row += 1
+        db.commit()
     return inserted_student_data
 
 
@@ -435,6 +565,7 @@ def process_campus_data_from_file(file: UploadFile, db: Session):
             insert_campus_from_file(dict(validation_data), db)
             #-----------------------------------------------------------------
             number_row += 1
+        db.commit()
     return inserted_campus_data
 
 # This will process department data from csv file, and add them to the corresponding database.
@@ -452,6 +583,7 @@ def process_department_data_from_file(file: UploadFile, db: Session):
             insert_department_from_file(dict(validation_data), db)
             #-----------------------------------------------------------------
             number_row += 1
+        db.commit()
     return inserted_department_data
 
 # This will process major data from csv file, and add them to the corresponding database.
@@ -469,6 +601,7 @@ def process_major_data_from_file(file: UploadFile, db: Session):
             insert_major_from_file(dict(validation_data), db)
             #-----------------------------------------------------------------
             number_row += 1
+        db.commit()
     return inserted_major_data
 
 # This will process major data from csv file, and add them to the corresponding database.
@@ -486,6 +619,7 @@ def process_degree_data_from_file(file: UploadFile, db: Session):
             insert_degree_from_file(dict(validation_data), db)
             #-----------------------------------------------------------------
             number_row += 1
+        db.commit()
     return inserted_degree_data
 
 # This will process major data from csv file, and add them to the corresponding database.
@@ -503,6 +637,7 @@ def process_faculty_data_from_file(file: UploadFile, db: Session):
             insert_faculty_from_file(dict(validation_data), db)
             #-----------------------------------------------------------------
             number_row += 1
+        db.commit()
     return inserted_faculty_data
 
 #------------------------------------------------------------------------------------------------------------------------------
