@@ -456,6 +456,36 @@ def update_data(db: Session, filter: dict, model, data):
     db.refresh(query)
     return query
 
+def update_progress_data(db: Session, filter: dict, model, data):
+    """
+    Update progress data in database based on the specified model, filter criteria, and input data. It will only update
+    the data that is not none. none means user did not input.
+    
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - model (sqlalchemy.ext.declarative.DeclarativeMeta): The SQLAlchemy model representing the database table.
+    - data (schema): it is input data passed by schema request body
+    
+    Returns:
+    - sqlalchemy.ext.declarative.DeclarativeMeta: The updated data after applying changes.
+    """
+    query = db.query(model)
+    query = apply_filters(query, model, filter).first()
+    if not query:
+        raise CustomValueError(message="The given id is not found in the Database.", original_exception=None, row_data=1)
+    if (data.custom_milestone_name is not None or data.custom_milestone_description is not None) and (query.requirement_id is not None or query.milestone_id is not None):
+        raise CustomValueError(message="The given id is not validated because it cannot modify the custom_milestone_name while having requirement and milestone.", original_exception=None, row_data=1)
+    for field, value in data.dict(exclude_unset=True, exclude={'student_id'}).items():
+            if value is not None:
+                setattr(query, field, value)
+    db.commit()
+    db.refresh(query)
+    return query
+    
+    
+
 def update_programenrollment_data(db: Session, filter: dict, model, data):
     """
     Update data in database based on the specified model, filter criteria, and input data.

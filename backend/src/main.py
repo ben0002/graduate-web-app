@@ -882,6 +882,22 @@ async def update_student_programenrollmen(programenrollmen_id: int, programenrol
         raise HTTPException(status_code=422, detail=f"Validation error: {str(validation_error)}")
     except IntegrityError as constraint_violation:
         raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+
+@app.patch("/student/progress/{progress_id}", response_model=schemas.ResponsedUpdateProgress)
+async def update_student_programenrollmen(progress_id: int, progress_data:schemas.UpdateProgress, access_token = Cookie(...), db:Session = Depends(get_db)):
+    verify_jwt(access_token)
+    filter = {
+        "id" : progress_id
+    }
+    try:
+        return crud.update_progress_data(db, filter, models.Progress, progress_data)
+    except crud.CustomValueError as value_error:
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data})
+    except ValueError as validation_error:
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(validation_error)}")
+    except IntegrityError as constraint_violation:
+        raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
     
 #---------------------------------------- end of /students endpoints --------------------------------------------#
     

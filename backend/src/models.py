@@ -8,6 +8,7 @@ from sqlalchemy import ForeignKey, UniqueConstraint, PrimaryKeyConstraint
 from sqlalchemy import Boolean, String, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.orm import DeclarativeBase, relationship
+from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy import Enum
 from database import engine
 from enums import *
@@ -441,6 +442,15 @@ class Progress(Base):
     approved: Mapped[bool] = mapped_column(Boolean)
     note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     exempt: Mapped[bool] = mapped_column(Boolean)
+    
+    
+    student = relationship("Student", back_populates="progress_tasks")
+    requirement = relationship("Requirement")
+    milestone = relationship("Milestone")
+    
+    
+    def __repr__(self) -> str:
+        return f"Progress(id={self.id!r},requirement_id={self.requirement_id!r},student_id={self.student_id!r})"
 
 class CourseEnrollment(Base):
     """Holds the information of course enrollment from student:

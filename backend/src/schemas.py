@@ -56,7 +56,7 @@ class CreateProgramEnrollment(BaseModel):
 class StudentAdvisor(BaseModel):
     first_name: str = Field(..., max_length=40)
     last_name : str = Field(..., max_length=40)
-    
+        
 class CreateStudent(StudentIn):
     program_enrollments: list[CreateProgramEnrollment]
     main_advisor_id: int 
@@ -245,7 +245,10 @@ class StudentAdvisorOut(StudentAdvisorIn, FacultyOut):
     
     class Config:
         from_attributes = True
-
+        
+class CreateStudentAdvisor(StudentAdvisorIn):
+    advisor_id: int
+    
 class UpdateStudentAdvisor(StudentAdvisorIn):
     advisor_id : int | None = None
     advisor_role : AdvisorRole | None = None
@@ -376,6 +379,24 @@ class ProgressOut(BaseModel):
     class Config:
         from_attributes = True
         exclude_unset = True  # Exclude fields with None (null) values
+
+class UpdateProgress(BaseModel):
+    student_id : int | None = None
+    ideal_completion_date: date | None = None
+    custom_milestone_name: str | None = None
+    custom_milestone_description: str | None = None
+    deadline: date | None = None
+    completion_date: date | None = None
+    approved: bool | None = False
+    note : Optional[str] | None = None
+    exempt: bool | None = False
+    custom_milestone_name: str | None = None
+    custom_milestone_description: str | None = None
+    
+
+class ResponsedUpdateProgress(UpdateProgress):
+    requirement_id: int | None = None
+    milestone_id: int | None = None
 
 class CourseEnrollmentIn(BaseModel):
     student_id: int
