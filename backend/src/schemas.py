@@ -259,12 +259,14 @@ class ResponseUpdateStudentAdvisor(StudentAdvisorIn):
     student_id : int
         
 class EmploymentIn(BaseModel):
-    student_id : int
+    employer: str = Field(..., max_length=50)
     job_title : str = Field(..., max_length=40)
     pay : int | None = None
     start_date: date | None = None
     end_date : date | None = None
     type : str = Field(..., max_length=30)
+    description: str | None = None
+    notes: str | None = None
     class Config:
         from_attributes = True
 
@@ -274,7 +276,7 @@ class EmploymentOut(EmploymentIn):
         from_attributes = True
 
 class UpdateEmployment(EmploymentIn):
-    student_id : int | None = None
+    employer: Optional[str] = Field(None, max_length=50)
     job_title : Optional[str] = Field(None, max_length=40)
     type : Optional[str]= Field(None, max_length=30)
 

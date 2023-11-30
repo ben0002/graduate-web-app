@@ -274,6 +274,7 @@ class Employment(Base):
     __tablename__ = 'employment'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     student_id: Mapped[int] = mapped_column(Integer, ForeignKey("student.id"))
+    employer: Mapped[str] = mapped_column(String(50)) 
     job_title: Mapped[str] = mapped_column(String(40))
     pay: Mapped[Optional[int]] = mapped_column(Integer, nullable=True) 
     start_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True) 

@@ -134,7 +134,7 @@ def get_messages(db: Session, filters, skip: int = 0, limit: int = 100):
     - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing message
     """
     query = db.query(models.Message)
-    query = apply_filters(query, models.Major, filters)
+    query = apply_filters(query, models.Message, filters)
     
     return query.offset(skip).limit(limit).all()
 
@@ -657,7 +657,7 @@ def insert_requirement(requirement: schemas.RequirementIn, db:Session):
             student_id=programEnrollment.student_id,
             requirement_id=requirement_id,              
         )
-        progress_data.deadline = "TBD"
+        progress_data.deadline = None
         progress = models.Progress(**progress_data.dict())
         db.add(progress)
         db.flush()
@@ -678,7 +678,7 @@ def insert_milestone(milestone: schemas.MilestoneIn, db:Session):
             student_id=programEnrollment.student_id,
             milestone_id=milestone_id,              
         )
-        progress_data.deadline="TBD"
+        progress_data.deadline=None
         progress = models.Progress(**progress_data.dict())
         db.add(progress)
         db.flush()

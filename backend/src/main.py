@@ -23,7 +23,7 @@ from database import SessionLocal, engine
 import csv
 
 #models.Base.metadata.drop_all(engine)
-#models.Base.metadata.create_all(engine)
+models.Base.metadata.create_all(engine)
 
 # Dependency
 def get_db():
@@ -76,7 +76,7 @@ def login(request: Request, response: Response, db:Session = Depends(get_db)):
         try:
             verify_jwt(jwt)
             return JSONResponse(content={"message": "Logged in!"}, media_type="application/json")
-        except HTTPException as e:
+        except Exception as e:
             response.delete_cookie("access_token")
     
     cas_ticket = request.query_params.get("ticket")
@@ -149,6 +149,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 def verify_jwt(token: Annotated[str | None, Cookie()] = None):
+    
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
@@ -211,7 +212,7 @@ def get_progress_page(student_id: int | None = None, db: Session=Depends(get_db)
     if student_id is None:
         student_id = payload.get("id")
     
-    tasks = student_progress(student_id=student_id, skip=0, limit=100, db=db)
+    tasks = student_progress(student_id=student_id, skip=0, limit=100, db=db, access_token=access_token)
     response = schemas.progressPage(
         milestones= [task for task in tasks if task.milestone],
         requirements= [task for task in tasks if task.requirement],
@@ -492,13 +493,13 @@ async def create_student_event(student_id: int, event: schemas.EventIn, access_t
         db.rollback()
         HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
 
-@app.post("/students/{student_id}/employments", response_model=schemas.EmploymentIn)
+@app.post("/students/{student_id}/employments", response_model=schemas.EmploymentOut)
 async def create_student_employment(student_id: int, employment: schemas.EmploymentIn, access_token = Cookie(...), db:Session = Depends(get_db)):
     try:
         verify_jwt(access_token)
         #student_id = payload.get("id")
-        employment.student_id = student_id
-        db_employment = models.Employment(**employment.dict())
+        #employment.student_id = student_id
+        db_employment = models.Employment(**employment.dict(), student_id=student_id)
         db.add(db_employment)
         db.commit()
         return db_employment
@@ -525,7 +526,7 @@ async def create_student_funding(student_id: int, funding: schemas.FundingIn, ac
     
     
     
-@app.post("/students/{student_id}/labs", response_model=schemas.StudentLabsIn)
+@app.post("/students/{student_id}/labs", response_model=schemas.StudentLabsOut)
 async def create_student_lab(student_id: int, lab: schemas.StudentLabsIn, access_token = Cookie(...), db:Session = Depends(get_db)):
     try:
         verify_jwt(access_token)
@@ -541,7 +542,7 @@ async def create_student_lab(student_id: int, lab: schemas.StudentLabsIn, access
    
     
 
-@app.post("/students/{student_id}/courses", response_model=schemas.CourseEnrollmentIn)
+@app.post("/students/{student_id}/courses", response_model=schemas.CourseEnrollmentOut)
 async def create_student_course(student_id: int, course: schemas.CourseEnrollmentIn, access_token = Cookie(...), db:Session = Depends(get_db)):
     try:
         verify_jwt(access_token)
@@ -641,6 +642,7 @@ async def delete_employment(student_id:int, employment_id: int, access_token = C
     student = crud.delete_data(db=db, filter=filter, model=models.Employment)
     if not student:
         raise HTTPException(status_code=404, detail=f"Employment with the given student id: {student_id} does not exist.")
+    return {"Message": "Deletion Successful"}
 
     
 @app.delete("/students/{student_id}/funding/{funding_id}", status_code=200)
@@ -713,6 +715,7 @@ async def delete_course(student_id: int, course_id: int, access_token = Cookie(.
     student = crud.delete_data(db=db, filter=filter, model=models.CourseEnrollment)
     if not student:
         raise HTTPException(status_code=404, detail=f"Course with the given student id: {student_id} does not exist.")
+    return {"Message": "Successfully deleted!"}
 
 @app.delete("/students/{student_id}/pos/{pos_id}", status_code=200)
 async def delete_pos(student_id:int, pos_id: int, access_token = Cookie(...), db:Session = Depends(get_db)):
