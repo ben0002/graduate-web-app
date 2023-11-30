@@ -25,11 +25,13 @@ const StudentPersonalCardInfo = ({ student }) => {
                                 <strong>Phone: </strong>
                                 {user.info.phone_number || '(123) 456-7890'}
                         </Typography>
-                        <Typography
-                            variant='body1'
-                            component={'div'}>
-                                <strong>Country/Residence: </strong>
-                                {user.info.citizenship || 'citizenship'}
+                        <Typography variant="body1" component={'div'}>
+                            <strong>Residence: </strong>{user.info.va_residency}
+                            {user.info.va_residency === 'Out-of-State' ? (
+                                <Typography variant="body1" component={'div'}>
+                                    <strong>Country: </strong>{user.info.citizenship || 'N/A'}
+                                </Typography>
+                            ) : null}
                         </Typography>
                     </Grid>
                     <Grid item xs={12} sm={4}>

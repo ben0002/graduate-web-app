@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Button, Card, CardContent, IconButton, Input, Modal, Switch, Tab, Tabs, TextField, Typography } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import HighlightOffIcon from '@mui/icons-material/HighlightOff';
+import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import { DatePicker } from '@mui/x-date-pickers';
@@ -82,20 +82,20 @@ function FundingModal(funding, openModal, closeModal, newFunding){
       <Modal open={openModal || isNew} onClose={_ => {closeModal(); setEdit(false); setIsNew(false)}}>
       <Box style={{width: '50%', height: '50%', backgroundColor: 'white', margin: '12.5% 25%', padding: '1rem', position: 'relative', borderRadius: '0.5rem', boxShadow: '0px 0px 15px 0 black'}}>
         <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', borderBottom: '2px solid gray', borderRadius: '0.25rem', marginBottom: '0.5rem'}}>
-          {edit ? <TextField name="name" value={localValues.name} onChange={e => handleInputChange(e.target)}/> : <h1 style={{margin: '0'}}>{funding.name || ''}</h1>}
+          {edit ? <TextField label="Name" name="name" value={localValues.name} onChange={e => handleInputChange(e.target)}/> : <h1 style={{margin: '0'}}>{funding.name || ''}</h1>}
           <div style={{display: 'flex'}}>
             <IconButton onClick={_ => (isNew ? checkValid() ? setConfirmDelete(true) : closeModal() : setEdit(!edit))}>
               <EditIcon sx={{color: '#630031'}}/>
             </IconButton>
             <IconButton onClick={_ => setConfirmDelete(true)}>
-              <HighlightOffIcon sx={{color: '#630031'}}/>
+              <DeleteIcon sx={{color: '#630031'}}/>
             </IconButton>
           </div>
         </div>
         <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: '.75rem'}}>
           <div style={{display: 'flex', flexDirection: 'column', alignItems: `${edit ? 'end' : 'start'}`, justifyContent: 'space-between', paddingRight: '.75rem'}}>
-            <p style={{margin: '0', display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>Total:</b> {edit ? <TextField name="award_amount" value={localValues.award_amount} onChange={e => handleInputChange(e.target)}/> : `$${funding.award_amount}`}</p>
-            <p style={{margin: '0', display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>Recurring:</b> {edit ? <TextField/> : 'No/Period'}</p>
+            <p style={{margin: '0', display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>Total:</b> {edit ? <TextField label="Award Amount" name="award_amount" value={localValues.award_amount} onChange={e => handleInputChange(e.target)}/> : `$${funding.award_amount}`}</p>
+            <p style={{margin: '0', display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>Recurring:</b> {edit ? <TextField label="Recurring"/> : 'No/Period'}</p>
           </div>
           <div style={{display: 'flex', flexDirection: 'column', alignItems: 'end', justifyContent: 'space-between', paddingRight: '.75rem'}}>
             <Typography style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>Start Date:</b> {edit ? <DatePicker name="start_date" value={localValues.start_date.length == 0 ? null : dayjs(localValues.start_date)} onChange={e => setLocalValues({...localValues, start_date: dayjs(e).format('YYYY-MM-DD')})}/> : funding.start_date}</Typography>

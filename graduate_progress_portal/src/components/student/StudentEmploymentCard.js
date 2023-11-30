@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Button, Card, CardContent, IconButton, Input, Modal, Switch, Tab, Tabs, TextField, Typography } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import HighlightOffIcon from '@mui/icons-material/HighlightOff';
+import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import { DatePicker } from '@mui/x-date-pickers';
@@ -79,32 +79,24 @@ function EmploymentModal(employment, openModal, closeModal, newEmployment){
       <Modal open={openModal || isNew} onClose={_ => {closeModal(); setEdit(false); setIsNew(false)}}>
       <Box style={{width: '50%', height: '50%', backgroundColor: 'white', margin: '12.5% 25%', padding: '1rem', position: 'relative', borderRadius: '0.5rem', boxShadow: '0px 0px 15px 0 black'}}>
         <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid gray', borderRadius: '0.25rem', marginBottom: '0.5rem'}}>
-         {edit ? <div> <b style={{fontSize: '2rem'}}>Company -</b> <TextField name="job_title" value={localValues.job_title} onChange={e => handleInputChange(e.target)}/></div>: <h1 style={{margin: '0'}}>Company - {employment.job_title}</h1>}
+         {edit ? <div> <b style={{fontSize: '2rem'}}><TextField label="Employer"/> -</b> <TextField label="Job Title" name="job_title" value={localValues.job_title} onChange={e => handleInputChange(e.target)}/></div>: <h1 style={{margin: '0'}}>{employment.employer || 'Company'} - {employment.job_title}</h1>}
           <div style={{display: 'flex'}}>
             <IconButton onClick={_ => (isNew ? checkValid() ? setConfirmDelete(true) : closeModal() : setEdit(!edit))}>
               <EditIcon sx={{color: '#630031'}}/>
             </IconButton>
             <IconButton onClick={_ => setConfirmDelete(true)}>
-              <HighlightOffIcon sx={{color: '#630031'}}/>
+              <DeleteIcon sx={{color: '#630031'}}/>
             </IconButton>
           </div>
         </div>
         <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: '.75rem'}}>
           <div style={{display: 'flex', flexDirection: 'column', alignItems: `${edit ? 'end' : 'start'}`, justifyContent: 'space-between', paddingRight: '.75rem'}}>
-            <p style={{margin: '0', display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>Salary:</b> {edit ? <TextField name="pay" value={localValues.pay} onChange={e => handleInputChange(e.target)}/> : `$${employment.pay}`}</p>
-            <p style={{margin: '0', display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>Empl. Type:</b> {edit ? <TextField name="type" value={localValues.type} onChange={e => handleInputChange(e.target)}/> : employment.type}</p>
+            <p style={{margin: '0', display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>Salary:</b> {edit ? <TextField label="Pay" name="pay" value={localValues.pay} onChange={e => handleInputChange(e.target)}/> : `$${employment.pay}`}</p>
+            <p style={{margin: '0', display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>Empl. Type:</b> {edit ? <TextField label="Employment Type" name="type" value={localValues.type} onChange={e => handleInputChange(e.target)}/> : employment.type}</p>
           </div>
           <div style={{display: 'flex', flexDirection: 'column', alignItems: 'end', justifyContent: 'space-between', paddingRight: '.75rem'}}>
             <Typography style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>Start Date:</b> {edit ? <DatePicker value={localValues.start_date.length == 0 ? null : dayjs(localValues.start_date)} onChange={e => setLocalValues({...localValues, start_date: dayjs(e).format('YYYY-MM-DD')})}/> : employment.start_date}</Typography>
             <Typography style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>End Date:</b> {edit ? <DatePicker value={localValues.end_date.length == 0 ? null : dayjs(localValues.end_date)} onChange={e => setLocalValues({...localValues, end_date: dayjs(e).format('YYYY-MM-DD')})}/> : employment.end_date}</Typography>
-          </div>
-          <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
-            <Switch disabled={!edit}/>
-            <Typography> Accepted </Typography>
-          </div>
-          <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
-            <Switch disabled={!edit}/>
-            <Typography> Gauranteed </Typography>
           </div>
         </div>
         <div style={{ width: '100%' }}>

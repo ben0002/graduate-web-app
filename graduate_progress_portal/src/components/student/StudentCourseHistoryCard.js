@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Button, Card, CardContent, Checkbox, FormControlLabel, IconButton, MenuItem, Modal, Select, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import HighlightOffIcon from '@mui/icons-material/HighlightOff';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useDispatch, useSelector } from 'react-redux';
 import { apiRequest, isNumeric, terms } from '../../assets/_commons';
 import { DatePicker } from '@mui/x-date-pickers';
@@ -121,7 +121,7 @@ export default function StudentCourseHistoryCard() {
                 <TableCell align='center'>{course.credits}</TableCell>
                 <TableCell align='center'><Checkbox disabled checked={course.course_type == 'Transfer'}/></TableCell>
                 <TableCell align='center'><Checkbox disabled/></TableCell>
-                <TableCell align='center'><IconButton onClick={_ => setConfirmDelete(course.id)}><HighlightOffIcon/></IconButton></TableCell>
+                <TableCell align='center'><IconButton onClick={_ => setConfirmDelete(course.id)}><DeleteIcon/></IconButton></TableCell>
             </TableRow>
         )
         })

@@ -110,14 +110,13 @@ function ToDoModal(task, openModal, closeModal, methods, newTask) {
             </IconButton>
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: '.75rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingRight: '.75rem' }}>
           <Typography style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
             <b style={{ marginRight: '0.25rem' }}>Due Date:</b>
             {edit ? (
               <DatePicker
                 value={formData.due_date.length > 0 ? dayjs(formData.due_date) : null}
                 onChange={(newDate) => handleChange('due_date', newDate)}
-                renderInput={(params) => <TextField {...params} />}
               />
             ) : (
               formData.due_date || 'mm/dd/yyyy'

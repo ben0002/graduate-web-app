@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Button, Card, CardContent, IconButton, Input, Modal, Switch, Tab, Tabs, TextField, Typography } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import HighlightOffIcon from '@mui/icons-material/HighlightOff';
+import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
@@ -38,13 +38,13 @@ function MilestoneModal(milestone, openModal, closeModal, methods, newMilestone)
       <Modal open={openModal || isNew} onClose={_ => {closeModal(null); setEdit(false)}}>
         <Box style={{width: '50%', height: '50%', backgroundColor: 'white', margin: '12.5% 25%', padding: '1rem', position: 'relative', borderRadius: '0.5rem', boxShadow: '0px 0px 15px 0 black'}}>
           <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', borderBottom: '2px solid gray', borderRadius: '0.25rem', marginBottom: '0.5rem'}}>
-            {edit ? <TextField/> : <h1 style={{margin: '0'}}>{milestone ? milestone.Name : ''}</h1>}
+            {edit ? <TextField label="Name"/> : <h1 style={{margin: '0'}}>{milestone ? milestone.Name : ''}</h1>}
             <div style={{display: 'flex'}}>
               <IconButton onClick={_ => (isNew ? checkNewFields(false) ? setConfirmDelete(true) : closeModal() : setEdit(!edit))}>
                 <EditIcon sx={{color: '#630031'}}/>
               </IconButton>
               <IconButton onClick={_ => setConfirmDelete(true)}>
-                <HighlightOffIcon sx={{color: '#630031'}}/>
+                <DeleteIcon sx={{color: '#630031'}}/>
               </IconButton>
             </div>
           </div>

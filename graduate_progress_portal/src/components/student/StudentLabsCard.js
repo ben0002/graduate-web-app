@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Button, Card, CardContent, IconButton, Modal, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import HighlightOffIcon from '@mui/icons-material/HighlightOff';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useDispatch, useSelector } from 'react-redux';
 import { apiRequest } from '../../assets/_commons';
 import { DatePicker } from '@mui/x-date-pickers';
@@ -102,7 +102,7 @@ const StudentLabInformationCard = () => {
                     <TableCell align='center'>yyyy-mm-dd</TableCell>
                     <TableCell align='center'>{lab.director}</TableCell>
                     <TableCell align='center'>located here</TableCell>
-                    <TableCell align='center'><IconButton onClick={_ => setConfirmDelete(lab.id)}><HighlightOffIcon/></IconButton></TableCell>
+                    <TableCell align='center'><IconButton onClick={_ => setConfirmDelete(lab.id)}><DeleteIcon/></IconButton></TableCell>
                 </TableRow>
             )
             })

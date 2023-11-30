@@ -12,6 +12,12 @@ export default function StudentCardInfo() {
 
     const user = useSelector(state => state.student)
 
+    const getMainAdvisor = _ => {
+        var main_adv = user.advisors.filter(adv => adv.role == "main_advisor")
+        if(main_adv.length > 0) return main_adv[0].name
+        return null
+    }
+
     if(user == undefined) return (<></>)
     
     return (
@@ -30,7 +36,7 @@ export default function StudentCardInfo() {
                                 <Typography variant="h6" component="div"><strong>{`${user.info.first_name || 'First'} ${user.info.middle_name || ''} ${user.info.last_name || 'Last'}`}</strong></Typography>
                                 <Typography fontSize={13} color="textSecondary">{user.info.pronoun || 'N/A'}</Typography>
                                 <br />
-                                <Typography color="textSecondary"><strong>Advisor:</strong> {user.advisors.sort((a, b) => {return (b.role == "main_advisor" ? b : a)}).map(advisor => advisor.name).join(', ') || 'N/A'}</Typography>
+                                <Typography color="textSecondary"><strong>Advisor:</strong> {getMainAdvisor() || 'N/A'}</Typography>
                                 <Tooltip title={user.info.advisory_committee || 'N/A'}>
                                     <Typography 
                                         className="truncate" 
