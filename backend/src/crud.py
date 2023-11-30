@@ -576,11 +576,8 @@ def update_programenrollment_data(db: Session, filter: dict, model, data):
     if not programenrollment:
         raise CustomValueError(message="The given id is not found in the Database.", original_exception=None, row_data=1)
     #If the major or degre is changed, we will need to delete the original progress that related to the degree and major. And add the new one with the new degree and major id.
-    if data.major_id is not None and data.major_id != programenrollment.major_id:
-        delete_progress(programenrollment.student_id, db)
-    elif data.degree_id is not None and data.degree_id != programenrollment.degree_id:
-        delete_progress(programenrollment.student_id, db)
-    # setting the new data
+    delete_progress(programenrollment, db)
+   
     for field, value in data.dict(exclude_unset=True, exclude={'student_id'}).items():
             if value is not None:
                 setattr(programenrollment, field, value)
@@ -590,31 +587,34 @@ def update_programenrollment_data(db: Session, filter: dict, model, data):
         "degree_id" : programenrollment.degree_id,
         "major_id" : programenrollment.major_id
     }
-    milestone = db.query(models.Milestone)
-    milestone = apply_filters(milestone, models.Milestone, filter_temp).first()
-    requirement= db.query(models.Requirement)
-    requirement = apply_filters(requirement, models.Requirement, filter_temp).first()
+    milestones = db.query(models.Milestone)
+    milestones = apply_filters(milestones, models.Milestone, filter_temp).all()
+    requirements= db.query(models.Requirement)
+    requirements = apply_filters(requirements, models.Requirement, filter_temp).all()
     
-    milestone_progress = schemas.ProgressIn(
-        milestone_id=milestone.id,
-        student_id=programenrollment.student_id
-    )
+    for milestone in milestones:
+        milestone_progress = schemas.ProgressIn(
+            milestone_id=milestone.id,
+            student_id=programenrollment.student_id
+        )
+        milestone_db = models.Progress(**milestone_progress.dict())
+        db.add(milestone_db)
+        db.flush()
     
-    requirement_progress = schemas.ProgressIn(
-        requirement_id=requirement.id,
-        student_id=programenrollment.id
-    )
-    
-    milestone_db = models.Progress(**milestone_progress.dict())
-    requirement_db= models.Progress(**requirement_progress.dict())
-    db.add(milestone_db)
-    db.add(requirement_db)
-    db.flush()
+    for requirement in requirements:
+        requirement_progress = schemas.ProgressIn(
+            requirement_id=requirement.id,
+            student_id=programenrollment.id
+        )
+        requirement_db= models.Progress(**requirement_progress.dict())
+        db.add(requirement_db)
+        db.flush()
+        
     db.commit()
     db.refresh(programenrollment)
     return programenrollment
 
-def delete_progress(student_id : int, db: Session):
+def delete_progress(programenrollment, db: Session):
     """
     Retrieve a list of student's event based on the event model and filter criteria.
 
@@ -628,11 +628,24 @@ def delete_progress(student_id : int, db: Session):
     Returns:
     - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing event
     """
-    progresses = db.query(models.Progress).filter(models.Progress.student_id==student_id).all()
-    if progresses:
-        for progress in progresses:
-            db.delete(progress)
-            db.flush()
+    related_reqs = db.query(models.Requirement).filter(models.Requirement.major_id == programenrollment.major_id,
+                                                         models.Requirement.degree_id == programenrollment.degree_id).all()
+    for req in related_reqs:
+        progress = db.query(models.Progress).filter(models.Progress.requirement_id == req.id, 
+                                                    models.Progress.student_id == programenrollment.student_id).one_or_none()
+        db.delete(progress)
+        db.flush()
+    
+    related_milestones = db.query(models.Milestone).filter(models.Milestone.major_id == programenrollment.major_id,
+                                                         models.Milestone.degree_id == programenrollment.degree_id).all()
+    for milestone in related_milestones:
+        progress = db.query(models.Progress).filter(models.Progress.milestone_id == milestone.id, 
+                                                    models.Progress.student_id == programenrollment.student_id).one_or_none()
+        db.delete(progress)
+        db.flush()
+    
+    db.commit()
+            
 def check_either_one(data):
     if data.milestone_id is None and data.requirement_id is None:
         return True
