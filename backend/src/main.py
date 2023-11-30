@@ -545,7 +545,7 @@ async def create_student_lab(student_id: int, lab: schemas.StudentLabsIn, access
 async def create_student_course(student_id: int, course: schemas.CourseEnrollmentIn, access_token = Cookie(...), db:Session = Depends(get_db)):
     try:
         verify_jwt(access_token)
-        course.pos_id = crud.find_studentpos(student_id, db, 1)
+        course.pos_id = crud.find_studentpos(student_id, db)
         course.student_id = student_id
         db_course = models.CourseEnrollment(**course.dict())
         db.add(db_course)
@@ -570,7 +570,7 @@ async def create_student_pos(student_id: int, pos: schemas.StudentPOSIn,access_t
         db.rollback()
         HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
 
-@app.post("/students/{student_id}/advisors/{advisor_id}", response_model=schemas.StudentAdvisor)
+@app.post("/students/{student_id}/advisors/{advisor_id}", response_model=schemas.CreateStudentAdvisor)
 async def create_student_advisor(student_id: int, advisor_id: int, role: schemas.StudentAdvisorIn, 
                                  access_token = Cookie(...), db:Session = Depends(get_db)):
     try:
@@ -606,6 +606,21 @@ async def create_milestone(progress_milestone: schemas.MilestoneIn, access_token
        
         return crud.insert_milestone(milestone=progress_milestone, db=db)
     
+    except IntegrityError as constraint_violation:
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+        
+@app.post("/students/{student_id}/progress", response_model= schemas.ProgressIn)
+async def create_progress(progress: schemas.ProgressIn, db:Session = Depends(get_db)):
+    try:
+        #payload = verify_jwt(access_token) this may need for privilege level
+        if crud.check_either_one(progress):
+            progress_db = models.Progress(**progress.dict())
+            db.add(progress_db)
+            db.commit()
+            db.refresh(progress_db)
+            return progress_db
+        else:
+            raise {"Milestone, Requirement, and Custom milestone can be exisited either one"} 
     except IntegrityError as constraint_violation:
         HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
 #------------------------------Student Delete Endpoint--------------------------    
@@ -710,7 +725,7 @@ async def delete_pos(student_id:int, pos_id: int, access_token = Cookie(...), db
     
     pos = crud.delete_data(db=db, filter=filter, model=models.StudentPOS)
     if not pos:
-        raise HTTPException(status_code=404, detail=f"Stuent POS with the given student id: {student_id} does not exist.")
+        raise HTTPException(status_code=404, detail=f"Student POS with the given student id: {student_id} does not exist.")
 
 @app.delete("/requirement/{requirement_id}")
 def delete_requirement(requirement_id: int, access_token= Cookie(...), db:Session = Depends(get_db)):
@@ -719,6 +734,7 @@ def delete_requirement(requirement_id: int, access_token= Cookie(...), db:Sessio
     try:
         crud.delete_requirement(db=db, requirement_id=requirement_id)
     except:
+        db.rollback()
         raise HTTPException(status_code=404, detail=f"Requirement ID with the given id: {requirement_id} does not exist.")
     
 @app.delete("/milestone/{milestone_id}")
@@ -728,25 +744,221 @@ def delete_milestone(milestone_id: int, access_token = Cookie(...), db:Session =
     try:
         crud.delete_milestone(db=db, milestone_id=milestone_id)
     except:
-         raise HTTPException(status_code=404, detail=f"Milestone ID with the given id: {milestone_id} does not exist.")
+        db.rollback()
+        raise HTTPException(status_code=404, detail=f"Milestone ID with the given id: {milestone_id} does not exist.")
      
-     
+@app.patch("/requirement/{requirement_id}", response_model=schemas.RequirementOut)
+def update_requirement(update_fields: schemas.RequirementPatch, requirement_id: int, access_token = Cookie(...), 
+                       db:Session = Depends(get_db)):
     
+    verify_jwt(access_token)
+    try:
+        return crud.update_requirement(db=db, requirement_id=requirement_id, data=update_fields)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=404, detail=f"Requirement ID with the given id: {requirement_id} does not exist. Error: {e}")
+    
+@app.patch("/milestone/{milestone_id}", response_model=schemas.MilestoneOut)
+def update_requirement(update_fields: schemas.MilestonePatch, milestone_id: int, access_token = Cookie(...), 
+                       db:Session = Depends(get_db)):
+    verify_jwt(access_token)
+    try:
+        return crud.update_milestone(db=db, milestone_id=milestone_id, data=update_fields)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=404, detail=f"Milestone ID with the given id: {milestone_id} does not exist. Error: {e}")
+
+#---------------------------------------- end of /students endpoints --------------------------------------------#
 
 
+@app.delete("/students/{student_id}/programs/{program_id}", status_code=200)
+async def delete_programEnrollment(student_id : int, program_id: int, db:Session = Depends(get_db)):
+    try:
+        crud.delete_program_enrollment(db=db, program_id=program_id)
+    except: 
+        db.rollback()
+        raise HTTPException(status_code=404, detail=f"Program with the given student id: {student_id} does not exist.")
+
+#--------------------------------- Patch Student EndPoint--------------------------
+@app.patch("/student/{student_id}", response_model=schemas.StudentOut)
+async def update_student(student_id : int, student_data:schemas.UpdateStudent, access_token = Cookie(...),db:Session = Depends(get_db)):
+    verify_jwt(access_token)
+    filter = {
+        "id" : student_id
+    }
+    try:
+        return crud.update_data(db, filter, models.Student, student_data)
+    except crud.CustomValueError as value_error:
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data})
+    except ValueError as validation_error:
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(validation_error)}")
+    except IntegrityError as constraint_violation:
+        raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+    
+@app.patch("/student/{student_id}/employments/{employment_id}", response_model=schemas.EmploymentOut)
+async def update_student_employment(student_id: int, employment_id: int, employment_data:schemas.UpdateEmployment, access_token = Cookie(...) ,db:Session = Depends(get_db)):
+    verify_jwt(access_token)
+    filter = {
+        "id" : employment_id,
+        "student_id":student_id
+    }
+    try:
+        return crud.update_data(db, filter, models.Employment, employment_data)
+    except crud.CustomValueError as value_error:
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data})
+    except ValueError as validation_error:
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(validation_error)}")
+    except IntegrityError as constraint_violation:
+        raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+
+@app.patch("/student/{student_id}/fundings/{funding_id}", response_model=schemas.FundingOut)
+async def update_student_funding(student_id: int, funding_id: int, funding_data:schemas.UpdateFunding, access_token = Cookie(...),db:Session = Depends(get_db)):
+    verify_jwt(access_token)
+    filter = {
+        "id" : funding_id,
+        "student_id": student_id
+    }
+    try:
+        return crud.update_data(db, filter, models.Funding, funding_data)
+    except crud.CustomValueError as value_error:
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data})
+    except ValueError as validation_error:
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(validation_error)}")
+    except IntegrityError as constraint_violation:
+        raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+    
+@app.patch("/student/{student_id}/events/{event_id}", response_model=schemas.EventOut)
+async def update_student_funding(student_id: int, event_id: int, event_data:schemas.UpdateEvent, access_token = Cookie(...),db:Session = Depends(get_db)):
+    verify_jwt(access_token)
+    filter = {
+        "id" : event_id,
+        "student_id": student_id
+    }
+    try:
+        return crud.update_data(db, filter, models.Event, event_data)
+    except crud.CustomValueError as value_error:
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data})
+    except ValueError as validation_error:
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(validation_error)}")
+    except IntegrityError as constraint_violation:
+        raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+
+@app.patch("/student/{student_id}/advisors/{advisor_id}", response_model=schemas.ResponseUpdateStudentAdvisor)
+async def update_student_advisor(student_id: int, advisor_id: int, advisor_data:schemas.UpdateStudentAdvisor, access_token = Cookie(...) ,db:Session = Depends(get_db)):
+    verify_jwt(access_token)
+    filter = {
+        "advisor_id" : advisor_id,
+        "student_id" : student_id
+    }
+    try:
+        return crud.update_data(db, filter, models.StudentAdvisor, advisor_data)
+    except crud.CustomValueError as value_error:
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data})
+    except ValueError as validation_error:
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(validation_error)}")
+    except IntegrityError as constraint_violation:
+        raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+
+@app.patch("/student/{student_id}/labs/{lab_id}", response_model=schemas.StudentLabsOut)
+async def update_student_lab(student_id: int, lab_id: int, lab_data:schemas.UpdateStudentLabs, access_token = Cookie(...),db:Session = Depends(get_db)):
+    verify_jwt(access_token)
+    filter = {
+        "id" : lab_id,
+        "student_id": student_id
+    }
+    try:
+        return crud.update_data(db, filter, models.StudentLabs, lab_data)
+    except crud.CustomValueError as value_error:
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data})
+    except ValueError as validation_error:
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(validation_error)}")
+    except IntegrityError as constraint_violation:
+        raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+    
+@app.patch("/student/{student_id}/courses/{course_id}", response_model=schemas.CourseEnrollmentOut)
+async def update_student_course(student_id: int, course_id: int, course_data:schemas.UpdateCourseEnrollment, access_token = Cookie(...),db:Session = Depends(get_db)):
+    verify_jwt(access_token)
+    filter = {
+        "id" : course_id,
+        "student_id": student_id
+    }
+    try:
+        return crud.update_data(db, filter, models.CourseEnrollment, course_data)
+    except crud.CustomValueError as value_error:
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data})
+    except ValueError as validation_error:
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(validation_error)}")
+    except IntegrityError as constraint_violation:
+        raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+
+@app.patch("/student/{student_id}/pos/{pos_id}", response_model=schemas.StudentPOSOut)
+async def update_student_pos(student_id: int, pos_id: int, pos_data:schemas.UpdateStudentPOS, access_token = Cookie(...),db:Session = Depends(get_db)):
+    verify_jwt(access_token)
+    filter = {
+        "id" : pos_id,
+        "student_id": student_id
+    }
+    try:
+        return crud.update_data(db, filter, models.StudentPOS, pos_data)
+    except crud.CustomValueError as value_error:
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data})
+    except ValueError as validation_error:
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(validation_error)}")
+    except IntegrityError as constraint_violation:
+        raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+
+
+@app.patch("/student/{student_id}/program/{programenrollment_id}", response_model=schemas.ResponseUpdateProgramEnrollment)
+async def update_student_programenrollment(student_id: int, programenrollment_id: int, programenrollment_data:schemas.UpdateProgramEnrollment, 
+                                           access_token = Cookie(...),db:Session = Depends(get_db)):
+    verify_jwt(access_token)
+    filter = {
+        "id" : programenrollment_id,
+        "student_id": student_id
+    }
+    try:
+        return crud.update_programenrollment_data(db, filter, models.ProgramEnrollment, programenrollment_data)
+    except crud.CustomValueError as value_error:
+        db.rollback()
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data})
+    except ValueError as validation_error:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(validation_error)}")
+    except IntegrityError as constraint_violation:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+
+@app.patch("/student/{student_id}/progress/{progress_id}", response_model=schemas.ResponsedUpdateProgress)
+async def update_student_programenrollmen(student_id: int, progress_id: int, progress_data:schemas.UpdateProgress, access_token = Cookie(...), db:Session = Depends(get_db)):
+    verify_jwt(access_token)
+    filter = {
+        "id" : progress_id,
+        "student_id": student_id
+    }
+    try:
+        return crud.update_progress_data(db, filter, models.Progress, progress_data)
+    except crud.CustomValueError as value_error:
+        db.rollback()
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data})
+    except ValueError as validation_error:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(validation_error)}")
+    
+    except IntegrityError as constraint_violation:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
     
 #---------------------------------------- end of /students endpoints --------------------------------------------#
-"""Program Enrollment
-@app.delete("/students/{student_id}/{program_id}", status_code=200)
-async def delete_programEnrollment(student_id : int, program_id: int, db:Session = Depends(get_db)):
-    filter = {
-        "id" : program_id,
-        "student_id" : student_id
-        }
-    student = crud.delete_data(db=db, filter=filter, model=models.ProgramEnrollment)
-    if not student:
-        raise HTTPException(status_code=404, detail=f"Program with the given student id: {student_id} does not exist.")
-"""
     
 @app.get("/faculty", response_model=list[schemas.FacultyOut])
 async def faculty(
