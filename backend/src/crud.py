@@ -21,8 +21,19 @@ class CustomException(Exception):
 class CustomValueError(CustomException):
     pass
 
-
 def apply_filters(query,  model, filters: dict = {}):
+    """
+    Apply filters to a SQLAlchemy query based on the specified model and filter criteria.
+
+    Parameters:
+    - query (sqlalchemy.orm.query.Query): The SQLAlchemy query to be filtered.
+    - model (sqlalchemy.ext.declarative.DeclarativeMeta): The SQLAlchemy model representing the database table.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+
+    Returns:
+    - sqlalchemy.orm.query.Query: The filtered SQLAlchemy query.
+    """
     if filters is None:
         return query
     
@@ -32,6 +43,19 @@ def apply_filters(query,  model, filters: dict = {}):
     return query
 
 def get_students(db: Session, filters: dict, skip: int = 0, limit: int =100):
+    """
+    Retrieve a list of students based on the Student model and filter criteria.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - skip (int, optional): The number of records to skip. Defaults to 0.
+    - limit (int, optional): The maximum number of records to return. Defaults to 100.
+    
+    Returns:
+    - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing students
+    """
     query = db.query(models.Student)
     query = apply_filters(query, models.Student, filters)
     #if(filters.get("citizenship", None) is not None):
@@ -39,72 +63,228 @@ def get_students(db: Session, filters: dict, skip: int = 0, limit: int =100):
     return query.offset(skip).limit(limit).all()
 
 def get_faculty(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    """
+    Retrieve a list of facultys based on the faculty model and filter criteria.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - skip (int, optional): The number of records to skip. Defaults to 0.
+    - limit (int, optional): The maximum number of records to return. Defaults to 100.
+    
+    Returns:
+    - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing faculty
+    """
     query = db.query(models.Faculty)
     query = apply_filters(query, models.Faculty, filters)
     
     return query.offset(skip).limit(limit).all()
 
 def get_degrees(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    """
+    Retrieve a list of degrees based on the degree model and filter criteria.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - skip (int, optional): The number of records to skip. Defaults to 0.
+    - limit (int, optional): The maximum number of records to return. Defaults to 100.
+    
+    Returns:
+    - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing degree 
+    """
     query = db.query(models.Degree)
     query = apply_filters(query, models.Degree, filters)
     
     return query.offset(skip).limit(limit).all()
 
 def get_majors(db: Session, filters, skip: int = 0, limit: int = 100):
+    """
+    Retrieve a list of majors based on the major model and filter criteria.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - skip (int, optional): The number of records to skip. Defaults to 0.
+    - limit (int, optional): The maximum number of records to return. Defaults to 100.
+    
+    Returns:
+    - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing major
+    """
     query = db.query(models.Major)
     query = apply_filters(query, models.Major, filters)
     
     return query.offset(skip).limit(limit).all()
 
 def get_messages(db: Session, filters, skip: int = 0, limit: int = 100):
+    """
+    Retrieve a list of messages based on the message model and filter criteria.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - skip (int, optional): The number of records to skip. Defaults to 0.
+    - limit (int, optional): The maximum number of records to return. Defaults to 100.
+    
+    Returns:
+    - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing message
+    """
     query = db.query(models.Message)
     query = apply_filters(query, models.Major, filters)
     
     return query.offset(skip).limit(limit).all()
 
 def get_campus(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    """
+    Retrieve a list of campus based on the campus model and filter criteria.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - skip (int, optional): The number of records to skip. Defaults to 0.
+    - limit (int, optional): The maximum number of records to return. Defaults to 100.
+    
+    Returns:
+    - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing campus
+    """
     query = db.query(models.Campus)
     query = apply_filters(query, models.Campus, filters)
     
     return query.offset(skip).limit(limit).all()
 
 def get_department(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    """
+    Retrieve a list of department based on the department model and filter criteria.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - skip (int, optional): The number of records to skip. Defaults to 0.
+    - limit (int, optional): The maximum number of records to return. Defaults to 100.
+    
+    Returns:
+    - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing department
+    """
     query = db.query(models.Department)
     query = apply_filters(query, models.Department, filters)
     
     return query.offset(skip).limit(limit).all()
 
 def get_programEnrollment(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    """
+    Retrieve a list of program enrollment based on the ProgramEnrollment model and filter criteria.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - skip (int, optional): The number of records to skip. Defaults to 0.
+    - limit (int, optional): The maximum number of records to return. Defaults to 100.
+    
+    Returns:
+    - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing program enrollment
+    """
     query = db.query(models.ProgramEnrollment)
     query = apply_filters(query, models.ProgramEnrollment, filters)
     
     return query.offset(skip).limit(limit).all()
 
 def get_studentLab(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    """
+    Retrieve a list of student lab based on the StudentLabs model and filter criteria.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - skip (int, optional): The number of records to skip. Defaults to 0.
+    - limit (int, optional): The maximum number of records to return. Defaults to 100.
+    
+    Returns:
+    - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing student lab
+    """
     query = db.query(models.StudentLabs)
     query = apply_filters(query, models.StudentLabs, filters)
     
     return query.offset(skip).limit(limit).all()
 
 def get_studentAdvisor(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    """
+    Retrieve a list of student advisor based on the StudentAdvisor model and filter criteria.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - skip (int, optional): The number of records to skip. Defaults to 0.
+    - limit (int, optional): The maximum number of records to return. Defaults to 100.
+    
+    Returns:
+    - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing student advisor
+    """
     query = db.query(models.StudentAdvisor)
     query = apply_filters(query, models.StudentAdvisor, filters)
     
     return query.offset(skip).limit(limit).all()
 
 def get_employment(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    """
+    Retrieve a list of student's employment based on the employment model and filter criteria.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - skip (int, optional): The number of records to skip. Defaults to 0.
+    - limit (int, optional): The maximum number of records to return. Defaults to 100.
+    
+    Returns:
+    - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing employment
+    """
     query = db.query(models.Employment)
     query = apply_filters(query, models.Employment, filters)
     
     return query.offset(skip).limit(limit).all()
 
 def get_funding(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    """
+    Retrieve a list of student's funding based on the funding model and filter criteria.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - skip (int, optional): The number of records to skip. Defaults to 0.
+    - limit (int, optional): The maximum number of records to return. Defaults to 100.
+    
+    Returns:
+    - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing funding
+    """
     query = db.query(models.Funding)
     query = apply_filters(query, models.Funding, filters)
     
     return query.offset(skip).limit(limit).all()
 
 def get_event(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    """
+    Retrieve a list of student's event based on the event model and filter criteria.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - skip (int, optional): The number of records to skip. Defaults to 0.
+    - limit (int, optional): The maximum number of records to return. Defaults to 100.
+    
+    Returns:
+    - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing event
+    """
     query = db.query(models.Event)
     query = apply_filters(query, models.Event, filters)
     
@@ -112,42 +292,132 @@ def get_event(db: Session, filters: dict, skip: int = 0, limit: int = 100):
 
 
 def get_requirement(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    """
+    Retrieve a list of requirement based on the requirement model and filter criteria.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - skip (int, optional): The number of records to skip. Defaults to 0.
+    - limit (int, optional): The maximum number of records to return. Defaults to 100.
+    
+    Returns:
+    - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing requirement
+    """
     query = db.query(models.Requirement)
     query = apply_filters(query, models.Requirement, filters)
     
     return query.offset(skip).limit(limit).all()
 
 def get_milestone(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    """
+    Retrieve a list of milestone based on the milestone model and filter criteria.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - skip (int, optional): The number of records to skip. Defaults to 0.
+    - limit (int, optional): The maximum number of records to return. Defaults to 100.
+    
+    Returns:
+    - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing milestone
+    """
     query = db.query(models.Milestone)
     query = apply_filters(query, models.Milestone, filters)
     
     return query.offset(skip).limit(limit).all()
 
 def get_progress(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    """
+    Retrieve a list of student's progress based on the progress model and filter criteria.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - skip (int, optional): The number of records to skip. Defaults to 0.
+    - limit (int, optional): The maximum number of records to return. Defaults to 100.
+    
+    Returns:
+    - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing progress
+    """
     query = db.query(models.Progress)
     query = apply_filters(query, models.Progress, filters)
     
     return query.offset(skip).limit(limit).all()
 
 def get_courseEnrollment(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    """
+    Retrieve a list of student's course enrollment based on the CourseEnrollment model and filter criteria.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - skip (int, optional): The number of records to skip. Defaults to 0.
+    - limit (int, optional): The maximum number of records to return. Defaults to 100.
+    
+    Returns:
+    - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing course enrollment
+    """
     query = db.query(models.CourseEnrollment)
     query = apply_filters(query, models.CourseEnrollment, filters)
     
     return query.offset(skip).limit(limit).all()
 
 def get_stage(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    """
+    Retrieve a list of student's stage based on the stage model and filter criteria.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - skip (int, optional): The number of records to skip. Defaults to 0.
+    - limit (int, optional): The maximum number of records to return. Defaults to 100.
+    
+    Returns:
+    - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing stage
+    """
     query = db.query(models.Stage)
     query = apply_filters(query, models.Stage, filters)
     
     return query.offset(skip).limit(limit).all()
 
 def get_studentPOS(db: Session, filters: dict, skip: int = 0, limit: int = 100):
+    """
+    Retrieve a list of student's pos based on the StudentPOS model and filter criteria.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - skip (int, optional): The number of records to skip. Defaults to 0.
+    - limit (int, optional): The maximum number of records to return. Defaults to 100.
+    
+    Returns:
+    - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing student's POS
+    """
     query = db.query(models.StudentPOS)
     query = apply_filters(query, models.StudentPOS, filters)
     
     return query.offset(skip).limit(limit).all()
 
 def delete_data(db: Session, filter: dict, model):
+    """
+    Delete data in database based on the specified model and filter criteria.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - model (sqlalchemy.ext.declarative.DeclarativeMeta): The SQLAlchemy model representing the database table.
+    
+    Returns:
+    - bool: True if the target data is found and deleted successfully, False otherwise.
+    """
     try:
         query = db.query(model)
         query = apply_filters(query, model, filter).first()
@@ -161,6 +431,20 @@ def delete_data(db: Session, filter: dict, model):
         print(e)
     
 def update_data(db: Session, filter: dict, model, data):
+    """
+    Update data in database based on the specified model, filter criteria, and input data. It will only update
+    the data that is not none. none means user did not input.
+    
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - model (sqlalchemy.ext.declarative.DeclarativeMeta): The SQLAlchemy model representing the database table.
+    - data (schema): it is input data passed by schema request body
+    
+    Returns:
+    - sqlalchemy.ext.declarative.DeclarativeMeta: The updated data after applying changes.
+    """
     query = db.query(model)
     query = apply_filters(query, model, filter).first()
     if not query:
@@ -173,6 +457,19 @@ def update_data(db: Session, filter: dict, model, data):
     return query
 
 def update_programenrollment_data(db: Session, filter: dict, model, data):
+    """
+    Update data in database based on the specified model, filter criteria, and input data.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - model (sqlalchemy.ext.declarative.DeclarativeMeta): The SQLAlchemy model representing the database table.
+    - data (schema): it is input data passed by schema request body
+    
+    Returns:
+    - sqlalchemy.ext.declarative.DeclarativeMeta: The updated data after applying changes.
+    """
     programenrollment = db.query(model)
     programenrollment = apply_filters(programenrollment, model, filter).first()
     if not programenrollment:
@@ -217,11 +514,32 @@ def update_programenrollment_data(db: Session, filter: dict, model, data):
     return programenrollment
 
 def delete_progress(student_id : int, db: Session):
+    """
+    Retrieve a list of student's event based on the event model and filter criteria.
+
+    Parameters:
+    - db (Session): the database session.
+    - filters (dict, optional): A dictionary containing filter criteria where keys represent model attributes
+      and values represent desired attribute values. Defaults to an empty dictionary.
+    - skip (int, optional): The number of records to skip. Defaults to 0.
+    - limit (int, optional): The maximum number of records to return. Defaults to 100.
+    
+    Returns:
+    - List[sqlalchemy.ext.declarative.DeclarativeMeta]: A list of SQLAlchemy model instances representing event
+    """
     progresses = db.query(models.Progress).filter(models.Progress.student_id==student_id).all()
     if progresses:
         for progress in progresses:
             db.delete(progress)
             db.flush()
+def check_either_one(data):
+    if data.milestone_id is None and data.requirement_id is None:
+        return True
+    if data.custom_milestone_name is None and data.requirement_id is None:
+        return True
+    if data.custom_milestone_name is None and data.milestone_id is None:
+        return True
+    return False
 
 #--------------------------------------------------Insert Data Function For File-------------------------
 

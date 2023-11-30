@@ -328,8 +328,10 @@ class ProgressIn(BaseModel):
     deadline: date | None = None
     completion_date: date | None = None
     approved: bool | None = False
-    note : Optional[str] = Field(None, max_length=200)
+    note : str | None = None
     exempt: bool | None = False
+    custom_milestone_name: str | None = None
+    custom_milestone_description: str | None = None
     
     class Config:
         from_attributes = True

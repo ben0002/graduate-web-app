@@ -603,6 +603,21 @@ async def create_milestone(progress_milestone: schemas.MilestoneIn, access_token
     
     except IntegrityError as constraint_violation:
         HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+        
+@app.post("/students/{student_id}/progress", response_model= schemas.ProgressIn)
+async def create_progress(progress: schemas.ProgressIn, db:Session = Depends(get_db)):
+    try:
+        #payload = verify_jwt(access_token) this may need for privilege level
+        if crud.check_either_one(progress):
+            progress_db = models.Progress(**progress.dict())
+            db.add(progress_db)
+            db.commit()
+            db.refresh(progress_db)
+            return progress_db
+        else:
+            raise {"Milestone, Requirement, and Custom milestone can be exisited either one"} 
+    except IntegrityError as constraint_violation:
+        HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
 #------------------------------Student Delete Endpoint--------------------------    
 @app.delete("/students/{student_id}", status_code=200)
 async def delete_student(student_id : int, access_token = Cookie(...), db:Session = Depends(get_db)):
@@ -707,17 +722,15 @@ async def delete_pos(student_id:int, pos_id: int, access_token = Cookie(...), db
     if not pos:
         raise HTTPException(status_code=404, detail=f"Stuent POS with the given student id: {student_id} does not exist.")
 
-"""Program Enrollment
-@app.delete("/students/{student_id}/{program_id}", status_code=200)
+@app.delete("/students/{program_id}", status_code=200)
 async def delete_programEnrollment(student_id : int, program_id: int, db:Session = Depends(get_db)):
     filter = {
         "id" : program_id,
-        "student_id" : student_id
         }
     student = crud.delete_data(db=db, filter=filter, model=models.ProgramEnrollment)
     if not student:
         raise HTTPException(status_code=404, detail=f"Program with the given student id: {student_id} does not exist.")
-"""
+
 #--------------------------------- Patch Student EndPoint--------------------------
 @app.patch("/student/{student_id}", response_model=schemas.StudentOut)
 async def update_student(student_id : int, student_data:schemas.UpdateStudent, access_token = Cookie(...),db:Session = Depends(get_db)):

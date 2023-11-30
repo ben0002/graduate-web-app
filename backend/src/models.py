@@ -3,11 +3,8 @@ the schema """
 
 from typing import Optional
 from sqlalchemy import ForeignKey, UniqueConstraint, PrimaryKeyConstraint
-from sqlalchemy import Boolean, String, Integer
-from sqlalchemy import ForeignKey, UniqueConstraint, PrimaryKeyConstraint
-from sqlalchemy import Boolean, String, Integer
+from sqlalchemy import Boolean, String, Integer, Text
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy import Enum
 from database import engine
@@ -431,20 +428,13 @@ class Progress(Base):
     ideal_completion_date: Mapped[str] = mapped_column(String(10), nullable=True)
     requirement_id: Mapped[int] = mapped_column(Integer, ForeignKey("requirement.id"), nullable=True)
     milestone_id: Mapped[int] = mapped_column(Integer, ForeignKey("milestone.id"), nullable=True)
+    custom_milestone_name: Mapped[str] = mapped_column(String(40), nullable=True)
+    custom_milestone_description: Mapped[str] = mapped_column(Text, nullable=True)
     deadline: Mapped[str] = mapped_column(String(10), nullable=True)
     completion_date: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     approved: Mapped[bool] = mapped_column(Boolean)
-    note: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     exempt: Mapped[bool] = mapped_column(Boolean)
-    
-    
-    student = relationship("Student", back_populates="progress_tasks")
-    requirement = relationship("Requirement")
-    milestone = relationship("Milestone")
-    
-    
-    def __repr__(self) -> str:
-        return f"Progress(id={self.id!r},requirement_id={self.requirement_id!r},student_id={self.student_id!r})"
 
 class CourseEnrollment(Base):
     """Holds the information of course enrollment from student:
