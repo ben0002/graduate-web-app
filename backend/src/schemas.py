@@ -181,7 +181,7 @@ class ProgramEnrollmentOut(BaseModel):
     id: int
     major: MajorOut
     degree: DegreeOut
-    concentration: str | None
+    concentration: str | None = None
     enrollment_date: date
     
 

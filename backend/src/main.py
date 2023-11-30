@@ -197,7 +197,7 @@ def get_login_page_info(student_id: int | None = None, access_token:str = Cookie
                     privilege_level=student_advisor.advisor.privilege_level,
                     advisor_role=student_advisor.advisor_role   
                 ) for student_advisor in student.advisors],
-        programs=[schemas.ProgramEnrollmentOut(id=program.id, major=program.major, degree=program.degree,
+        programs=[schemas.ProgramEnrollmentOut(id=program.id, major=program.major, degree=program.degree, concentration=program.concentration,
                                                enrollment_date=program.enrollment_date) for program in student.programs],
         pos=student.pos
     )
