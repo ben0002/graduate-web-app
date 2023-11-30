@@ -91,6 +91,11 @@ class StudentFileUpload(StudentIn):
     class Config:
         from_attributes = True
 
+class UpdateStudent(StudentIn):
+    first_name: Optional[str] = Field(None, max_length=40)
+    last_name: Optional[str] = Field(None, max_length=40)
+    email: EmailStr | None =None
+
 class FacultyIn(BaseModel):
     first_name: str = Field(..., max_length=40)
     last_name: str = Field(..., max_length=30)
@@ -179,6 +184,19 @@ class ProgramEnrollmentOut(BaseModel):
     major: MajorOut
     degree: DegreeOut
     enrollment_date: date
+
+class UpdateProgramEnrollment(ProgramEnrollmentIn):
+    student_id: int | None = None
+    degree_id: int | None = None
+    major_id: int | None = None
+    enrollment_date: date | None = None
+
+class ResponseUpdateProgramEnrollment(ProgramEnrollmentIn):
+    id : int
+    student_id: int
+    degree_id: int
+    major_id: int
+    enrollment_date: date
     
 
 class StudentLabsIn(BaseModel):
@@ -192,6 +210,12 @@ class StudentLabsOut(StudentLabsIn):
     id : int
     class Config:
         from_attributes = True
+
+class UpdateStudentLabs(StudentLabsIn):
+    student_id: int | None = None
+    name: Optional[str] = Field(None, max_length=40)
+    director: Optional[str] = Field(None, max_length=40)
+    
         
 class StudentAdvisorIn(BaseModel):
     advisor_role : AdvisorRole
@@ -202,6 +226,14 @@ class StudentAdvisorOut(StudentAdvisorIn, FacultyOut):
     
     class Config:
         from_attributes = True
+
+class UpdateStudentAdvisor(StudentAdvisorIn):
+    advisor_id : int | None = None
+    advisor_role : AdvisorRole | None = None
+    
+class ResponseUpdateStudentAdvisor(StudentAdvisorIn):
+    advisor_id : int
+    student_id : int
         
 class EmploymentIn(BaseModel):
     student_id : int
@@ -218,6 +250,11 @@ class EmploymentOut(EmploymentIn):
     class Config:
         from_attributes = True
 
+class UpdateEmployment(EmploymentIn):
+    student_id : int | None = None
+    job_title : Optional[str] = Field(None, max_length=40)
+    type : Optional[str]= Field(None, max_length=30)
+
 class FundingIn(BaseModel):
     student_id : int
     name : str = Field(..., max_length=50)
@@ -233,6 +270,10 @@ class FundingOut(FundingIn):
     class Config:
         from_attributes = True
 
+class UpdateFunding(FundingIn):
+    student_id : int | None = None
+    name : Optional[str] = Field(None, max_length=50)
+
 class EventIn(BaseModel):
     student_id : int
     name : str = Field(..., max_length=40)
@@ -246,7 +287,12 @@ class EventOut(EventIn):
     id : int
     class Config:
         from_attributes = True
-
+    
+class UpdateEvent(EventIn):
+    student_id : int | None = None
+    name : Optional[str] = Field(None, max_length=40)
+    status: EventStatus | None = None
+    
 class RequirementIn(BaseModel):
     name : str = Field(..., max_length=50)
     description : Optional[str] = Field(None, max_length=100)
@@ -318,7 +364,13 @@ class CourseEnrollmentOut(CourseEnrollmentIn):
     id: int
     class Config:
         from_attributes = True
-        
+
+class UpdateCourseEnrollment(CourseEnrollmentIn):
+    student_id: int | None = None
+    course_title: Optional[str] = Field(None, max_length=50)   
+    transfer: bool | None = False
+    credits: int | None = None
+    term: int | None = None
         
 class StudentPOSIn(BaseModel):
     student_id: int
@@ -333,6 +385,9 @@ class StudentPOSOut(StudentPOSIn):
     id: int
     class Config:
         from_attributes = True
+
+class UpdateStudentPOS(StudentPOSIn):
+    student_id: int | None = None
 
 
 # ----------------------- lump schemas ------------------------- #
