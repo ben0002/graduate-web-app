@@ -657,7 +657,8 @@ def insert_requirement(requirement: schemas.RequirementIn, db:Session):
             student_id=programEnrollment.student_id,
             requirement_id=requirement_id,              
         )
-        progress = models.Progress(**progress_data.dict(), deadline="TBD")
+        progress_data.deadline = "TBD"
+        progress = models.Progress(**progress_data.dict())
         db.add(progress)
         db.flush()
         
@@ -666,7 +667,7 @@ def insert_requirement(requirement: schemas.RequirementIn, db:Session):
 
 def insert_milestone(milestone: schemas.MilestoneIn, db:Session):
     
-    db_milestone = models.Requirement(**milestone.dict())
+    db_milestone = models.Milestone(**milestone.dict())
     db.add(db_milestone)
     db.flush()
     milestone_id = db_milestone.id
@@ -677,7 +678,8 @@ def insert_milestone(milestone: schemas.MilestoneIn, db:Session):
             student_id=programEnrollment.student_id,
             milestone_id=milestone_id,              
         )
-        progress = models.Progress(**progress_data.dict(), deadline="TBD")
+        progress_data.deadline="TBD"
+        progress = models.Progress(**progress_data.dict())
         db.add(progress)
         db.flush()
         
@@ -823,12 +825,22 @@ def insert_degree_from_file(data : dict, db: Session):
         db.add(degree)
         db.flush()
         
-# Processing data from file to Degree table
+# Processing data from file to Faculty table
 def insert_faculty_from_file(data : dict, db: Session):
     # Modeling the field with the data from file
     faculty = models.Faculty(**data)  
     db.add(faculty)
     db.flush()
+
+# Processing data from file to Milestone table
+def insert_milestone_from_file(data : schemas.MilestoneIn, db: Session):
+    # Modeling the field with the data from file
+    insert_milestone(data, db)
+    
+# Processing data from file to Requirement table
+def insert_requirement_from_file(data : schemas.RequirementIn, db: Session):
+    # Modeling the field with the data from file
+    insert_requirement(data, db)
 #------------------------------------------------------------------------------------------------------------
 
 #----------------------------------------------------------Helper function for validation--------------------------------------------
@@ -899,7 +911,7 @@ def find_major(db: Session, row_number: int, major_description: str = None, majo
 # This will find major with its name and return the id itself 
 def find_major_name(major_name: str, db: Session, row_number: int):
     if not major_name:
-        raise CustomValueError(message="The major is need.", original_exception=None)
+        raise CustomValueError(message="The given major name + " + major_name + "is not found.", original_exception=None, row_data=row_number)
     major = db.query(models.Major).filter(models.Major.name == major_name).one_or_none()
     if major:
         return major.id
@@ -1000,6 +1012,30 @@ def validation_faculty_data_from_file(data: dict, db:Session, row_number: int):
         faculty_type = data.get("faculty type") or None,
         privilege_level = data.get("privilege level") or None,
         email= data.get("Email")
+    )
+    return validation_data
+
+# This will help to validate the data from csv file when insert the data for degree
+def validation_milestone_data_from_file(data: dict, db:Session, row_number: int):
+    major_id = find_major_name(data.get("Major"), db, row_number)
+    degree_id = find_degree(data.get("Degree"), db, row_number)
+    validation_data = schemas.MilestoneIn(
+        name=data.get("Name"),
+        description=data.get("Description"),
+        major_id=major_id,
+        degree_id=degree_id
+    )
+    return validation_data
+
+# This will help to validate the data from csv file when insert the data for degree
+def validation_requirement_data_from_file(data: dict, db:Session, row_number: int):
+    major_id = find_major_name(data.get("Major"), db, row_number)
+    degree_id = find_degree(data.get("Degree"), db, row_number)
+    validation_data = schemas.RequirementIn(
+        name=data.get("Name"),
+        description=data.get("Description"),
+        major_id=major_id,
+        degree_id=degree_id
     )
     return validation_data
 #----------------------------------------------------------------------------------------------------------------------
@@ -1120,6 +1156,42 @@ def process_faculty_data_from_file(file: UploadFile, db: Session):
             number_row += 1
         db.commit()
     return inserted_faculty_data
+
+# This will process milestone data from csv file, and add them to the corresponding database.
+def process_milestone_data_from_file(file: UploadFile, db: Session):
+    with TextIOWrapper(file.file, 'utf-8') as text_file:
+        csv_reader = csv.DictReader(text_file)
+        inserted_milestone_data : list = []
+        number_row = 1
+        for row in csv_reader:
+            #--------------Validation-----------------------------------------
+            validation_data = validation_milestone_data_from_file(row, db, number_row)
+            inserted_milestone_data.append(validation_data)
+            #-----------------------------------------------------------------
+            #----------------Insert To Database ------------------------------
+            insert_milestone_from_file(validation_data, db)
+            #-----------------------------------------------------------------
+            number_row += 1
+        db.commit()
+    return inserted_milestone_data
+
+# This will process requirement data from csv file, and add them to the corresponding database.
+def process_requirement_data_from_file(file: UploadFile, db: Session):
+    with TextIOWrapper(file.file, 'utf-8') as text_file:
+        csv_reader = csv.DictReader(text_file)
+        inserted_requirement_data : list = []
+        number_row = 1
+        for row in csv_reader:
+            #--------------Validation-----------------------------------------
+            validation_data = validation_requirement_data_from_file(row, db, number_row)
+            inserted_requirement_data.append(validation_data)
+            #-----------------------------------------------------------------
+            #----------------Insert To Database ------------------------------
+            insert_requirement_from_file(validation_data, db)
+            #-----------------------------------------------------------------
+            number_row += 1
+        db.commit()
+    return inserted_requirement_data
 
 #------------------------------------------------------------------------------------------------------------------------------
             
