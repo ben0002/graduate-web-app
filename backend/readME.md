@@ -29,20 +29,23 @@
 
  - Install Conda Environment from their [official website](https://www.anaconda.com/products/distribution) 
  - Inside capstoneproject/backend, run: `conda env create -f environment.yml`
- - Activate the environment: `conda activate my_env` (replace my_env with name of your environment)
+ - Activate the environment: `conda activate vtprograd_env` (you can change name of environment in .yml file if you want)
  - To deactivate, run `conda deactivate`
  - Remember to always activate your environment before you start your work!
  - To install anything new into your environment, first try `conda install` *before* `pip install` but remember to 
- update your requirements.txt with any new dependencies for docker purposes.
+ update your requirements.txt with any new python dependencies for docker purposes.
  - **[Conda Cheat Sheet](https://conda.io/projects/conda/en/latest/user-guide/cheatsheet.html)**
  - [Conda Documentation](https://conda.io/projects/conda/en/latest/user-guide/index.html)
+ - If you want to view your installed packages -> run `conda list`
 
 
 
-2. Pip Install
+2. Pip Install 
  - In your local environment (whether in a python virtual environment , etc.) inside capstoneproject/backend, run: `pip install -r requirements.txt`
  - Always ensure to add any new dependencies into requirements.txt
+ - If you forget the versions, run `pip list`
 
 
 ## Backend Design Overview ##
+
 
