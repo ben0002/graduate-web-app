@@ -1281,4 +1281,50 @@ async def upload_faculty_file(file: UploadFile, db: Session = Depends(get_db)):
         raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
     finally:
         db.close()
+    
+@app.post("/uploadmilestonefile", response_model=list[schemas.MilestoneIn])
+async def upload_milestone_file(file: UploadFile, db: Session = Depends(get_db)):    
+    try:
+        return crud.process_milestone_data_from_file(file, db)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="CSV file not found")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Permission denied to access the CSV file")
+    except csv.Error as csv_error:
+        raise HTTPException(status_code=400, detail=f"CSV file error: {csv_error}")
+    except ValueError as validation_error:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(validation_error)}")
+    except crud.CustomValueError as value_error:
+        db.rollback()
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data}) 
+    except IntegrityError as constraint_violation:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+    finally:
+        db.close()
+
+@app.post("/uploadrequirementfile", response_model=list[schemas.RequirementIn])
+async def upload_requirement_file(file: UploadFile, db: Session = Depends(get_db)):  
+    try:
+        return crud.process_requirement_data_from_file(file, db)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="CSV file not found")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Permission denied to access the CSV file")
+    except csv.Error as csv_error:
+        raise HTTPException(status_code=400, detail=f"CSV file error: {csv_error}")
+    except ValueError as validation_error:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Validation error: {str(validation_error)}")
+    except crud.CustomValueError as value_error:
+        db.rollback()
+        raise HTTPException(status_code=422, detail={"error_message": str(value_error), 
+                                                     "problematic_row": value_error.row_data}) 
+    except IntegrityError as constraint_violation:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=f"Integrity error: {str(constraint_violation)}")
+    finally:
+        db.close()
 #--------------------------------------------------------------------------------------------------
