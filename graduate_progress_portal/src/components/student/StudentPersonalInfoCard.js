@@ -38,7 +38,7 @@ const StudentPersonalCardInfo = ({ student }) => {
                             variant='body1' 
                             component='div'>
                                 <strong>Program Entry: </strong>
-                                {user.programs[0].enrollment_date || 'Today'}
+                                {user.programs.length > 0 ? user.programs[0].enrollment_date : 'Enrolled'}
                         </Typography>
                         <Typography 
                             variant='body1' 

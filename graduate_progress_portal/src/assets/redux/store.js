@@ -125,6 +125,18 @@ const studentReducer = (state = initialState, action) => {
                 courses: state.student.courses.filter(course => course.id != action.payload.id)
             }
         }
+    case 'add_lab':
+        return {...state,
+            student: { ...state.student,
+                labs: [...state.student.labs, action.payload]
+        }
+    }
+    case 'delete_lab':
+        return {...state,
+            student: { ...state.student,
+                labs: state.student.labs.filter(lab => lab.id != action.payload.id)
+            }
+        }
     default:
       return state;
   }
