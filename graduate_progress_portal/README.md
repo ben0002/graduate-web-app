@@ -28,7 +28,7 @@ Below is a list, a brief explanation of it's uses, and it's documentation link.
   * JS runtime environemnt that will allow you to execute code outside of the web browser. 
   * Documentation Link: https://nodejs.org/en/docs/
 
-### FrontEnd Structure
+# FrontEnd Structure
 Below will be a brief explanation of the directories and what each file is specifically for. **Everything frontend will be located in the src directory in graduate_progress_portal** 
 
 ## Advisor 
@@ -38,21 +38,21 @@ Below will be a brief explanation of the directories and what each file is speci
 
 ## Layouts
  * Contains files where any design or component is applied globally
- # mainLayout.js
+ ### mainLayout.js
    * Global to all users
- # studentLayout.js
+ ### studentLayout.js
    * Only global to all users that return the 'student' role
      
 ## Pages
- * Contains the files for the pages that currently exist
- # /advisor
- # /student
-  # StudentProfile.js
-  # StudentProgress.js 
- # login.js 
+* Contains the files for the pages that currently exist
+### /advisor
+### /student
+#### StudentProfile.js
+#### StudentProgress.js 
+ ### login.js 
   * React component that will handle user authentication with VT CAS. Uses a useEffect hook to initiate an API request to retrieve current user's information from the CAS server. It will then redirect a user to the CAS login page if they are not logged in, once succesfull it will redirect the user to their default page.
 
- # notFound.js 
+ ### notFound.js 
   * Standard notFound page.
 
 ## Shared
