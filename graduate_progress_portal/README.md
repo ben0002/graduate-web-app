@@ -1,70 +1,29 @@
-# Getting Started with Create React App
+# FRONTEND README 
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Technology 
+Below is a list, a brief explanation of it's uses, and it's documentation link.
 
-## Available Scripts
+### React 
+ * React is a JS library for building UIs. Allows you to create reusable UI components that update as data changes.
+ * Documentation Link: [https://legacy.reactjs.org/docs](https://react.dev/reference/react)
 
-In the project directory, you can run:
+### Material UI 
+ * MUI is a React UI framwork that provides a set of pre-designed customizable UI component. Our front-end uses MUI heavily to create pre-designed UI which is then customized to fit our specifications.
+ * Documentation Link: https://mui.com/material-ui/getting-started/
 
-### `npm start`
+### CSS
+ * Cascading Style Sheets is a styling language which will allow for control over the visual appearance of elements.
+ * Our project uses both CSS with MUI styling
+ * Documentation Link: https://devdocs.io/css/
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Redux 
+ * Redux is a predictable state management library for JS applications, normally used with React. In our project, it will help manage the application state in a centralized store located in /graduate_progress_portal/src/assets/redux
+* Documentation Link: https://redux.js.org/
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### NPM 
+ * NPM is a package manager for JS, which will allow for managing, installing, and sharing pakages from the Node.js ecosystem. Used to install dependecies.
+ * Documentation Link: https://docs.npmjs.com/
 
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### Node.js
+  * JS runtime environemnt that will allow you to execute code outside of the web browser. 
+  * Documentation Link: https://nodejs.org/en/docs/
