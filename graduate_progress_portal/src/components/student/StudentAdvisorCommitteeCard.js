@@ -1,108 +1,107 @@
-import React, { useState } from 'react';
-import { Box, TextField, Button, Paper, Typography } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, TextField, Button, Paper, Typography, Modal, MenuItem, FormControl, Select, Grid, IconButton } from '@mui/material';
+import { apiRequest } from '../../assets/_commons';
+import { useSelector } from 'react-redux';
+import '../../assets/styling/student/studentAdvisorCommitteeCard';
+
 
 const StudentAdvisorCommittee = () => {
   const [advisors, setAdvisors] = useState([]);
   const [committeeMembers, setCommitteeMembers] = useState([]);
-  const [newAdvisor, setNewAdvisor] = useState('');
-  const [newCommitteeMember, setNewCommitteeMember] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [newMember, setNewMember] = useState({ name: '', role: '', advisorType: '' });
+  const student_id = useSelector(state => state.student.info.id)
 
-  const handleAddAdvisor = (event) => {
-    event.preventDefault();
-    if (newAdvisor.trim()) {
-      setAdvisors([...advisors, newAdvisor.trim().toUpperCase()]);
-      setNewAdvisor('');
-    }
+  const handleOpenModal = () => {
+    setModalOpen(true);
   };
 
-  const handleAddCommitteeMember = (event) => {
-    event.preventDefault();
-    if (newCommitteeMember.trim()) {
-      setCommitteeMembers([...committeeMembers, newCommitteeMember.trim().toUpperCase()]);
-      setNewCommitteeMember('');
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setNewMember({ name: '', role: '', advisorType: '' });
+  };
+
+  const handleInputChange = (e) => {
+    setNewMember({ ...newMember, [e.target.name]: e.target.value });
+  };
+
+  useEffect(() => {
+    // Fetch advisors
+    apiRequest(`students/${student_id}/advisors`, 'GET')
+      .then(response => response.json())
+      .then(data => setAdvisors(data))
+      .catch(error => console.error('Error fetching advisors:', error));
+
+    // Fetch committee members
+    apiRequest(`students/${student_id}`, 'GET')
+      .then(response => response.json())
+      .then(data => setCommitteeMembers(data.advisory_committee.split(',')))
+      .catch(error => console.error('Error fetching committee members:', error));
+  }, [student_id]);
+
+  const displayAdvisorInfo = (advisorRole) => {
+    const advisorArray = advisors.filter(a => a.advisor_role === advisorRole);
+    if (advisorArray.length > 0) {
+      const advisor = advisorArray[0];
+      return (
+        <>
+          <Typography className='advisorName'>{`${advisor.first_name} ${advisor.last_name}`}</Typography>
+          <Typography className='advisorInfo'>{`Email: ${advisor.email}`}</Typography>
+          <Typography className='advisorInfo'>{`Department: ${advisor.dept_code}`}</Typography>
+          <Typography className='advisorInfo'>{`Faculty-Type: ${advisor.faculty_type}` || ''}</Typography>
+        </>
+      );
     }
+    return <Typography className='advisorName'>Not Assigned</Typography>;
   };
 
   return (
     <Paper>
-      <Box sx={{ display: 'flex', flexDirection: 'column', p: 2 }}>
-        {/* Advisor Section */}
-        <Box sx={{ flex: 1, borderBottom: '1px solid black', mb: 2, paddingBottom: "0.5rem" }}>
-          <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#630031', mb: 1 }}>Advisor(s)</Typography>
-          {advisors.map((advisor, index) => (
-            <Typography key={index} sx={{ fontSize: 12 }}>{advisor}</Typography>
-          ))}
-          <form onSubmit={handleAddAdvisor} style={{ display: 'flex', alignItems: 'center' }}>
-            <TextField 
-              value={newAdvisor}
-              onChange={(e) => setNewAdvisor(e.target.value)}
-              size="medium"
-              placeholder="Enter Advisor Name"
-              InputProps={{
-                sx: {
-                  fontSize: 16,
-                  '&::placeholder': {
-                    color: 'rgba(0, 0, 0, 0.6)'
-                  }
-                }
-              }}
-              sx={{ flexGrow: 1, mr: 1 }}
-            />
-            <Button
-              type="submit"
-              sx={{
-                backgroundColor: '#630031', 
-                color: 'white',
-                borderRadius: 20,
-                '&:hover': {
-                  backgroundColor: '#4E342E'
-                },
-                p: '6px 16px',
-              }}
-            >
-              Add
-            </Button>
-          </form>
-        </Box>
-        
-        {/* Committee Section */}
-        <Box sx={{ flex: 1, borderBottom: '1px solid black', paddingBottom: "0.5rem" }}>
-          <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#630031', mb: 1 }}>Committee</Typography>
-          {committeeMembers.map((member, index) => (
-            <Typography key={index} sx={{ fontSize: 12 }}>{member}</Typography>
-          ))}
-          <form onSubmit={handleAddCommitteeMember} style={{ display: 'flex', alignItems: 'center' }}>
-            <TextField 
-              value={newCommitteeMember}
-              onChange={(e) => setNewCommitteeMember(e.target.value)}
-              size="medium"
-              placeholder="Enter Committee Member Name"
-              InputProps={{
-                sx: {
-                  fontSize: 16,
-                  '&::placeholder': {
-                    color: 'rgba(0, 0, 0, 0.6)'
-                  }
-                }
-              }}
-              sx={{ flexGrow: 1, mr: 1 }}
-            />
-            <Button
-              type="submit"
-              sx={{
-                backgroundColor: '#630031',
-                color: 'white',
-                borderRadius: 20,
-                '&:hover': {
-                  backgroundColor: '#4E342E'
-                },
-                p: '6px 16px',
-              }}
-            >
-              Add
-            </Button>
-          </form>
-        </Box>
+      <Box className='studentAdvisorCommitteeContainer'>
+        <Grid container spacing={2}>
+          {/* Left Side - Advisor */}
+          <Grid item xs={6}>
+            <Typography variant="h6" className='advisorTitle'>Advisors</Typography>
+            <Typography className='advisor'>Main Advisor:</Typography>
+            {displayAdvisorInfo('main_advisor')}
+            <Typography className='advisor coAdvisor'>Co-Advisor:</Typography>
+            {displayAdvisorInfo('co_advisor')}
+          </Grid>
+
+          {/* Right Side - Committee */}
+          <Grid item xs={6}>
+            <Typography variant="h6" className='committeeTitle'>Committee</Typography>
+            {committeeMembers.length > 0 ? committeeMembers.map((member, index) => (
+              <Typography key={index} className='committeeMember'>{member}</Typography>
+            )) : <Typography className='committeeMember'>Not assigned</Typography>}
+          </Grid>
+        </Grid>
+
+        <Button onClick={handleOpenModal} className='addButton'>Add Member</Button>
+
+        {/* Modal for adding member */}
+        <Modal open={modalOpen} onClose={handleCloseModal}>
+          <Box className='ACmodalBox'>
+            <TextField fullWidth label="Name" name="name" value={newMember.name} disabled margin="normal" />
+            <FormControl fullWidth margin="normal">
+              <Select name="role" value={newMember.role} disabled displayEmpty>
+                <MenuItem value="" disabled>Select Role</MenuItem>
+                <MenuItem value="advisor">Advisor</MenuItem>
+                <MenuItem value="committee">Committee</MenuItem>
+              </Select>
+            </FormControl>
+            {newMember.role === 'advisor' && (
+              <FormControl fullWidth margin="normal">
+                <Select name="advisorType" value={newMember.advisorType} disabled displayEmpty>
+                  <MenuItem value=""  >Select Advisor Type</MenuItem>
+                  <MenuItem value="Main Advisor">Main Advisor</MenuItem>
+                  <MenuItem value="Co-Advisor">Co-Advisor</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+            <Button disabled className='addButton'>Add</Button>
+          </Box>
+        </Modal>
       </Box>
     </Paper>
   );

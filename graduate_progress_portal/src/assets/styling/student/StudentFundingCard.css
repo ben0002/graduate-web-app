@@ -1,16 +1,67 @@
-/*CSS File for Student Funding Card*/
 
-.student-funding-card-container {
+/* Funding Modal Styles */
+
+.modalHeader {
+    border-bottom: 2px solid gray;
+    border-radius: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.modalBody {
+    padding-right: .75rem;
+}
+
+.modalBodyText {
+    margin: 0;
+}
+
+.modalBodyText b {
+    margin-right: 0.25rem;
+}
+
+.modalBodyDates {
+    align-items: end;
+}
+
+.flexRowCenter {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-right: .75rem;
+}
+
+/* Student Funding Card Styles */
+
+.studentFundingContainer {
     width: 100%;
-    height: 375px;
     box-sizing: border-box;
 }
 
-.student-funding-card-placeholder {
+.studentFundingListContainer {
+    min-height: 17.375rem;
+    max-height: 17.375rem;
+}
+
+.studentFundingList {
     width: 100%;
-    height: 300px;
+    height: 100%;
     border: 1px dashed #ccc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    justify-content: left;
+}
+
+.fundingItem {
+    margin: auto;
+    width: 90%;
+    position: relative;
+    border-bottom: 1px solid lightgray;
+}
+
+.fundingItem div h2,p {
+    margin: 0;
+}
+
+.fundingItemDate{
+    font-size: 0.75rem;
+    display: inline-block;
 }

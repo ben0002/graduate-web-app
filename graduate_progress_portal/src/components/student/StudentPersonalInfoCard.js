@@ -1,14 +1,14 @@
 import React from 'react';
 import { Tooltip, Button, Card, CardContent, Typography, Avatar, Box, Grid } from '@mui/material';
 import { useSelector } from 'react-redux';
-//import './StudentPersonalInfoCard.css';
+import '../../assets/styling/student/studentPersonalInfoCard';
 
 const StudentPersonalCardInfo = ({ student }) => {
 
     const user = useSelector(state => state.student)
 
     return (
-        <Card className="student-personal-info-container">
+        <Card className="studentPersonalInfoContainer">
             <CardContent>
                 <Grid container spacing={2} alignItems={'flex-start'}>
                     <Grid item xs={12} sm={4}>

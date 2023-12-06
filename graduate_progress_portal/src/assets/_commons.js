@@ -1,6 +1,6 @@
 
 export function apiRequest(endpoint, method, body){
-    return fetch(`//bktp-gradpro-api.discovery.cs.vt.edu/${endpoint}`, {
+    return fetch(`//bktp-gradpro-api2.discovery.cs.vt.edu/${endpoint}`, {
         method: method,
         credentials: 'include', // To include cookies in the request
         headers: {
@@ -8,6 +8,16 @@ export function apiRequest(endpoint, method, body){
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(body)
+    })
+}
+
+export function apiGetRequest(endpoint){
+    return fetch(`//bktp-gradpro-api2.discovery.cs.vt.edu/${endpoint}`, {
+        credentials: 'include', // To include cookies in the request
+        headers: {
+            'Accept': 'application/json', // Explicitly tell the server that you want JSON
+            'Content-Type': 'application/json',
+        }
     })
 }
 

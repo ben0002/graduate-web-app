@@ -1,0 +1,65 @@
+
+.messageBoxContainer {
+    margin: auto;
+    height: 25.5rem;
+    position: relative;
+}
+
+.messageTab {
+    color: #630031;
+    font-size: 1rem;
+}
+
+.messageArea {
+    margin-top: 0.5rem;
+    min-height: 14rem;
+    max-height: 14rem;
+}
+
+.messageAreaContainer {
+    row-gap: 0.75rem;
+}
+
+.messageItem {
+    min-height: 3.5rem;
+    border-bottom: 1px solid gray;
+    border-radius: 0.25rem;
+    max-width: calc(50% - 2.5rem);
+    width: fit-content;
+    margin: 0 2rem;
+    min-width: 10rem;
+    align-self: flex-end; /* Adjust based on message ownership */
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: end;
+}
+
+.messageTimestamp {
+    font-size: 0.75rem;
+}
+
+.messageText {
+    margin: 0;
+}
+
+.messageInputArea {
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+    padding: 0 1rem 1rem 0;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    row-gap: 0.5rem;
+    width: calc(100% - 2rem);
+}
+
+.submitButton {
+    border-radius: 20;
+    background-color: #630031;
+    color: white;
+    width: fit-content;
+    &:hover {
+        background-color: #4E342E
+    };
+}

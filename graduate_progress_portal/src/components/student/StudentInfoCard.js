@@ -2,6 +2,7 @@ import React from 'react';
 import { Tooltip, Button, Card, CardContent, Typography, Avatar, Box, Grid } from '@mui/material';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import '../../assets/styling/student/studentInfoCard';
 
 
 export default function StudentCardInfo() {
@@ -13,36 +14,35 @@ export default function StudentCardInfo() {
     const user = useSelector(state => state.student)
 
     const getMainAdvisor = _ => {
-        var main_adv = user.advisors.filter(adv => adv.role == "main_advisor")
-        if(main_adv.length > 0) return main_adv[0].name
+        var main_adv = user.advisors.filter(adv => adv.advisor_role == "main_advisor")
+        if(main_adv.length > 0) return main_adv[0].first_name + main_adv[0].last_name
         return null
     }
 
     if(user == undefined) return (<></>)
     
     return (
-        <Card className="student-card-container" sx={{ height: '165px' }}>
+        <Card className="studentInfoContainer">
             <CardContent>
                 <Grid container spacing={2} alignItems="flex-start">
                     {/* Column 1: Avatar and basic info */}
                     <Grid item xs={12} sm={5}>
-                        <Box display="flex" alignItems="flex-start">
+                        <Box className='flex avatarBox'>
                             <Avatar
                                 alt={`${user.info.first_name || 'First'} ${user.info.middle_name || ''} ${user.info.last_name || 'Last'} Name`}
                                 src={defaultAvatar}
-                                sx={{ width: 56, height: 56, marginRight: 2 }}
+                                className='avatarStyle'
                             />
                             <Box sx={{ flexGrow: 1 }}>
                                 <Typography variant="h6" component="div"><strong>{`${user.info.first_name || 'First'} ${user.info.middle_name || ''} ${user.info.last_name || 'Last'}`}</strong></Typography>
-                                <Typography fontSize={13} color="textSecondary">{user.info.pronoun || 'N/A'}</Typography>
+                                <Typography className='userPronouns' color="textSecondary">{user.info.pronouns || 'N/A'}</Typography>
                                 <br />
                                 <Typography color="textSecondary"><strong>Advisor:</strong> {getMainAdvisor() || 'N/A'}</Typography>
                                 <Tooltip title={user.info.advisory_committee || 'N/A'}>
                                     <Typography 
                                         className="truncate" 
-                                        fontSize={13} 
                                         color="textSecondary"
-                                        style={{ maxWidth: '27%' }} // Truncate everything after 27% of the container width
+                                        classes={'committeeInfo'}
                                     >
                                         <strong>Committee: </strong>{user.info.advisory_committee || 'N/A'}
                                     </Typography>
@@ -53,7 +53,7 @@ export default function StudentCardInfo() {
 
                     {/* Column 2: Major, Status, Year */}
                     <Grid item xs={12} sm={2}>
-                        <Box sx={{ flexGrow: 1 }}>
+                        <Box className='flexGrowEven'>
                             <Typography color="textSecondary"><strong>Major: </strong>{user.programs.length > 0 ? user.programs[0].major.name : 'Major'}</Typography> {/*user.programs.map( pro => pro.major).join(', ')*/}
                             <Typography color="textSecondary"><strong>Status: </strong>{user.info.status || 'New'}</Typography>
                             <Typography color="textSecondary"><strong>Year: </strong>{user.info.year || 2023}</Typography>
@@ -62,7 +62,7 @@ export default function StudentCardInfo() {
 
                     {/* Column 3: Concentration, Degree Type */}
                     <Grid item xs={12} sm={2}>
-                        <Box sx={{ flexGrow: 1 }}>
+                        <Box className='flexGrowEven'>
                             <Typography color="textSecondary"><strong>Concentration: </strong>{user.info.concentration || 'Concentration'}</Typography>
                             <Typography color="textSecondary"><strong>Degree Type: </strong>{user.programs.length > 0 ? user.programs[0].degree.name : 'Degree'}</Typography> {/*user.programs.map( pro => pro.degree).join(', ')*/}
                         </Box>
@@ -70,7 +70,7 @@ export default function StudentCardInfo() {
 
                     {/* Column 4: Action Buttons */}
                     <Grid item xs={12} sm={3}>
-                        <Box display="flex" flexDirection="column" alignItems="center">
+                        <Box className='flex flexColumn flexCenter'>
                             <Button
                                 variant="contained"
                                 //color="primary"

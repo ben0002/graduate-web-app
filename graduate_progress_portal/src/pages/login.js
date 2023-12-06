@@ -3,7 +3,7 @@ import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 
 function getStuInfo(){
-    return fetch("https://bktp-gradpro-api.discovery.cs.vt.edu/students/login_info", {
+    return fetch("https://bktp-gradpro-api2.discovery.cs.vt.edu/students/login_info", {
         credentials: 'include', // To include cookies in the request
         headers: {
             'Accept': 'application/json', // Explicitly tell the server that you want JSON

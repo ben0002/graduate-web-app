@@ -1,0 +1,51 @@
+
+.studentAdvisorCommitteeContainer {
+    display: flex;
+    flex-direction: column;
+    padding: 2rem;
+}
+
+.advisorTitle,
+.committeeTitle {
+    font-weight: bold;
+    color: #630031;
+    margin-bottom: 1rem;
+    font-size: 1.125rem;
+}
+
+.advisor {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.coAdvisor {
+    margin-top: 1rem;
+}
+
+.advisorName, .committeeMember {
+    font-size: 1rem;
+}
+
+.advisorInfo {
+    font-size: 0.875rem;
+}
+
+.ACmodalBox {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    box-shadow: 1.5rem;
+    padding: 4rem;
+}
+
+.addButton {
+    background-color: #630031;
+    color: white;
+    margin-top: 2rem;
+    &:hover {
+        background-color: #4E342E
+    };
+}

@@ -1,0 +1,24 @@
+/* Student Lab Information Card Styles */
+
+.studentLabContainer {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.studentLabList {
+    overflow-x: hidden;
+    height: 18rem;
+}
+
+/* Lab Modal Styles */
+
+.modalHeader {
+    border-bottom: 2px solid gray;
+    border-radius: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.modalLabForm {
+    column-gap: 1rem;
+    margin-bottom: 3rem;
+}

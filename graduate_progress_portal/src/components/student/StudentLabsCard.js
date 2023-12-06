@@ -3,9 +3,10 @@ import { Box, Button, Card, CardContent, IconButton, Modal, Table, TableBody, Ta
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useDispatch, useSelector } from 'react-redux';
-import { apiRequest } from '../../assets/_commons';
+import { apiGetRequest, apiRequest } from '../../assets/_commons';
 import { DatePicker } from '@mui/x-date-pickers';
 import dayjs from 'dayjs';
+import '../../assets/styling/student/studentLabCard';
 
 function LabModal(openModal, setOpen){
     const [localValues, setLocalValues] = useState({name: '', start_date: '', director: '', location: ''});
@@ -30,12 +31,12 @@ function LabModal(openModal, setOpen){
     }
   
     return(
-    <Modal open={openModal} onClose={_ => {console.log(1); setOpen(false)}} style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-          <div style={{backgroundColor: 'white', padding: '1rem', position: 'relative', borderRadius: '0.5rem', boxShadow: '0px 0px 15px 0 black'}}>
-            <div style={{borderBottom: '2px solid gray', borderRadius: '0.25rem', marginBottom: '0.5rem'}}>
-              <h1 style={{margin: '0'}}>Add Lab</h1>
+    <Modal open={openModal} onClose={_ => {console.log(1); setOpen(false)}} className='flex flexCenter'>
+          <div className='modalBox'>
+            <div className='modalHeader'>
+              <h1>Add Lab</h1>
             </div>
-            <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', columnGap: '1rem', marginBottom: '3rem'}}>
+            <div className='flex modalLabForm'>
                 <TextField
                     label="Lab Name"
                     value={localValues.name}
@@ -61,11 +62,10 @@ function LabModal(openModal, setOpen){
                 />
                 
             </div>
-            <Button style={{position: 'absolute', right: '1rem', bottom: '1rem'}} variant='outlined' 
+            <Button className='saveButton actionButton' variant='outlined' 
                 onClick={_ => {
                     var body = {...localValues};
-                    body.student_id = student_id
-                    apiRequest(`student/lab`, 'POST', body)
+                    apiRequest(`students/${student_id}/labs`, 'POST', body, true)
                     .then(res => {
                         if(res.ok) return res.json();
                         else console.log(res.status);
@@ -96,35 +96,29 @@ const StudentLabInformationCard = () => {
     const dispatch = useDispatch()
     const student_id = useSelector(state => state.student.info.id)
     
-    useEffect(_ => {
-        async function getLabs(id) {
-          await fetch(`https://bktp-gradpro-api.discovery.cs.vt.edu/students/${id}/labs`, {
-            credentials: 'include', // To include cookies in the request
-            headers: { 'Accept': 'application/json', }
-          })
-          .then(res => {
+    useEffect(_ => { 
+        apiGetRequest(`students/${student_id}/labs`, 'GET', null)  
+        .then(res => {
             if(res.ok) return res.json();
             else console.log(res.status);
-          })
-          .then(data => {
+        })
+        .then(data => {
             if (data == undefined) console.error('Error: Non ok http response');
             else{
-              console.log(data)
-              dispatch({type: 'pop_stu_labs', payload: data});
+                console.log(data)
+                dispatch({type: 'pop_stu_labs', payload: data});
             }
-          })
-          .catch((err) => console.error('Error:', err.message))    
-        }
-        getLabs(student_id);      
+        })
+        .catch((err) => console.error('Error:', err.message))     
       }, []);
 
     var makeLabRows = _ => {
         return labs.map( (lab, idx) => { return(
-                <TableRow style={{backgroundColor: `${idx % 2 === 0 ? '#f5f5f5' : 'white'}`}}  key={`lab-${lab.id}`}>
+                <TableRow className={`${idx % 2 === 0 ? 'tableRowAlternate' : 'tableRow'}`}  key={`lab-${lab.id}`}>
                     <TableCell align='center'>{lab.name}</TableCell>
-                    <TableCell align='center'>yyyy-mm-dd</TableCell>
+                    <TableCell align='center'>{lab.start_date}</TableCell>
                     <TableCell align='center'>{lab.director}</TableCell>
-                    <TableCell align='center'>located here</TableCell>
+                    <TableCell align='center'>{lab.location}</TableCell>
                     <TableCell align='center'><IconButton onClick={_ => setConfirmDelete(lab.id)}><DeleteIcon/></IconButton></TableCell>
                 </TableRow>
             )
@@ -132,16 +126,15 @@ const StudentLabInformationCard = () => {
         }
     
     return (<>
-        <Card className="student-labs-container">
+        <Card className="studentLabContainer"> {/* does this actually provide any styling? */}
             <CardContent>
-                <Typography variant="h6" component="div" sx={{display: 'flex', justifyContent: 'space-between'}}>
+                <Typography variant="h6" component="div" className='flex'>
                     <strong>Labs</strong>
                     <IconButton onClick={ _ => setOpen(true)}>
                         <AddCircleOutlineIcon sx={{color: '#630031'}}/>
                     </IconButton>
                 </Typography>
-                {/* Placeholder box, uses the milestones-placeholder class for styling */}
-                <div style={{overflowX: 'hidden', height: '18rem'}}>
+                <div className="studentLabList">
                     <TableContainer sx={{maxHeight: '18rem'}}>
                         <Table stickyHeader aria-label="sticky table">
                             <TableHead>
@@ -162,13 +155,13 @@ const StudentLabInformationCard = () => {
             </CardContent>
         </Card>
         {LabModal(open, setOpen)}
-        <Modal open={confirmDelete != null} onClose={_ => setConfirmDelete(null)} style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-                <div style={{backgroundColor: 'white', padding: '1rem', display: 'flex', flexDirection: 'column', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center'}}>
-                    <h2 style={{marginTop: '0'}}>Are you sure you want to delete this event?</h2>
+        <Modal open={confirmDelete != null} onClose={_ => setConfirmDelete(null)} className='flex flexCenter'>
+                <div className="flex flexColumn flexWrap flexCenter modalBox">
+                    <h2>Are you sure you want to delete this event?</h2>
                     <div>
                         <Button variant='outlined' style={{marginRight: '1rem'}}
                             onClick={_ => {
-                            apiRequest(`student/lab/${confirmDelete}`, 'DELETE', null)
+                            apiRequest(`${student_id}/labs/${confirmDelete}`, 'DELETE', null, true)
                             .then(res => {
                                 if(res.ok) return res.json();
                                 else console.log(res.status);

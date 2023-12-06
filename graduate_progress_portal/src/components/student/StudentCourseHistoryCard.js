@@ -6,15 +6,15 @@ import { useDispatch, useSelector } from 'react-redux';
 import { apiRequest, isNumeric, terms } from '../../assets/_commons';
 import { DatePicker } from '@mui/x-date-pickers';
 import dayjs from 'dayjs';
-//import './StudentCourseHistoryCard.css';
+import '../../assets/styling/student/studentCourseHistoryCard';
 
 function CourseModal(openModal, setOpen){
-    const [localValues, setLocalValues] = useState({course_title: '', term: 0, year: 0, credits: 0, course_type: 'Non-Transfer'});
+    const [localValues, setLocalValues] = useState({course_title: '', term: 0, year: 0, credits: 0, transfer: false, research: false});
     const student_id = useSelector(state => state.student.info.id)
     const dispatch = useDispatch();
 
     useEffect(_=>{
-      setLocalValues({course_title: '', term: 0, year: 0, credits: 0, course_type: 'Non-Transfer'})
+      setLocalValues({course_title: '', term: 0, year: 0, credits: 0, transfer: false, research: false})
     }, [openModal])
   
     const checkValid = _ => {
@@ -23,7 +23,8 @@ function CourseModal(openModal, setOpen){
         localValues.term >= 0 &&
         localValues.year >= 0 &&
         localValues.credits >= 0 &&
-        localValues.course_type != null
+        localValues.transfer != null &&
+        localValues.research != null
       )
     }
   
@@ -32,12 +33,12 @@ function CourseModal(openModal, setOpen){
     }
   
     return(
-    <Modal open={openModal} onClose={_ => {console.log(1); setOpen(false)}} style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-        <div style={{backgroundColor: 'white', padding: '1rem', position: 'relative', borderRadius: '0.5rem', boxShadow: '0px 0px 15px 0 black'}}>
-          <div style={{borderBottom: '2px solid gray', borderRadius: '0.25rem', marginBottom: '0.5rem'}}>
-            <h1 style={{margin: '0'}}>Add Course</h1>
+    <Modal open={openModal} onClose={_ => {console.log(1); setOpen(false)}} className='flex flexCenter'>
+        <div className='modalBox'>
+          <div className='modalHeader'>
+            <h1>Add Course</h1>
           </div>
-          <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', columnGap: '1rem', marginBottom: '3rem'}}>
+          <div className='flex modalCourseForm'>
             <TextField
                 label="Course Title"
                 value={localValues.course_title}
@@ -50,10 +51,10 @@ function CourseModal(openModal, setOpen){
                 onChange={(e) => {if(isNumeric(e.target.value)) handleInputChange('term', +e.target.value)}}
                 sx={{width: '7rem'}}
             >
-                <MenuItem value="0">Fall</MenuItem>
-                <MenuItem value="1">Winter</MenuItem>
-                <MenuItem value="2">Spring</MenuItem>
-                <MenuItem value="3">Summer</MenuItem>
+                <MenuItem value="0">Spring</MenuItem>
+                <MenuItem value="1">Summer</MenuItem>
+                <MenuItem value="2">Fall</MenuItem>
+                <MenuItem value="3">Winter</MenuItem>
             </Select>
             <DatePicker
                     label="Year"
@@ -70,18 +71,23 @@ function CourseModal(openModal, setOpen){
             />
             <FormControlLabel control={
                 <Checkbox
-                    checked={localValues.course_type == 'Transfer'}
-                    onChange={(e) => handleInputChange('course_type', e.target.checked ? 'Transfer' : 'Non-Transfer')}
+                    checked={localValues.transfer}
+                    onChange={(e) => handleInputChange('transfer', e.target.checked)}
                 />} 
                 label="Transfer" 
-            /> 
+            />
+            <FormControlLabel control={
+                <Checkbox
+                    checked={localValues.research}
+                    onChange={(e) => handleInputChange('research', e.target.checked)}
+                />} 
+                label="Research" 
+            />
           </div>
-          <Button style={{position: 'absolute', right: '1rem', bottom: '1rem'}} variant='outlined' 
+          <Button className='saveButton actionButton' variant='outlined' 
             onClick={_ => {
                 var body = {...localValues};
-                body.student_id = student_id
-                body.pos_id = 1 //state.student.pos.id
-                apiRequest(`student/course`, 'POST', body)
+                apiRequest(`students/${student_id}/courses`, 'POST', body)
                 .then(res => {
                     if(res.ok) return res.json();
                     else console.log(res.status);
@@ -110,17 +116,18 @@ export default function StudentCourseHistoryCard() {
     const [confirmDelete, setConfirmDelete] = useState(null);
     const [open, setOpen] = useState(false);
     const courses = useSelector(state => state.student.courses)
+    const student_id = useSelector(state => state.student.info.id)
     const dispatch = useDispatch()
 
     var makeCourseRows = _ => {
         return courses.map( (course, idx) => { return(
-            <TableRow style={{backgroundColor: `${idx % 2 === 0 ? '#f5f5f5' : 'white'}`}}  key={`course-${course.id}`}>
+            <TableRow className={`${idx % 2 === 0 ? 'tableRowAlternate' : 'tableRow'}`}  key={`course-${course.id}`}>
                 <TableCell align='center'>{course.course_title}</TableCell>
                 <TableCell align='center'>{terms[course.term]}</TableCell>
                 <TableCell align='center'>{course.year}</TableCell>
                 <TableCell align='center'>{course.credits}</TableCell>
-                <TableCell align='center'><Checkbox disabled checked={course.course_type == 'Transfer'}/></TableCell>
-                <TableCell align='center'><Checkbox disabled/></TableCell>
+                <TableCell align='center'><Checkbox disabled checked={course.transfer}/></TableCell>
+                <TableCell align='center'><Checkbox disabled checked={course.research}/></TableCell>
                 <TableCell align='center'><IconButton onClick={_ => setConfirmDelete(course.id)}><DeleteIcon/></IconButton></TableCell>
             </TableRow>
         )
@@ -128,16 +135,16 @@ export default function StudentCourseHistoryCard() {
     }
 
     return (<>
-        <Card className="student-course-history-container">
+        <Card className="studentCourseHistoryContainer">
             <CardContent>
-                <Typography variant="h6" component="div" sx={{display: 'flex', justifyContent: 'space-between'}}>
+                <Typography variant="h6" component="div" className='flex'>
                     <strong>Course History</strong>
                     <IconButton onClick={ _ => setOpen(true)}>
                         <AddCircleOutlineIcon sx={{color: '#630031'}}/>
                     </IconButton>
                 </Typography>
                 {/* Placeholder box, uses the milestones-placeholder class for styling */}
-                <div style={{overflowX: 'hidden', height: '18rem'}}>
+                <div className="studentCourseHistoryList">
                     <TableContainer sx={{maxHeight: '18rem'}}>
                         <Table stickyHeader aria-label="sticky table">
                             <TableHead>
@@ -160,13 +167,13 @@ export default function StudentCourseHistoryCard() {
             </CardContent>
         </Card>
         {CourseModal(open, setOpen)}
-        <Modal open={confirmDelete != null} onClose={_ => setConfirmDelete(null)} style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-            <div style={{backgroundColor: 'white', padding: '1rem', display: 'flex', flexDirection: 'column', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center'}}>
-              <h2 style={{marginTop: '0'}}>Are you sure you want to delete this event?</h2>
+        <Modal open={confirmDelete != null} onClose={_ => setConfirmDelete(null)} className='flex flexCenter'>
+            <div className="flex flexColumn flexWrap flexCenter modalBox">
+              <h2>Are you sure you want to delete this event?</h2>
               <div>
                 <Button variant='outlined' style={{marginRight: '1rem'}}
                     onClick={_ => {
-                    apiRequest(`student/course/${confirmDelete}`, 'DELETE', null)
+                    apiRequest(`students/${student_id}/courses/${confirmDelete}`, 'DELETE', null)
                     .then(res => {
                         if(res.ok) return res.json();
                         else console.log(res.status);

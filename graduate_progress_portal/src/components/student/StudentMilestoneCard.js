@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Button, Card, CardContent, IconButton, Input, Modal, Switch, Tab, Tabs, TextField, Typography } from '@mui/material';
+import { TabPanel, MenuItem, Box, Button, Card, CardContent, IconButton, Input, Modal, Switch, Tab, Tabs, TextField, Typography } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import EditIcon from '@mui/icons-material/Edit';
@@ -8,70 +8,121 @@ import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import { DatePicker } from '@mui/x-date-pickers';
 import { useDispatch, useSelector } from 'react-redux';
 import { apiRequest, isNumeric } from '../../assets/_commons';
+import '../../assets/styling/student/studentMilestoneCard';
 
 function MilestoneModal(milestone, openModal, closeModal, methods, newMilestone) {
   const [isNew, setIsNew] = useState(false);
   const [edit, setEdit] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [tab, setTab] = useState(0);
-  const [localValues, setLocalValues] = useState({ name: '', description: '', ideal_completion_date: '', deadline: '', completion_date: '', approved: false, exempt: false, note: '' });
+  const [localValues, setLocalValues] = useState({ name: '', description: '', ideal_completion_date: '', deadline: '', completion_date: '', approved: false, exempt: false, completed: false, note: '' });
   const dispatch = useDispatch();
   const student_id = useSelector(state => state.student.info.id)
+  const [selectedMajorId, setSelectedMajorId] = useState('');
+  const [selectedDegreeId, setSelectedDegreeId] = useState('');
+
+  // Options for major and degree dropdowns
+  const majorOptions = [
+    { id: 1, name: 'ISE', description: 'Industrial & Systems Engineering' },
+    { id: 2, name: 'SYSE', description: 'Systems Engineering' }
+  ];
+
+  const degreeOptions = [
+    { id: 1, name: 'PHD', description: 'Doctor of Philosophy' },
+    { id: 2, name: 'MS', description: 'Master of Science' },
+    { id: 3, name: 'MENG', description: 'Master of Engineering' },
+    { id: 4, name: 'MEA', description: 'Master of Engineering Administration' }
+  ];
 
   useEffect(_ => {
     setIsNew(newMilestone);
     setEdit(newMilestone);
   }, [newMilestone])
 
-  useEffect(_ => {
-    if (milestone) setLocalValues({ name: milestone.name, description: milestone.description, ideal_completion_date: milestone.ideal_completion_date, deadline: milestone.deadline, completion_date: milestone.completion_date, approved: milestone.approved, exempt: milestone.exempt, note: milestone.note })
-    else setLocalValues({ name: '', description: '', ideal_completion_date: '', deadline: '', completion_date: '', approved: false, exempt: false, note: '' })
-  }, [milestone])
+  useEffect(() => {
+    if (milestone) {
+      setLocalValues({
+        name: milestone.milestone.name,
+        description: milestone.milestone.description,
+        ideal_completion_date: milestone.ideal_completion_date,
+        deadline: milestone.deadline,
+        completion_date: milestone.completion_date,
+        approved: milestone.approved,
+        exempt: milestone.exempt,
+        completed: milestone.completed,
+        note: milestone.note
+      });
+      setSelectedMajorId(milestone.milestone.major_id ? milestone.milestone.major_id.toString() : '');
+      setSelectedDegreeId(milestone.milestone.degree_id ? milestone.milestone.degree_id.toString() : '');
+    } else {
+      setLocalValues({
+        name: '',
+        description: '',
+        ideal_completion_date: '',
+        deadline: '',
+        completion_date: '',
+        approved: false,
+        exempt: false,
+        completed: false,
+        note: ''
+      });
+      setSelectedMajorId('');
+      setSelectedDegreeId('');
+    }
+  }, [milestone]);
+
+  const handleDropdownChange = (event, type) => {
+    const value = event.target.value;
+    if (type === 'major') {
+      setSelectedMajorId(value);
+    } else if (type === 'degree') {
+      setSelectedDegreeId(value);
+    }
+  };
 
   const checkChanged = _ => {
-    return milestone && (
-      localValues.name !== milestone.name ||
-      localValues.description !== milestone.description ||
-      localValues.ideal_completion_date !== milestone.ideal_completion_date ||
-      localValues.deadline !== milestone.deadline ||
-      localValues.completion_date !== milestone.completion_date ||
-      localValues.approved !== milestone.approved ||
-      localValues.exempt !== milestone.exempt ||
-      localValues.completed !== milestone.completed ||
-      localValues.notes !== milestone.notes
-    )
+    if (isNew) {
+      return true;
+    } else {
+      const milestoneMajorId = milestone && milestone.milestone.major_id ? milestone.milestone.major_id.toString() : '';
+      const milestoneDegreeId = milestone && milestone.milestone.degree_id ? milestone.milestone.degree_id.toString() : '';
+
+      return milestone && (
+        localValues.name !== milestone.milestone.name ||
+        localValues.description !== milestone.milestone.description ||
+        localValues.ideal_completion_date !== milestone.ideal_completion_date ||
+        localValues.deadline !== milestone.deadline ||
+        localValues.completion_date !== milestone.completion_date ||
+        localValues.approved !== milestone.approved ||
+        localValues.exempt !== milestone.exempt ||
+        localValues.completed !== milestone.completed ||
+        localValues.note !== milestone.note ||
+        selectedMajorId !== milestoneMajorId ||
+        selectedDegreeId !== milestoneDegreeId
+      )
+    }
   }
 
-  const checkValid = _ => {
-    return (
-      localValues.name.length > 0 &&
-      localValues.deadline !== null
-    )
+  const checkValid = () => {
+    return localValues.name.length > 0 &&
+      selectedDegreeId.length > 0 &&
+      selectedMajorId.length > 0 &&
+      localValues.deadline;
   }
 
   const getDifferentValues = _ => {
-    if (milestone == null) return {}
-    var body = {}
+    if (milestone == null || isNew) return {}
+    let body = {}
     if (localValues.name !== milestone.name) body.name = localValues.name
     if (localValues.description !== milestone.description) body.description = localValues.description
-    if (localValues.ideal_completion_date !== milestone.ideal_completion_date) body.ideal_completion_date = localValues.ideal_completion_date
-    if (localValues.deadline !== milestone.deadline) body.deadline = localValues.deadline
-    if (localValues.completion_date !== milestone.completion_date) body.completion_date = localValues.completion_date
-    if (localValues.approved !== milestone.approved) body.approved = localValues.approved
-    if (localValues.exempt !== milestone.exempt) body.exempt = localValues.exempt
-    if (localValues.completed !== milestone.completed) body.completed = localValues.completed
-    if (localValues.notes !== milestone.notes) body.notes = localValues.notes
-    return body
+    return body;
   }
 
   const handleInputChange = (name, value) => {
-    setLocalValues({ ...localValues, [name]: value })
-  }
-
-  const checkNewFields = save => {
-    var valid = true
-    if (save && valid) setIsNew(false)
-    return valid
+    setLocalValues(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
   }
 
   const handleTabChange = (_, newTab) => {
@@ -81,98 +132,144 @@ function MilestoneModal(milestone, openModal, closeModal, methods, newMilestone)
   if (milestone == null && !isNew) { return (<></>) }
 
   return (
-    <Modal open={openModal || isNew} onClose={_ => { closeModal(null); setEdit(false) }}>
-      <Box style={{ width: '50%', height: '50%', backgroundColor: 'white', margin: '12.5% 25%', padding: '1rem', position: 'relative', borderRadius: '0.5rem', boxShadow: '0px 0px 15px 0 black' }}>
-        <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', borderBottom: '2px solid gray', borderRadius: '0.25rem', marginBottom: '0.5rem' }}>
-          {edit ?
-            <TextField
-              label="Name"
-              value={localValues.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              fullWidth
-              variant="outlined"
-            />
-            :
-            <h1 style={{ margin: '0' }}>{milestone ? milestone.Name : ''}</h1>
-          }
-          <div style={{ display: 'flex' }}>
+    <Modal open={openModal || isNew} onClose={_ => { closeModal(null); setEdit(false) }} className='flex flexCenter'>
+      <div className='modalBox'>
+        <div className='flex modalHeader'>
+          {edit ? (
+            <Box className='flex flexCenter modalHeaderForm'>
+              <TextField
+                label="Name"
+                value={localValues.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                variant="outlined"
+                style={{ width: '30rem' }}
+              />
+              <TextField
+                select
+                label="Major"
+                value={selectedMajorId}
+                onChange={(e) => handleDropdownChange(e, 'major')}
+                variant="outlined"
+                style={{ width: '8rem' }}
+              >
+                {majorOptions.map((option) => (
+                  <MenuItem key={option.id} value={option.id}>{option.name}</MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                select
+                label="Degree"
+                value={selectedDegreeId}
+                onChange={(e) => handleDropdownChange(e, 'degree')}
+                variant="outlined"
+                style={{ width: '8rem' }}
+              >
+                {degreeOptions.map((option) => (
+                  <MenuItem key={option.id} value={option.id}>{option.name}</MenuItem>
+                ))}
+              </TextField>
+            </Box>
+          ) : (
+            <>
+              <h1>{localValues.name}</h1>
+              <Typography variant="body1">
+                Major: {majorOptions.find(o => o.id === selectedMajorId)?.name || 'None'}
+              </Typography>
+              <Typography variant="body1">
+                Degree: {degreeOptions.find(o => o.id === selectedDegreeId)?.name || 'None'}
+              </Typography>
+            </>
+          )}
+          {/*<div style={{ display: 'flex' }}>
             <IconButton onClick={_ => setEdit(!edit)}>
               <EditIcon sx={{ color: '#630031' }} />
             </IconButton>
             <IconButton onClick={_ => setConfirmDelete(true)}>
               <HighlightOffIcon sx={{ color: '#630031' }} />
             </IconButton>
-          </div>
+          </div>*/}
         </div>
-        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: '.75rem' }}>
-          <Typography style={{ display: 'flex', flexDirection: `${edit ? 'column' : 'row'}`, justifyContent: 'left' }}> <b style={{ marginRight: '0.25rem' }}>Ideal Completion:</b> {edit ? <DatePicker /> : 'mm/dd/yyyy'}</Typography>
-          <Typography style={{ display: 'flex', flexDirection: `${edit ? 'column' : 'row'}`, justifyContent: 'center' }}> <b style={{ marginRight: '0.25rem' }}>Deadline:</b> {edit ? <DatePicker /> : 'mm/dd/yyyy'}</Typography>
-          <Typography style={{ display: 'flex', flexDirection: `${edit ? 'column' : 'row'}`, justifyContent: 'right' }}> <b style={{ marginRight: '0.25rem' }}>Completed on:</b> {edit ? <DatePicker /> : 'mm/dd/yyyy'}</Typography>
+        <div className='flex flexCenter modalBody'>
+          <Typography style={{ display: 'flex', flexDirection: `${edit ? 'column' : 'row'}`, justifyContent: 'left' }}> <b style={{ marginRight: '0.25rem' }}>Ideal Completion:</b> {edit ? <DatePicker /> : localValues.ideal_completion_date || 'N/A'}</Typography>
+          <Typography style={{ display: 'flex', flexDirection: `${edit ? 'column' : 'row'}`, justifyContent: 'center' }}> <b style={{ marginRight: '0.25rem' }}>Deadline:</b> {edit ? <DatePicker /> : localValues.deadline || 'N/A'}</Typography>
+          <Typography style={{ display: 'flex', flexDirection: `${edit ? 'column' : 'row'}`, justifyContent: 'right' }}> <b style={{ marginRight: '0.25rem' }}>Completed on:</b> {edit ? <DatePicker /> : localValues.completion_date  || 'N/A'}</Typography>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: '.75rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-            <Switch disabled={!edit} />
+        <div className='flex flexCenter modalBody'>
+          <div className='flex flexCenter'>
+            <Switch disabled={!edit} checked={localValues.approved}/>
             <Typography> Approved </Typography>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-            <Switch disabled={!edit} />
+          <div className='flex flexCenter'>
+            <Switch disabled={!edit} checked={localValues.exempt}/>
             <Typography> Exempt </Typography>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-            <Switch disabled={!edit} />
+          <div className='flex flexCenter'>
+            <Switch disabled={!edit} checked={localValues.completed}/>
             <Typography> Completed </Typography>
           </div>
         </div>
-        <div style={{ width: '100%' }}>
+        <div className='fullWidth'>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs value={tab} onChange={handleTabChange} aria-label="basic tabs example">
               <Tab label="Description" />
               <Tab label="Notes" />
             </Tabs>
           </Box>
-          {tab === 0 &&
-            <div style={{ borderTop: '1px solid lightgray', borderBottom: '1px solid lightgray', borderRadius: '0.5rem', height: '10rem' }}>
-              <Typography>Placeholder text</Typography>
-            </div>
-          }
-          {tab === 1 &&
-            (edit ?
-              <textarea style={{ resize: 'none', height: '10rem', width: 'calc(100% - 0.5rem)' }} />
+          { tab === 0 &&
+            (edit ? 
+              <textarea name="description" value={localValues.description} className='modalTextArea'/>
               :
-              <div style={{ borderTop: '1px solid lightgray', borderBottom: '1px solid lightgray', borderRadius: '0.5rem', height: '10rem' }}>
-                <Typography>Placeholder text</Typography>
+              <div className='modalDescription'>
+                <Typography>{localValues.description}</Typography>
+              </div>
+            )
+          }
+          { tab === 1 &&
+            (edit ? 
+              <textarea name="notes" value={localValues.notes} className='modalTextArea'/>
+              :
+              <div className='modalDescription'>
+                <Typography>{localValues.notes}</Typography>
               </div>
             )
           }
         </div>
-        <div style={{ position: 'absolute', left: '1rem', bottom: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <h3 style={{ display: 'inline-block', margin: '0.5rem 0' }}> Files: </h3>
+        <div className='fileSection'>
+          <div className='flex flexCenter'>
+            <h3 className='fileSectionHeader'> Files: </h3>
             <Button component='label' startIcon={<FileUploadIcon sx={{ color: '#630031' }} />}>
-              <Input type='file' style={{ width: '0' }} onChange={e => console.log(e.target.files)} />
+              <Input type='file' className='hiddenInput' onChange={e => console.log(e.target.files)} />
             </Button>
           </div>
-          <div style={{ height: '2rem', width: 'fit-content', border: '1px solid lightgray', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 1rem' }}>
-            <h3 style={{ margin: '0' }}>File1.pdf</h3>
+          <div className='fileDisplay'>
+            <h3>File1.pdf</h3>
           </div>
         </div>
         {edit ? (
           <Button
-            style={{ position: 'absolute', right: '1rem', bottom: '1rem' }}
+            className='saveButton actionButton'
             variant='outlined'
             onClick={() => {
-              // Prepare the body for POST or PUT request
-              let body = isNew ? { ...localValues, major_id: selectedMajorId, degree_id: selectedDegreeId } : getDifferentValues();
+              let body, apiEndpoint, apiMethod;
+
               if (isNew) {
-                // Include student_id if it's a new milestone
-                body.student_id = student_id;
+                body = {
+                  ...localValues,
+                  student_id: student_id,
+                  degree_id: parseInt(selectedDegreeId),
+                  major_id: parseInt(selectedMajorId)
+                };
+                apiEndpoint = 'milestone';
+                apiMethod = 'POST';
+              } else {
+                body = {};
+                if (localValues.name !== milestone.name) body.name = localValues.name;
+                if (localValues.description !== milestone.description) body.description = localValues.description;  
+
+                apiEndpoint = 'milestone/${milestone.id}';
+                apiMethod = 'PATCH'
               }
 
-              // Determine the API endpoint and method based on whether it's a new milestone or not
-              const apiEndpoint = isNew ? 'milestone' : `student/${student_id}/progress-tasks`;
-              const apiMethod = isNew ? 'POST' : 'PUT';
-
-              // Perform the API request
               apiRequest(apiEndpoint, apiMethod, body)
                 .then(res => {
                   if (res.ok) return res.json();
@@ -193,7 +290,7 @@ function MilestoneModal(milestone, openModal, closeModal, methods, newMilestone)
                   console.error('Error:', err.message);
                 });
             }}
-            disabled={!checkChanged() || !checkValid()}
+            enabled={!checkChanged() || !checkValid()}
           >
             Save
           </Button>
@@ -201,24 +298,24 @@ function MilestoneModal(milestone, openModal, closeModal, methods, newMilestone)
         ) : (
           <></>
         )}
-        <Modal open={confirmDelete} onClose={_ => setConfirmDelete(false)}>
-          <Box style={{ width: '13.5%', backgroundColor: 'white', margin: '12.5% auto', padding: '1rem', display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-            <h2 style={{ marginTop: '0' }}>Are you sure you want to delete this event?</h2>
+        <Modal open={confirmDelete} onClose={_ => setConfirmDelete(false)} className='flex flexCenter'>
+          <div className="flex flexColumn flexWrap flexCenter modalBox">
+            <h2>Are you sure you want to delete this event?</h2>
             <Button variant='outlined' style={{ marginRight: '1rem' }} onClick={_ => { if (!isNew) { methods.removeMilestone(milestone.id) } setConfirmDelete(false); closeModal(null); setEdit(false) }}>Confrim</Button>
             <Button variant='outlined' onClick={_ => setConfirmDelete(false)}>Keep Event</Button>
-          </Box>
+          </div>
         </Modal>
-      </Box>
+      </div>
     </Modal >
   )
-
 }
 
 export default function StudentMilestoneCard() {
 
-  const [milestone, setMilestone] = useState([{ Name: "First", id: 1 }]);
   const [makeNew, setMakeNew] = useState(false);
   const [modal, setModal] = useState(null);
+  const milestones = useSelector(state => state.student.milestones);
+  const dispatch = useDispatch();
 
   var closeModal = _ => {
     setModal(null)
@@ -234,14 +331,27 @@ export default function StudentMilestoneCard() {
     setMilestone(milestone.filter(milestone => milestone.id != id))
   }
 
+  const deleteMilestone = (milestoneId) => {
+    apiRequest(`milestone/${milestoneId}`, 'DELETE', {})
+      .then(res => {
+        if (res.ok) {
+    
+          dispatch({ type: 'remove_milestone', payload: milestoneId });
+        } else {
+          console.error(`Failed to delete milestone with ID: ${milestoneId}`);
+        }
+      })
+      .catch(err => console.error('Error:', err));
+  }
+
   var makeMilestoneCards = _ => {
-    return milestone.map((milestone, idx) => {
+    return milestones.map((milestone) => {
       return (
-        <div style={{ marginX: 'auto', width: '90%', position: 'relative', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid lightgray' }} onClick={_ => { setModal(milestone); setMakeNew(false) }} key={`milestone-${idx}`}>
-          <h2 style={{ margin: '0' }}>{milestone.Name}</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0.25rem 0' }}>
+        <div className='flex flexCenter milestoneCardItem'>
+          <h2>{milestone.milestone.name}</h2>
+          <div className='flex flexColumn flexCenter statusContainer'>
             <RadioButtonUncheckedIcon />
-            <p style={{ margin: '0', fontSize: '0.75rem' }}>Status</p>
+            <p>Status</p>
           </div>
         </div>
       )
@@ -250,16 +360,16 @@ export default function StudentMilestoneCard() {
 
   return (
     <>
-      <Card className="student-milestones-container">
+      <Card className="studentMilestoneContainer">
         <CardContent>
-          <Typography variant="h6" component="div" sx={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Typography variant="h6" component="div" className='flex'>
             <strong>Milestones</strong>
-            <IconButton onClick={_ => setMakeNew(true)}>
+            {/*<IconButton onClick={_ => setMakeNew(true)}>
               <AddCircleOutlineIcon sx={{ color: '#630031' }} />
-            </IconButton>
+            </IconButton>*/}
           </Typography>
-          <div style={{ overflowY: 'scroll', overflowX: 'hidden' }}>
-            <div className="student-milestones-placeholder">
+          <div className='overflowY'>
+            <div className="flex flexColumn flexCenter studentMilestoneList">
               {makeMilestoneCards()}
             </div>
           </div>

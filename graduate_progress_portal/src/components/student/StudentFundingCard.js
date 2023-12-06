@@ -8,11 +8,12 @@ import { DatePicker } from '@mui/x-date-pickers';
 import { useDispatch, useSelector } from 'react-redux';
 import dayjs from 'dayjs';
 import { apiRequest, isNumeric } from '../../assets/_commons';
+import '../../assets/styling/student/studentFundingCard';
 
 function FundingModal(funding, openModal, closeModal, newFunding){
   const [isNew, setIsNew] = useState(false);
   const [edit, setEdit] = useState(false);
-  const [localValues, setLocalValues] = useState({name: '', award_amount: 0, start_date: '', end_date: '', guaranteed: false});
+  const [localValues, setLocalValues] = useState({name: '', award_amount: 0, start_date: '', end_date: '', guaranteed: false, recurring: false, description: '', notes: ''});
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [tab, setTab] = useState(0);
   const dispatch = useDispatch();
@@ -24,8 +25,8 @@ function FundingModal(funding, openModal, closeModal, newFunding){
   }, [newFunding])
 
   useEffect(_=>{
-    if(funding) setLocalValues({name: funding.name, award_amount: funding.award_amount, start_date: funding.start_date, end_date: funding.end_date, guaranteed: funding.guaranteed})
-    else setLocalValues({name: '', award_amount: 0, start_date: '', end_date: '', guaranteed: false})
+    if(funding) setLocalValues({name: funding.name, award_amount: funding.award_amount, start_date: funding.start_date, end_date: funding.end_date, guaranteed: funding.guaranteed, recurring: funding.recurring, description: funding.description, notes: funding.notes})
+    else setLocalValues({name: '', award_amount: 0, start_date: '', end_date: '', guaranteed: false, recurring: false, description: '', notes: ''})
   }, [funding])
 
   const checkChanged = _ => {
@@ -34,7 +35,10 @@ function FundingModal(funding, openModal, closeModal, newFunding){
       localValues.award_amount !== funding.award_amount || 
       localValues.start_date !== funding.start_date || 
       localValues.end_date !== funding.end_date || 
-      localValues.guaranteed !== funding.guaranteed
+      localValues.guaranteed !== funding.guaranteed ||
+      localValues.recurring !== funding.recurring ||
+      localValues.description !== funding.description ||
+      localValues.notes !== funding.notes
       )
   }
 
@@ -44,7 +48,8 @@ function FundingModal(funding, openModal, closeModal, newFunding){
       localValues.award_amount >= 0 &&
       localValues.start_date.length > 0 &&
       localValues.end_date.length > 0 &&
-      localValues.guaranteed != null
+      localValues.guaranteed != null  &&
+      localValues.recurring != null
     )
   }
 
@@ -56,6 +61,9 @@ function FundingModal(funding, openModal, closeModal, newFunding){
     if(localValues.start_date !== funding.start_date) body.start_date = localValues.start_date
     if(localValues.end_date !== funding.end_date) body.end_date = localValues.end_date
     if(localValues.guaranteed !== funding.guaranteed) body.guaranteed = localValues.guaranteed
+    if(localValues.recurring !== funding.recurring) body.recurring = localValues.recurring
+    if(localValues.description !== funding.description) body.description = localValues.description
+    if(localValues.notes !== funding.notes) body.notes = localValues.notes
     return body
   }
 
@@ -65,8 +73,9 @@ function FundingModal(funding, openModal, closeModal, newFunding){
 
   const handleInputChange = target => {
     switch(target.name){
+      case 'recurring':
       case 'guaranteed':
-        setLocalValues({...localValues, guaranteed: target.checked})
+        setLocalValues({...localValues, [target.name]: target.checked})
         break
       case 'award_amount':
         if(isNumeric(target.value)) setLocalValues({...localValues, award_amount: +target.value})
@@ -79,11 +88,11 @@ function FundingModal(funding, openModal, closeModal, newFunding){
   if(funding == null && !isNew) {return(<></>)}
 
     return(
-      <Modal open={openModal || isNew} onClose={_ => {closeModal(); setEdit(false); setIsNew(false)}}>
-      <Box style={{width: '50%', height: '50%', backgroundColor: 'white', margin: '12.5% 25%', padding: '1rem', position: 'relative', borderRadius: '0.5rem', boxShadow: '0px 0px 15px 0 black'}}>
-        <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', borderBottom: '2px solid gray', borderRadius: '0.25rem', marginBottom: '0.5rem'}}>
-          {edit ? <TextField label="Name" name="name" value={localValues.name} onChange={e => handleInputChange(e.target)}/> : <h1 style={{margin: '0'}}>{funding.name || ''}</h1>}
-          <div style={{display: 'flex'}}>
+      <Modal open={openModal || isNew} onClose={_ => {closeModal(); setEdit(false); setIsNew(false); setLocalValues({name: '', award_amount: 0, start_date: '', end_date: '', guaranteed: false, recurring: false, description: '', notes: ''})}} className='flex flexCenter'>
+      <div className='modalBox'>
+        <div className='flex modalHeader'>
+          {edit ? <TextField label="Name" name="name" value={localValues.name} onChange={e => handleInputChange(e.target)}/> : <h1>{funding.name || ''}</h1>}
+          <div className='flex'>
             <IconButton onClick={_ => (isNew ? checkValid() ? setConfirmDelete(true) : closeModal() : setEdit(!edit))}>
               <EditIcon sx={{color: '#630031'}}/>
             </IconButton>
@@ -92,25 +101,21 @@ function FundingModal(funding, openModal, closeModal, newFunding){
             </IconButton>
           </div>
         </div>
-        <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: '.75rem'}}>
-          <div style={{display: 'flex', flexDirection: 'column', alignItems: `${edit ? 'end' : 'start'}`, justifyContent: 'space-between', paddingRight: '.75rem'}}>
-            <p style={{margin: '0', display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>Total:</b> {edit ? <TextField label="Award Amount" name="award_amount" value={localValues.award_amount} onChange={e => handleInputChange(e.target)}/> : `$${funding.award_amount}`}</p>
-            <p style={{margin: '0', display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>Recurring:</b> {edit ? <TextField label="Recurring"/> : 'No/Period'}</p>
+        <div className='flex flexCenter modalBody'>
+          <div className='flex flexColumn flexCenter modalBody'>
+            <Typography className='flex flexCenter modalBodyText'><b>Total:</b> {edit ? <TextField label="Award Amount" name="award_amount" value={localValues.award_amount} onChange={e => handleInputChange(e.target)}/> : `$${funding.award_amount}`}</Typography>
+            <Typography className='flex flexCenter modalBodyText'><b>Recurring:</b> <Switch disabled={!edit} checked={localValues.recurring} name="recurring" onChange={e => handleInputChange(e.target)}/></Typography>
           </div>
-          <div style={{display: 'flex', flexDirection: 'column', alignItems: 'end', justifyContent: 'space-between', paddingRight: '.75rem'}}>
-            <Typography style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>Start Date:</b> {edit ? <DatePicker name="start_date" value={localValues.start_date.length == 0 ? null : dayjs(localValues.start_date)} onChange={e => setLocalValues({...localValues, start_date: dayjs(e).format('YYYY-MM-DD')})}/> : funding.start_date}</Typography>
-            <Typography style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}><b style={{marginRight: '0.25rem'}}>End Date:</b> {edit ? <DatePicker name="end_date" value={localValues.end_date.length == 0 ? null : dayjs(localValues.end_date)} onChange={e => setLocalValues({...localValues, end_date: dayjs(e).format('YYYY-MM-DD')})}/> : funding.end_date}</Typography>
+          <div className='flex flexColumn modalBody modalBodyDates'>
+            <Typography className='flex flexCenter modalBodyText'><b>Start Date:</b> {edit ? <DatePicker name="start_date" value={localValues.start_date.length == 0 ? null : dayjs(localValues.start_date)} onChange={e => setLocalValues({...localValues, start_date: dayjs(e).format('YYYY-MM-DD')})}/> : funding.start_date}</Typography>
+            <Typography className='flex flexCenter modalBodyText'><b>End Date:</b> {edit ? <DatePicker name="end_date" value={localValues.end_date.length == 0 ? null : dayjs(localValues.end_date)} onChange={e => setLocalValues({...localValues, end_date: dayjs(e).format('YYYY-MM-DD')})}/> : funding.end_date}</Typography>
           </div>
-          <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
-            <Switch disabled={!edit}/>
-            <Typography> Approved </Typography>
-          </div>
-          <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
+          <div className='flex flexCenter'>
             <Switch disabled={!edit} checked={localValues.guaranteed} name="guaranteed" onChange={e => handleInputChange(e.target)}/>
             <Typography> Gauranteed </Typography>
           </div>
         </div>
-        <div style={{ width: '100%' }}>
+        <div className='fullWidth'>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs value={tab} onChange={handleTabChange} aria-label="basic tabs example">
               <Tab label="Description"/>
@@ -119,82 +124,82 @@ function FundingModal(funding, openModal, closeModal, newFunding){
           </Box>
           { tab === 0 &&
             (edit ? 
-              <textarea style={{resize: 'none', height: '10rem', width: 'calc(100% - 0.5rem)'}}/>
+              <textarea name="description" value={localValues.description} onChange={e => handleInputChange(e.target)} className='modalTextArea'/>
               :
-              <div style={{borderTop: '1px solid lightgray', borderBottom: '1px solid lightgray', borderRadius: '0.5rem', height: '10rem'}}>
-                <Typography>Placeholder text</Typography>
+              <div className='modalDescription'>
+                <Typography>{funding.description}</Typography>
               </div>
             )
           }
           { tab === 1 &&
             (edit ? 
-              <textarea style={{resize: 'none', height: '10rem', width: 'calc(100% - 0.5rem)'}}/>
+              <textarea name="notes" value={localValues.notes} onChange={e => handleInputChange(e.target)} className='modalTextArea'/>
               :
-              <div style={{borderTop: '1px solid lightgray', borderBottom: '1px solid lightgray', borderRadius: '0.5rem', height: '10rem'}}>
-                <Typography>Placeholder text</Typography>
+              <div className='modalDescription'>
+                <Typography>{funding.notes}</Typography>
               </div>
             )
           }
         </div>
-        <div style={{position: 'absolute', left: '1rem', bottom: '1rem'}}>
-          <div style={{display: 'flex', alignItems: 'center'}}>
-            <h3 style={{display: 'inline-block', margin: '0.5rem 0'}}> Files: </h3>
-            <Button component='label' startIcon={<FileUploadIcon sx={{color: '#630031'}}/>}>
-              <Input type='file' style={{width: '0'}} onChange={ e => console.log(e.target.files)}/>
+        <div className='fileSection'>
+          <div className='flex flexCenter'>
+            <h3 className='fileSectionHeader'> Files: </h3>
+            <Button component='label' startIcon={<FileUploadIcon sx={{ color: '#630031' }} />}>
+              <Input type='file' className='hiddenInput' onChange={e => console.log(e.target.files)} />
             </Button>
           </div>
-          <div style={{height: '2rem', width: 'fit-content', border: '1px solid lightgray', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 1rem'}}>
-            <h3 style={{margin: '0'}}>File1.pdf</h3>
+          <div className='fileDisplay'>
+            <h3>File1.pdf</h3>
           </div>
         </div>
-        {edit ? 
-          <Button style={{position: 'absolute', right: '1rem', bottom: '1rem'}} variant='outlined' 
-          onClick={_ => {
-            if(isNew){
-              var body = {...localValues};
-              body.student_id = student_id
-              apiRequest(`student/funding`, 'POST', body)
-              .then(res => {
-                if(res.ok) return res.json();
-                else console.log(res.status);
-              })
-              .then(data => {
-                if (data == undefined) console.error('Error: Non ok http response');
-                else{
-                    dispatch({type: 'add_funding', payload: data})
-                }
-              })
-              .catch((err) => console.error('Error:', err.message))
-            }
-            else{ 
-              apiRequest(`student/funding/${funding.id}`, 'PUT', getDifferentValues())
-              .then(res => {
-                if(res.ok) return res.json();
-                else console.log(res.status);
-              })
-              .then(data => {
-                if (data == undefined) console.error('Error: Non ok http response');
-                else{
-                    dispatch({type: 'update_funding', payload: {id: funding.id, data}})
-                }
-              })
-              .catch((err) => console.error('Error:', err.message))
-            }
-            setIsNew(false)
-            setEdit(false)
-            closeModal()
-          }} 
+        {edit ?
+          <Button
+            className='saveButton actionButton' 
+            onClick={_ => {
+              if(isNew){
+                var body = {...localValues};
+                apiRequest(`students/${student_id}/funding`, 'POST', body)
+                .then(res => {
+                  if(res.ok) return res.json();
+                  else console.log(res.status);
+                })
+                .then(data => {
+                  if (data == undefined) console.error('Error: Non ok http response');
+                  else{
+                      dispatch({type: 'add_funding', payload: data})
+                  }
+                })
+                .catch((err) => console.error('Error:', err.message))
+              }
+              else{ 
+                apiRequest(`student/${student_id}/funding/${funding.id}`, 'PATCH', getDifferentValues())
+                .then(res => {
+                  if(res.ok) return res.json();
+                  else console.log(res.status);
+                })
+                .then(data => {
+                  if (data == undefined) console.error('Error: Non ok http response');
+                  else{
+                      dispatch({type: 'update_funding', payload: {id: funding.id, data}})
+                  }
+                })
+                .catch((err) => console.error('Error:', err.message))
+              }
+              setIsNew(false)
+              setEdit(false)
+              closeModal()
+            }} 
           disabled={(!checkChanged() || isNew) && !checkValid()}>Save</Button> 
           : 
           <></>
         }
-        <Modal open={confirmDelete} onClose={_ => setConfirmDelete(false)}>
-          <Box style={{width: '13.5%', backgroundColor: 'white', margin: '12.5% auto', padding: '1rem', display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between'}}>
-            <h2 style={{marginTop: '0'}}>Are you sure you want to delete this event?</h2>
+        <Modal open={confirmDelete} onClose={_ => setConfirmDelete(false)} className='flex flexCenter'>
+        <div className="flex flexColumn flexWrap flexCenter modalBox">
+            <h2>Are you sure you want to delete this event?</h2>
             <Button variant='outlined' style={{marginRight: '1rem'}} 
               onClick={_ => {
                 if(!isNew){
-                  apiRequest(`student/funding/${funding.id}`, 'DELETE', null)
+                  apiRequest(`students/${student_id}/funding/${funding.id}`, 'DELETE', null)
                   .then(res => {
                     if(res.ok) return res.json();
                     else console.log(res.status);
@@ -208,9 +213,9 @@ function FundingModal(funding, openModal, closeModal, newFunding){
                   .catch((err) => console.error('Error:', err.message))
                 } setConfirmDelete(false); closeModal(); setEdit(false)}}>Confrim</Button>
             <Button variant='outlined' onClick={_ => setConfirmDelete(false)}>Keep Event</Button>
-          </Box>
+          </div>
         </Modal>
-      </Box>
+      </div>
     </Modal>
   )
 }
@@ -231,14 +236,14 @@ export default function StudentFundingCard() {
 
   var makeFundingCards = _ => {
     return fundings.map( funding => { return(
-      <div style={{ marginX: 'auto', width: '90%', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderBottom: '1px solid lightgray'}} onClick={_ => {setModal(funding); setMakeNew(false)}} key={`funding-${funding.id}`}>
-        <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap'}}>
-          <h2 style={{margin: '0'}}>{funding.name}</h2>
-          <p style={{margin: '0'}}>${funding.award_amount}</p>
+      <div className='flex flexColumn fundingItem' onClick={_ => {setModal(funding); setMakeNew(false)}} key={`funding-${funding.id}`}>
+        <div className='flex flexCenter flexWrap'>
+          <h2>{funding.name}</h2>
+          <p>${funding.award_amount}</p>
         </div>
         <div>
-          <p style={{margin: '0', fontSize: '0.75rem', display: 'inline-block'}}>{funding.start_date} -</p>
-          <p style={{margin: '0', fontSize: '0.75rem', display: 'inline-block'}}>{funding.end_date}</p>
+          <p className='fundingItemDate'>{funding.start_date} -</p>
+          <p className='fundingItemDate'>{funding.end_date}</p>
         </div>
       </div>
     )})
@@ -246,16 +251,16 @@ export default function StudentFundingCard() {
 
   return (
     <>
-    <Card className="student-funding-card-container">
+    <Card className="studentFundingContainer">
       <CardContent>
-        <Typography variant="h6" component="div" sx={{display: 'flex', justifyContent: 'space-between'}}>
+        <Typography variant="h6" component="div" className='flex'>
           <strong>Student Funding</strong>
           <IconButton onClick={ _ => setMakeNew(true)}>
             <AddCircleOutlineIcon sx={{color: '#630031'}}/>
           </IconButton>
         </Typography>
-        <div style={{overflowY: 'scroll', overflowX: 'hidden', minHeight: '17.5rem', maxHeight: '17.5rem'}}>
-          <div className="student-funding-card-placeholder">
+        <div className='overflowY studentFundingListContainer'>
+          <div className="flex flexColumn flexCenter studentFundingList">
             {makeFundingCards()}
           </div>
         </div>

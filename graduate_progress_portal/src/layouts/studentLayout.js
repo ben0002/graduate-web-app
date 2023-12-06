@@ -3,8 +3,8 @@ import '../assets/styling/students.css';
 
 export default function StudentLayout() {
     return (
-        <>
+        <div className="studentPageContainer">
             <Outlet/>
-        </>
+        </div>
     );
 }

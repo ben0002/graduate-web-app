@@ -17,7 +17,7 @@ const StudentProgress = () => {
 
   useEffect(_ => {
     async function progress() {
-      await fetch("https://bktp-gradpro-api.discovery.cs.vt.edu/students/progress_page_info", {
+      await fetch("https://bktp-gradpro-api2.discovery.cs.vt.edu/students/progress_page_info", {
         credentials: 'include', // To include cookies in the request
         headers: { 'Accept': 'application/json', }
       })
@@ -38,7 +38,7 @@ const StudentProgress = () => {
   }, []);
 
   return (
-    <Box sx={{ width: '70%', paddingX: '2.5%', mx: 'auto', backgroundColor: '#f2f2f2', marginTop: '1rem', paddingBottom: '1rem'}}>
+    <>
       <Grid container spacing={2}>
         <Grid item xs={12}>
           <StudentCardInfo student={studentData} />
@@ -73,7 +73,7 @@ const StudentProgress = () => {
           </Grid>
         </Grid>
       </Grid>
-    </Box>
+    </>
   );
 }
 export default StudentProgress;

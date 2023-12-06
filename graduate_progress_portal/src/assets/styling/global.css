@@ -1,1 +1,158 @@
-/* Media Query for larger screens */
+/* Global Modal Styles */
+.ModalBox {
+    background-color: white;
+    padding: 1rem;
+    position: relative;
+    border-radius: 0.5rem;
+    box-shadow: 0px 0px 15px 0 black;
+}
+
+.modalHeader h1,h2{
+    margin: 0;
+}
+
+.modalTextArea {
+    resize: none;
+    height: 10rem;
+    width: calc(100% - 0.5rem);
+}
+
+.modalDescription {
+    border-top: 1px solid lightgray;
+    border-bottom: 1px solid lightgray;
+    border-radius: 0.5rem;
+    height: 10rem;
+}
+
+.saveButton {
+    position: absolute;
+    right: 1rem;
+    bottom: 1rem;
+}
+
+/* Global File Section Styles */
+.fileSection {
+    position: absolute;
+    left: 1rem;
+    bottom: 1rem;
+}
+
+.fileSectionHeader{
+    display: inline-block;
+    margin: 0.5rem 0;
+}
+
+.fileDisplay {
+    height: 2rem;
+    width: fit-content;
+    border: 1px solid lightgray;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1rem;
+}
+
+.fileDisplay h3{
+    margin: 0;
+}
+
+.hiddenInput {
+    width: 0;
+}
+
+/* Global General Styling */
+
+.fullWidth {
+    width: 100%;
+}
+
+.overflowX {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.overflowY {
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.center-text {
+    text-align: center;
+}
+
+.normalText {
+    font-size: 14px;
+    color: #333;
+}
+
+.boldText {
+    font-weight: bold;
+    color: #333;
+}
+
+.actionButton {
+    background-color: #630031;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    text-transform: none;
+    &:hover {
+        background-color: #4E342E;
+    }
+}
+
+.secondaryButton {
+    background-color: #f0f0f0;
+    color: #333;
+    padding: 10px 15px;
+    border-radius: 5px;
+    text-transform: none;
+    &:hover {
+        background-color: #ddd;
+    }
+}
+
+/* Global Table Styling */
+
+.tableRowAlternate {
+    background-color: #f5f5f5;
+}
+
+.tableRow {
+    background-color: white;
+}
+
+.tableCellCenter {
+    align: center;
+}
+
+/* Global Flex Styling */
+.flex {
+    display: flex;
+    justify-content: space-between;
+}
+
+.flexColumn {
+    flex-direction: column;
+}
+
+.flexCenter {
+    align-items: center;
+}
+
+.flexWrap {
+    flex-wrap: wrap;
+}
+
+.flexGrowEven {
+    flex-grow: 1;
+}
+
+/* Media Query for smaller screens */
